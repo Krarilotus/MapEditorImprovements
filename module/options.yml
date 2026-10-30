@@ -288,6 +288,30 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.castle.moat_kinds
+    name: map-editor-improvements-castle-moat-kinds
+    text: '{{castle_moat_kinds}}'
+    tooltip: '{{castle_moat_kinds_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.castle.moat_on_marsh
+    name: map-editor-improvements-castle-moat-on-marsh
+    text: '{{castle_moat_on_marsh}}'
+    tooltip: '{{castle_moat_on_marsh_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.castle.moat_removal_keeps_ground
+    name: map-editor-improvements-castle-moat-removal-keeps-ground
+    text: '{{castle_moat_removal_keeps_ground}}'
+    tooltip: '{{castle_moat_removal_keeps_ground_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
 
 - display: GroupBox
   category: [Map Editor Improvements]

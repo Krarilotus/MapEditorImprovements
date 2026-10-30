@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.26
+**Version**: 1.0.27
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -155,6 +155,15 @@ In the building menu of the map editor's castle mode:
 - **Damaged walls.** While the stairs, low wall, high wall or crenellated wall is chosen, a row
   above the castle buildings menu offers it **Damaged**: the walls you place get the top of a
   damaged wall and keep their height. Choosing the wall in the menu places normal walls again.
+- **Dug, planned and permanent moat.** While the moat is chosen in the gatehouses menu, a row
+  above the menu offers it three ways: **Dug** (the editor's usual moat), **Planned** (moat
+  marked out to be dug, as in a game) and **Permanent** (dug moat that nobody can fill in or
+  delete in a game). Choosing the moat in the menu goes back to dug moat.
+- **Moat on marsh.** Moat can be placed on marsh again; the marsh stays under it and comes
+  back when the moat is filled in.
+- **Removing moat keeps the ground.** "Remove moat" only changes tiles with dug or planned
+  moat: the moat goes (dug moat gets the normal ground height back) and the ground's texture
+  stays. Before, every tile under the brush became plain dirt.
 - **Building names further left.** The name of the building under the mouse ("Player 1's
   Keep") moves 100 pixels to the left, clear of the building counts.
 - **Barrier.** The Ruins menu gets a Barrier button in its free spot at the bottom right: a

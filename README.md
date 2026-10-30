@@ -103,6 +103,13 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   which is what the game does once its 4000 rocks are used up: the tiles get rock number 2000.
   The eraser takes a rock off by number - 2000, so for such a tile it would clear empty slot 0;
   both erase brushes now free the tile itself instead (rock flag 0x80 and the tile's number).
+* **Moat.** In the editor the moat buttons (106/107) choose 0x2D/0x2C and the click sends
+  ClickSetTerrain with terrain 0x40000000 and a mode (0 planned, 1 plan removed, 2 dug, 3
+  removed). The panel's choice picks mode 0, 2 or the module's 4 (dug moat without a moat list
+  entry, which units fill and the destroy tool delete through - so it stays). setTerrain's
+  mode 3 normally sets every tile under the brush to height 8 and clears its decoration byte;
+  the module's mode 3 only clears moat flags and the moat entry (height 8 for dug tiles).
+  The branch's marsh test is skipped in the editor.
 * **Undo and redo.** The map is the sections the game saves a map file with (its section
   table, 122 sections: 13.8 MB in Crusader, 25.2 MB in Extreme). The first map edit command
   (ids 0x12-0x1D and a few more, hooked in queueCommand past the bytes the protocol module

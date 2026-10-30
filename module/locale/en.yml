@@ -176,6 +176,21 @@ castle_damaged_walls_tooltip: |
   While the stairs, low wall, high wall or crenellated wall is chosen, a row above the castle
   buildings menu offers it "Damaged": the walls you place get the top of a damaged wall (they
   keep their height). Choosing the wall in the menu places undamaged walls again.
+castle_moat_kinds: Dug, planned and permanent moat
+castle_moat_kinds_tooltip: |
+  While the moat is chosen in the gatehouses menu, a row above the menu offers it three ways:
+  Dug (the editor's usual moat), Planned (moat marked out to be dug, as in a game) and
+  Permanent (dug moat that nobody can fill in or delete in a game). Choosing the moat in the
+  menu goes back to dug moat.
+castle_moat_on_marsh: Moat on marsh
+castle_moat_on_marsh_tooltip: |
+  In the map editor moat can be placed on marsh again. The marsh stays under it, so it comes
+  back when the moat is filled in.
+castle_moat_removal_keeps_ground: Removing moat keeps the ground
+castle_moat_removal_keeps_ground_tooltip: |
+  The editor's "remove moat" only changes tiles with dug or planned moat: it takes the moat
+  away (dug moat gets the normal ground height back) and leaves the ground's texture alone.
+  Without this it turns every tile under the brush into plain dirt.
 
 herds_group: Herds
 herds_group_descr: |

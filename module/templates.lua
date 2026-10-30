@@ -1007,6 +1007,82 @@ jmp BACK
 ]]
 
 ---------------------------------------------------------------------------------------
+-- Moat
+---------------------------------------------------------------------------------------
+
+-- The editor's moat click, replacing `xor ecx,ecx / cmp eax,0x2D / setne cl` (eax: the chosen
+-- tool; the game adds 2 to ecx for the mode): remove stays 3, the moat tool gets 2 (dug), 0
+-- (planned) or 4 (permanent) from the panel's choice in MOAT_MODE (0 dug, 1 planned, 2 permanent).
+templates.moatClick = [[
+mov ecx,1
+cmp eax,MOAT_TOOL
+jne moat_click_done
+mov ecx,[MOAT_MODE]
+cmp ecx,PLANNED
+jne moat_click_done
+mov ecx,-2
+moat_click_done:
+jmp BACK
+]]
+
+-- setTerrain's moat modes, replacing `cmp dword [ebp+0x1C],0 / jne NEXT` (ebp-0x20 TileMapState,
+-- ebp+0xC the tile, ebp-0xC x, ebp+0x10 y). Mode PERMANENT: dug moat without a moat list entry.
+-- Mode 3 with KEEP_GROUND: only a planned or dug tile changes - flags and moat entry go, a dug
+-- tile gets ground height back; the decoration and the other flags stay.
+templates.moatModes = [[
+mov eax,[ebp+0x1C]
+cmp eax,PERMANENT
+je moat_permanent
+cmp eax,3
+jne moat_game
+mov ecx,KEEP_GROUND
+test ecx,ecx
+je moat_game
+mov ecx,[ebp-0x20]
+mov edx,[ebp+0x0C]
+mov eax,[ecx+edx*4+LOGIC]
+test eax,MOAT_FLAGS
+je DONE
+test eax,DUG
+je moat_unplan
+mov byte [ecx+edx+HEIGHT],GROUND
+moat_unplan:
+and dword [ecx+edx*4+LOGIC],UNMOAT
+jmp moat_entry
+moat_permanent:
+mov ecx,[ebp-0x20]
+mov edx,[ebp+0x0C]
+mov eax,[ecx+edx*4+LOGIC]
+and eax,UNMOAT_PLAIN
+or eax,DUG
+mov [ecx+edx*4+LOGIC],eax
+mov byte [ecx+edx+HEIGHT],0
+mov byte [ecx+edx+DECORATION],0
+moat_entry:
+push dword [ebp+0x10]
+push dword [ebp-0x0C]
+mov ecx,[ebp-0x20]
+call CLEAR_DATA
+jmp DONE
+moat_game:
+test eax,eax
+jne NEXT
+jmp PLAN
+]]
+
+-- The moat branch's marsh test, replacing `and eax,0x20000000` (before `je <go on>`): in the map
+-- editor marsh does not stop moat.
+templates.moatMarsh = [[
+and eax,0x20000000
+je moat_marsh_done
+cmp dword [GAME_MODE],MAP_EDITOR
+jne moat_marsh_done
+xor eax,eax
+moat_marsh_done:
+jmp BACK
+]]
+
+---------------------------------------------------------------------------------------
 -- Undo and redo
 ---------------------------------------------------------------------------------------
 

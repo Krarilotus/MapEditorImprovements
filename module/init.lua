@@ -93,7 +93,8 @@ local DEFAULTS = {
     erase_invisible = true },
   castle = { building_counts = true, tower_ruins = true, tunnel_and_tents = true, statues_and_shrines = true,
     barrier = true, several_keeps = true, several_storage_and_recruitment = true, tower_engines_anywhere = true,
-    keep_parts = true, damaged_walls = true, hover_text_left = true },
+    keep_parts = true, damaged_walls = true, hover_text_left = true, moat_kinds = true, moat_on_marsh = true,
+    moat_removal_keeps_ground = true },
   herds = { panel = true },
 }
 
@@ -473,6 +474,33 @@ K.WALL_DAMAGE_OPERAND = 4
 K.WALLS = { 27, 46, 25, 26 }             -- stairs, low wall, high wall, crenellated wall
 K.TAB_CASTLE = 10
 K.DAMAGED_LABEL = "Damaged"
+
+-- Moat. The gatehouses tab's moat buttons (106, 107) choose 0x2D (dig) and 0x2C (remove) in the
+-- map editor; the click sends ClickSetTerrain with terrain 0x40000000 and a mode: 0 planned
+-- moat, 1 plan removed (the game's), 2 dug moat, 3 moat removed (the editor's). The module adds
+-- mode 4: dug moat without an entry in the moat list, which nothing can fill in or delete.
+K.TAB_GATEHOUSES = 12
+K.MOAT_BUTTON, K.MOAT_TOOL = 106, 0x2D
+K.MOAT_DUG, K.MOAT_PLANNED, K.MOAT_PERMANENT = 0, 1, 2     -- the panel's choices
+K.MOAT_LABELS = { [0] = "Dug", [1] = "Planned", [2] = "Permanent" }
+K.MOAT_PERMANENT_MODE = 4
+K.MOAT_FLAGS, K.MOAT_DUG_FLAG = 0x40004000, 0x40000000      -- planned or dug, dug
+K.GROUND_HEIGHT = 8                                         -- what removeMoat gives a filled tile
+K.PLAIN2_FLAG = 0x8                                         -- dug moat clears it too
+-- TriggerPlaceBuildingCommand, the editor's moat click: `xor ecx,ecx / cmp eax,0x2D / setne cl /
+-- push 0x15 / add ecx,2 / mov [command param 4],ecx` (2 dig, 3 remove).
+K.AOB_MOAT_CLICK = "33 C9 83 F8 2D 0F 95 C1 6A 15 83 C1 02 89 0D"
+K.MOAT_CLICK_SIZE = 8
+-- setTerrain's moat branch, after its tests (`... movzx eax, byte [edx+HEIGHT] / cmp eax,12 / jle
+-- / jmp <skip>`): `cmp dword [ebp+0x1C],0 / jne NEXT` picks the mode (ebp-0x20 TileMapState,
+-- ebp+0xC the tile, ebp-0xC x, ebp+0x10 y). NEXT (mode 1) calls clearMoatDataAtTile at +0x46;
+-- the mode 0 code ends with a jmp to the branch's end; the mode 2/3 code writes the decoration
+-- byte at NEXT+0x80.
+K.AOB_MOAT_MODE = "8B 55 E0 03 55 0C 0F B6 82 ? ? ? ? 83 F8 0C 7E 05 E9 ? ? ? ? 83 7D 1C 00 75 52"
+K.MOAT_MODE = { site = 23, size = 6, height = 9, logic = 9, clear = 0x46, done = 0x4D, decoration = 0x80 }
+-- The same branch's marsh test: `mov eax,[edx+ecx*4+LOGIC] / and eax,0x20000000 / je +5 / jmp <skip>`.
+K.AOB_MOAT_MARSH = "8B 84 8A ? ? ? ? 25 00 00 00 20 74 05 E9"
+K.MOAT_MARSH = { site = 7, size = 5 }
 
 -- MenuItemRenderFunction_MapEditorLandscaping_GeneralButtons: the item position globals
 -- (width follows the position), the hover flag, the open tab, the brush size, the chosen
@@ -2676,6 +2704,44 @@ function C.enableUndo(self)
   log(INFO, string.format("%s: undo and redo ready (%d map sections, %.1f MB)", MODULE_NAME, #sections, total / 1e6))
 end
 
+-- The moat panel's choice decides the mode the editor's moat click sends.
+function C.patchMoatClick(self, data)
+  local site = scan(K.AOB_MOAT_CLICK, "the moat click")
+  patchJump(self, site, K.MOAT_CLICK_SIZE, core.allocateAssembly(templates.moatClick, {
+    MOAT_MODE = data.moatMode, PLANNED = K.MOAT_PLANNED, MOAT_TOOL = K.MOAT_TOOL, BACK = site + K.MOAT_CLICK_SIZE,
+  }))
+end
+
+-- setTerrain's moat modes: permanent moat (mode 4), and a removal (mode 3) that only touches
+-- moat tiles and leaves their ground as it is.
+function C.patchMoatModes(self, permanent, keepGround)
+  local base = scan(K.AOB_MOAT_MODE, "the moat modes")
+  local D = K.MOAT_MODE
+  local site = base + D.site
+  local plan = site + D.size
+  local nextMode = plan + (rd8(site + D.size - 1) & 0xFF)
+  expectBytes(plan, { 0x8B, 0x4D, 0x0C, 0x8B, 0x55, 0xE0, 0x8B, 0x84, 0x8A }, "the planned moat")
+  expectBytes(nextMode + D.decoration, { 0xC6, 0x81 }, "the moat decoration")
+  expectBytes(plan + D.done, { 0xE9 }, "the moat branch's end")
+  patchJump(self, site, D.size, core.allocateAssembly(templates.moatModes, {
+    PERMANENT = permanent and K.MOAT_PERMANENT_MODE or 0xFFFFFFFF, KEEP_GROUND = keepGround and 1 or 0,
+    LOGIC = rd32(plan + D.logic), HEIGHT = rd32(base + D.height), DECORATION = rd32(nextMode + D.decoration + 2),
+    MOAT_FLAGS = K.MOAT_FLAGS, DUG = K.MOAT_DUG_FLAG, GROUND = K.GROUND_HEIGHT,
+    UNMOAT = ~K.MOAT_FLAGS & 0xFFFFFFFF, UNMOAT_PLAIN = ~(K.MOAT_FLAGS | K.PLAIN2_FLAG) & 0xFFFFFFFF,
+    CLEAR_DATA = readCallTarget(nextMode, D.clear, "clearMoatDataAtTile"),
+    DONE = plan + D.done + 5 + rd32(plan + D.done + 1), PLAN = plan, NEXT = nextMode,
+  }))
+end
+
+-- Moat on marsh in the map editor: the marsh stays under it.
+function C.patchMoatMarsh(self)
+  local site = scan(K.AOB_MOAT_MARSH, "the moat's marsh test") + K.MOAT_MARSH.site
+  patchJump(self, site, K.MOAT_MARSH.size, core.allocateAssembly(templates.moatMarsh, {
+    GAME_MODE = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND), MAP_EDITOR = K.MAP_EDITOR,
+    BACK = site + K.MOAT_MARSH.size,
+  }))
+end
+
 -- The undo and redo buttons (items added as "undo" and "redo") in the screen's top left
 -- corner, drawn on the map surface like the tooltips. Shown in the map editor only.
 function C.undoButtons(G, added, guarded, actions)
@@ -3021,6 +3087,7 @@ function C.makeEntries(G, panel, rows)
           local param, image = entry.command, entry.image
           if entry.images ~= nil then param, image = command, entry.images[command] end
           local chosen = command == param
+          if entry.tool ~= nil then param = entry.tool end   -- the button that chooses this tool
           if entry.flag ~= nil then chosen = chosen and rd32(entry.flag) == entry.value end
           list[i] = { item = panel.items[i], image = image, label = entry.label, param = param, chosen = chosen }
           if entry.compose ~= nil then
@@ -3103,6 +3170,19 @@ function C.build(G, B, O)
       { K.KEEP_NO_STOCKPILE, K.KEEP_LABELS[K.KEEP_NO_STOCKPILE] } })
   end
   if O.damagedWalls then choices(K.TAB_CASTLE, K.WALLS, data.damagedWalls, { { 1, K.DAMAGED_LABEL } }) end
+  data.moatMode = core.allocate(4, true)
+  if O.moatKinds then
+    -- The moat tool (chosen as 0x2D) placed dug, planned or permanent; the menu's moat button
+    -- goes back to dug.
+    local row = { when = { [K.MOAT_TOOL] = true } }
+    local images = { [K.MOAT_TOOL] = lookup(K.TAB_GATEHOUSES, K.MOAT_BUTTON) }
+    for _, kind in ipairs({ K.MOAT_DUG, K.MOAT_PLANNED, K.MOAT_PERMANENT }) do
+      row[#row + 1] = { images = images, tool = K.MOAT_BUTTON, label = K.MOAT_LABELS[kind], flag = data.moatMode,
+        value = kind }
+    end
+    resets[#resets + 1] = { K.TAB_GATEHOUSES, K.MOAT_BUTTON, data.moatMode }
+    panels[#panels + 1] = { tab = K.TAB_GATEHOUSES, rows = { row }, shift = K.PANEL_SHIFT[K.TAB_GATEHOUSES] }
+  end
   for p, panel in ipairs(panels) do
     local most = 0
     for _, row in ipairs(panel.rows) do most = math.max(most, #row) end
@@ -3455,7 +3535,7 @@ function C.enable(self, O)
   local B = C.resolve(G)
   local data = nil
   if O.buildingCounts or O.towerRuins or O.armyExtras or O.statues or O.barrier or O.keepParts or O.damagedWalls
-      or O.undo then
+      or O.undo or O.moatKinds then
     local newTable
     newTable, data = C.build(G, B, O)
     core.writeCodeInteger(B.site + 1, newTable)
@@ -3478,6 +3558,9 @@ function C.enable(self, O)
   try(O.keepParts, C.patchKeepParts, "the keep choices", G, data)
   try(O.damagedWalls, C.patchDamagedWalls, "damaged walls", G, data)
   try(O.hoverTextLeft, C.patchHoverText, "the hover text move")
+  try(O.moatKinds and data ~= nil, C.patchMoatClick, "the moat kinds", data)
+  try(O.moatKinds or O.moatRemoval, C.patchMoatModes, "the moat modes", O.moatKinds, O.moatRemoval)
+  try(O.moatOnMarsh, C.patchMoatMarsh, "moat on marsh")
   log(INFO, string.format("%s: build menu changed (menu 0x%X, items 0x%X)", MODULE_NAME, B.menu, B.table))
 end
 
@@ -3546,6 +3629,9 @@ local function enable(self, config)
     keepParts = setting(config, "castle", "keep_parts") == true,
     damagedWalls = setting(config, "castle", "damaged_walls") == true,
     hoverTextLeft = setting(config, "castle", "hover_text_left") == true,
+    moatKinds = setting(config, "castle", "moat_kinds") == true,
+    moatOnMarsh = setting(config, "castle", "moat_on_marsh") == true,
+    moatRemoval = setting(config, "castle", "moat_removal_keeps_ground") == true,
     undo = self.undo,
   }
   if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.sortedRows or O.textures
@@ -3556,7 +3642,8 @@ local function enable(self, config)
   end
   if castle.buildingCounts or castle.towerRuins or castle.armyExtras or castle.statues or castle.barrier
       or castle.severalKeeps or castle.looseBuildings or castle.towerEngines or castle.keepParts
-      or castle.damagedWalls or castle.hoverTextLeft or castle.undo then
+      or castle.damagedWalls or castle.hoverTextLeft or castle.undo or castle.moatKinds or castle.moatOnMarsh
+      or castle.moatRemoval then
     local ok, problem = pcall(C.enable, self, castle)
     if not ok then log(WARNING, tostring(problem) .. "; the build menu is left as it is") end
   end
