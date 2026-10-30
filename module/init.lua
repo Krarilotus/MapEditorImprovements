@@ -273,6 +273,12 @@ K.WATER_DECORATIONS = { { command = 150, image = 286, name = "foam" }, { command
 K.NAMES.foam = { en = "Foam", de = "Gischt" }
 K.NAMES.waves = { en = "Small waves", de = "Kleine Wellen" }
 K.ROW_GAP = 8
+-- setTerrain in the map editor first turns the brush area to land for the land types (`cmp
+-- [ebp+0x18], 0x40000000 / je <skip> / cmp [ebp+0x1C], 2 ...`), and 0x10 / 0x20 are among them:
+-- river terrain (0x100000) with a decoration skips that, or the decoration finds no river.
+K.AOB_TERRAIN_LAND = "83 3D ? ? ? ? 01 75 ? 81 7D 18 00 00 00 40 74 ? 83 7D 1C 02 74"
+K.TERRAIN_LAND = { site = 9, size = 9 }
+K.RIVER_TERRAIN = 0x100000
 -- Castle mode's building hover text ("Player 1's Keep"): RenderPlayerInfoOnHoverDisplayElement's
 -- map editor branch, `mov eax,[esp+0x10] (x) / mov ecx,[hovered player]` before renderText.
 K.AOB_HOVER_TEXT = "8B 44 24 10 8B 0D ? ? ? ? 53 6A 10 53 68 ? ? ? ? 6A 01 83 C5 EC 55 50"
@@ -2000,40 +2006,63 @@ local function buildTable(G, O)
       decorations[#decorations + 1] = into
       tooltips[#tooltips + 1] = { item = into, name = K.NAMES[decoration.name][language] }
     end
+    -- Once the menu has placed its buttons: the two join its shortest rows, and every row is
+    -- spread evenly over the panel like the Textures menu's.
     places[#places + 1] = function(measure)
-      local rowsByY = {}
+      local rowsByY, sizes = {}, {}
       for _, address in ipairs(waters) do
         local x = rd32(address + ITEM_X)
         if (x & 0xFFFFFFFF) == PLACED_BY_CONTROL then return false end
         local width, height = measure(address)
         if width == nil then return false end
+        sizes[address] = { width, height }
         local y = rd32(address + ITEM_Y)
-        rowsByY[y] = rowsByY[y] or { y = y, count = 0, right = 0, height = height }
-        local row = rowsByY[y]
-        row.count, row.right = row.count + 1, math.max(row.right, x + width)
+        rowsByY[y] = rowsByY[y] or { y = y, height = height, items = {} }
+        table.insert(rowsByY[y].items, address)
       end
       local list = {}
       for _, row in pairs(rowsByY) do list[#list + 1] = row end
       if #list == 0 then return false end
       table.sort(list, function(a, b) return a.y < b.y end)
+      for _, row in ipairs(list) do
+        table.sort(row.items, function(a, b) return rd32(a + ITEM_X) < rd32(b + ITEM_X) end)
+      end
       for _, into in ipairs(decorations) do
         local width, height = measure(into)
         if width == nil then return false end
+        sizes[into] = { width, height }
         local shortest = list[1]
         for _, row in ipairs(list) do
-          if row.count < shortest.count then shortest = row end
+          if #row.items < #shortest.items then shortest = row end
         end
-        wr32(into + ITEM_X, shortest.right + K.ROW_GAP)
-        wr32(into + ITEM_Y, shortest.y + (shortest.height - height) // 2)
-        wr16(into + ITEM_HIDDEN, 0)
-        shortest.count, shortest.right = shortest.count + 1, shortest.right + K.ROW_GAP + width
+        table.insert(shortest.items, into)
+      end
+      for _, row in ipairs(list) do
+        local sum = 0
+        for _, address in ipairs(row.items) do sum = sum + sizes[address][1] end
+        local gap = #row.items > 1 and (ROW_RIGHT - ROW_LEFT - sum) / (#row.items - 1) or 0
+        local x = ROW_LEFT
+        for _, address in ipairs(row.items) do
+          wr32(address + ITEM_X, math.floor(x + 0.5))
+          wr32(address + ITEM_Y, row.y + (row.height - sizes[address][2]) // 2)
+          wr16(address + ITEM_CONTROL, -1)
+          wr16(address + ITEM_HIDDEN, 0)
+          x = x + sizes[address][1] + gap
+        end
       end
       return true
     end
   end
   -- The heights menu's iron goes; the Textures menu's copy of it stays.
   if O.noHeightsIron and O.textures then
+    -- Hidden alone is not enough: the user control table places it (and shows it) again.
     local iron = button(IRON_COMMAND)
+    wr32(iron + ITEM_X, 0)
+    wr32(iron + ITEM_Y, 0)
+    wr32(iron + ITEM_WIDTH, 0)
+    wr32(iron + ITEM_HEIGHT, 0)
+    wr32(iron + ITEM_IMAGE, 0)
+    wr32(iron + ITEM_RENDER_TYPE, RENDER_NONE)
     wr16(iron + ITEM_CONTROL, -1)
     wr16(iron + ITEM_HIDDEN, 1)
   end
@@ -2281,6 +2310,7 @@ local function patchTrees(self, G, O, data)
     }))
   end
   if O.noStacking then C.patchEraseStacks(self, G) end
+  if O.waterDecorations then C.patchRiverDecorations(self) end
 end
 
 -- The rock number the editor places and previews follows the variant row.
@@ -2348,6 +2378,15 @@ function C.patchEraseStacks(self, G)
       TILE_FROM_IN_USE = K.TREE_TILE_FROM_IN_USE, BACK = site + K.ERASE_TREE.size,
     }))
   end
+end
+
+-- Foam and small waves: setTerrain leaves the brush area river for them (see K.TERRAIN_LAND).
+function C.patchRiverDecorations(self)
+  local site = scan(K.AOB_TERRAIN_LAND, "the terrain brush") + K.TERRAIN_LAND.site
+  patchJump(self, site, K.TERRAIN_LAND.size, core.allocateAssembly(templates.riverDecorations, {
+    RIVER = K.RIVER_TERRAIN, SKIP_LAND = site + K.TERRAIN_LAND.size + (rd8(site + K.TERRAIN_LAND.size - 1) & 0xFF),
+    BACK = site + K.TERRAIN_LAND.size,
+  }))
 end
 
 -- Herds of the brush size while the herd panel's check box is on.

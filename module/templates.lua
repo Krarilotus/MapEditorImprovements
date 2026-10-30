@@ -960,4 +960,15 @@ mov ecx,[PLAYER]
 jmp BACK
 ]]
 
+-- setTerrain, map editor, replacing `cmp dword [ebp+0x18], 0x40000000 / je SKIP_LAND` (the land
+-- types are first laid as land): river terrain skips that too, so foam and small waves (river
+-- with decoration 0x10 / 0x20, which are also land type values) find their river.
+templates.riverDecorations = [[
+cmp dword [ebp+0x18],0x40000000
+je SKIP_LAND
+cmp dword [ebp+0x18],RIVER
+je SKIP_LAND
+jmp BACK
+]]
+
 return templates

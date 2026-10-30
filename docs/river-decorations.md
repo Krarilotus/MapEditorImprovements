@@ -6,7 +6,8 @@ confirmed in game.
 
 ## In short
 
-Both Stronghold decorations are still fully in Crusader, only their menu buttons are gone:
+Both Stronghold decorations are still in Crusader; their menu buttons are gone, and one editor step
+added for Crusader's land types gets in their way (see below):
 
 | Decoration | Placement id | Decoration value | What setTerrain does |
 |---|---|---|---|
@@ -34,6 +35,15 @@ river terrain:
 
 So the waves' direction comes from the direction the game already stores for the tile, not from
 the direction the mouse is dragged in as in Stronghold 1.
+
+Only river tiles take a decoration: for a decoration other than 0, a tile that is not already river
+(`0x100000`) is skipped (VAN `0x512CF1`).
+
+**The catch in Crusader**: in the map editor, before its tile loop, setTerrain first lays the whole
+brush area as land when the decoration is one of Crusader's land types - 2, 0x10, 0x20, 0x40, 1,
+0x80 (VAN `0x512995`, a call to `setLand`). 0x10 and 0x20 are on that list, so foam and small waves
+first turn the river into plain ground, and then find no river tile to decorate. In game, foam left
+plain ground and small waves gave a pond. The module skips that step for river terrain.
 
 ## How they are stored in the map
 
@@ -67,4 +77,5 @@ the time anyway.
 
 It adds two buttons to the water menu - copies of the river button with placement ids 150 and 151
 and the menu pictures that are still in the image table (entries 286 and 287, `mapedit_buttons.gm1`
-pictures 154 and 145). Nothing else is changed: placing and drawing are the game's own.
+pictures 154 and 145) - and skips the land step above for river terrain. Placing and drawing are
+otherwise the game's own.
