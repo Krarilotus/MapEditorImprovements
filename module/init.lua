@@ -316,9 +316,17 @@ K.QUEUE_COMMAND_SIZE = 6
 -- every frame, whatever the menu's position), and a hidden item's place.
 K.UNDO_BUTTONS = { left = 10, top = 10, gap = 8, padding = 4 }
 K.FAR_AWAY = -100000
--- `mov [..],ecx / call [clock] / mov [..],eax`.
-K.AOB_CLOCK = "89 0D ? ? ? ? FF 15 ? ? ? ? A3 ? ? ? ? EB"
-K.CLOCK_IMPORT = 8
+-- `push VK_DOWN / call [GetAsyncKeyState] / test ax,ax`: the mouse buttons' state.
+K.AOB_ASYNC_KEY = "6A 28 FF 15 ? ? ? ? 66 85 C0"
+K.ASYNC_KEY_IMPORT = 4
+K.VK_LBUTTON, K.VK_RBUTTON = 0x01, 0x02
+-- The commands that change the map (the command table's ids): erase, set land, raise land,
+-- set terrain, equalize heights, height min/max, plateau, walls, rocks and trees, raise land 2,
+-- buildings, destroy building, destroy, siege tents, animals, gates, repair tower, spawn
+-- entity, remove tower engine, destroy wall or pitch. Others, like a click that only selects
+-- (0x10), make no step.
+K.MAP_EDITS = { 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x29, 0x2A, 0x2C,
+  0x2D, 0x44, 0x45, 0x4B, 0x4C }
 -- prepareMap's calls after loading a map, from `call / mov ecx, PATHFINDING / call linkTiles /
 -- push edi / ...`; its `mov ecx, PATHFINDING` (forget) is where a new map clears the history.
 -- (interface-visual-fixes patches prepareMap's first bytes.)
@@ -329,7 +337,6 @@ K.PREPARE = { forget = 0x05, forgetSize = 5, pathFinding = 0x06, linkTiles = 0x0
 K.AOB_MINIMAP_REDRAW = "57 B9 ? ? ? ? E8 ? ? ? ? B8 D0 07 00 00 B9"
 K.MINIMAP_REDRAW = { object = 2, call = 6 }
 K.UNDO_STEPS = 20
-K.UNDO_PAUSE = 750                        -- ms without a command that end a step
 K.UNDO_GAP_BYTES = 16                     -- unchanged bytes that end a changed run
 K.UNDO_SCRATCH = 16 * 1024 * 1024         -- the largest single step
 K.UNDO_MOST_BYTES = 64 * 1024 * 1024      -- all steps together
@@ -2490,9 +2497,9 @@ end
 ---------------------------------------------------------------------------------------
 
 -- What a map is: the sections the game saves a map with (its section table). Before the first
--- editor command after a pause the module copies them (the snapshot); when the step ends -
--- after a pause, or at a click on undo or redo - it compares them and keeps only the bytes that
--- changed, old and new. Undo writes the old bytes back, redo the new ones, and then the things
+-- map edit of a click the module copies them (the snapshot); when the step ends - at the next
+-- click's first edit, or at a click on undo or redo - it compares them and keeps only the bytes
+-- that changed, old and new. A brush held down is one click. Undo writes the old bytes back, redo the new ones, and then the things
 -- the game works out from the map are worked out again, as after loading a map.
 
 -- The section list for the diff: { live address, snapshot address, size } per section, 0 at the end.
@@ -2529,10 +2536,14 @@ function C.enableUndo(self)
     WRITE_AT = state, ENTRY_AT = state + 4, RUN_FROM = state + 8, RUN_LENGTH = state + 12,
   }), 0, 0)
 
-  -- The game's clock (milliseconds), through a thunk to its import.
-  local clock = core.exposeCode(core.allocateAssembly(templates.undoClock, {
-    IMPORT = rd32(scan(K.AOB_CLOCK, "the game's clock") + K.CLOCK_IMPORT),
-  }), 0, 0)
+  -- The mouse buttons, through a thunk to GetAsyncKeyState.
+  local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, {
+    IMPORT = rd32(scan(K.AOB_ASYNC_KEY, "the key state") + K.ASYNC_KEY_IMPORT),
+  }), 1, 0)
+  local function down(key) return (asyncKey(key) % 0x10000) >= 0x8000 end
+  local edits = {}
+  for _, command in ipairs(K.MAP_EDITS) do edits[command] = true end
+  U.released = true      -- the mouse buttons were up since the last map edit
 
   -- What the game works out from the map after loading it (prepareMap's own calls).
   local block = scan(K.AOB_PREPARE_BLOCK, "the map preparation")
@@ -2600,16 +2611,17 @@ function C.enableUndo(self)
     refresh()
   end
 
-  -- Every command the editor queues (before it is carried out): the first one after a pause
-  -- opens a step.
+  -- Every command the editor queues (before it is carried out): a map edit after the mouse
+  -- buttons were let go starts a new step.
+  local command = core.allocate(4, true)
   local function onCommand()
-    local now = clock() & 0xFFFFFFFF
-    if U.open and now - U.last > K.UNDO_PAUSE then closeStep() end
+    if not edits[rd32(command) & 0xFF] then return end
+    if U.open and U.released then closeStep() end
     if not U.open then
       snapshot()
       U.open = true
     end
-    U.last = now
+    U.released = false
   end
   local gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
   local queue = scan(K.AOB_QUEUE_COMMAND, "the command queue")
@@ -2618,7 +2630,7 @@ function C.enableUndo(self)
   patchJump(self, queue, K.QUEUE_COMMAND_SIZE, core.allocateAssembly(
     templates.undoCommand:gsub("ORIGINAL", "db " .. table.concat(original, ",")), {
       GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, PAD = C.luaPad(onCommand, "the undo history"),
-      BACK = queue + K.QUEUE_COMMAND_SIZE,
+      COMMAND = command, BACK = queue + K.QUEUE_COMMAND_SIZE,
     }))
 
   -- What the two buttons do (see C.undoButtons), in the map editor only.
@@ -2640,6 +2652,10 @@ function C.enableUndo(self)
       if record == nil then return end
       apply(record, true)
       U.steps[#U.steps + 1] = record
+    end,
+    -- Every frame (from the buttons): notes the mouse buttons being let go.
+    tick = function()
+      if not (down(K.VK_LBUTTON) or down(K.VK_RBUTTON)) then U.released = true end
     end,
     available = {
       undo = function() return U.open or #U.steps > 0 end,
@@ -2691,6 +2707,7 @@ function C.undoButtons(G, added, guarded, actions)
     wr32(button + ITEM_HEIGHT, P.height)
     wr32(button + ITEM_ACTION, C.luaPad(actions[kind], "the " .. kind .. " button"))
     wr32(button + ITEM_RENDER, C.luaPad(function()
+      if kind == "undo" then actions.tick() end
       local menu = rd32(button + ITEM_MENU)
       if menu == 0 or not actions.editor() then
         wr32(button + ITEM_Y, K.FAR_AWAY)

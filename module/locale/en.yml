@@ -204,8 +204,8 @@ undo_enabled_tooltip: |
   Two arrow buttons in the top left corner of the map editor: the left one takes back the last
   thing done on the map - placing, removing, painting, heights - and the right one puts it
   back, for up to 20 steps. A button is greyed out while there is nothing to take back or put
-  back. Everything done without a pause of
-  about a second counts as one step (a whole brush stroke, for example). Loading another map
+  back. Every click is one step, and so is a brush stroke held down. Clicks that change
+  nothing on the map (with no tool chosen, for example) make no step. Loading another map
   starts the history afresh.
 
 menu_group: Editor menu

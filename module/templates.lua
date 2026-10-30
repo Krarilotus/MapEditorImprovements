@@ -1010,8 +1010,9 @@ jmp BACK
 -- Undo and redo
 ---------------------------------------------------------------------------------------
 
--- The game's clock (cdecl, no arguments).
-templates.undoClock = [[
+-- GetAsyncKeyState (cdecl, the key).
+templates.undoKeyState = [[
+push dword [esp+4]
 call dword [IMPORT]
 ret
 ]]
@@ -1110,10 +1111,15 @@ pop ebx
 ret
 ]]
 
--- An instruction of queueCommand (ORIGINAL): lua first, in the map editor.
+-- An instruction of queueCommand (ORIGINAL), after its three pushes: in the map editor lua
+-- first, with the command (queueCommand's argument) in COMMAND.
 templates.undoCommand = [[
 cmp dword [GAME_MODE],MAP_EDITOR
 jne command_run
+push eax
+mov eax,[esp+0x14]
+mov [COMMAND],eax
+pop eax
 pushad
 pushfd
 call PAD

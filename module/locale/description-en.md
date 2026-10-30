@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.25
+**Version**: 1.0.26
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -186,9 +186,9 @@ Two arrow buttons in the top left corner of the map editor (in the landscape and
 menus): the left one takes back the last thing done on the map - placing or removing
 buildings, trees, rocks and animals, painting textures and water, changing heights - and the
 right one puts it back. A button is greyed out while there is nothing to take back or put
-back. Up to the last 20 steps are kept. Everything done without a pause
-of about a second is one step, so a whole brush stroke is undone at once. Doing something new
-after an undo drops the steps that could have been redone, and loading another map starts the
+back. Up to the last 20 steps are kept. Every click is one step, and a brush stroke held down is
+undone at once. Clicks that change nothing on the map, like a click with no tool chosen, make
+no step, so they do not get in the way of a redo. Doing something new after an undo drops the steps that could have been redone, and loading another map starts the
 history afresh.
 
 ## Always keep the menu up to date
