@@ -58,6 +58,12 @@ trees_sorted_rows_tooltip: |
   Moves the shrub from the top row to the bottom row and sorts the bottom row's shrubs, so
   the top row holds the trees (and the apple tree and the check box) and the bottom row all
   the shrubs.
+trees_no_stacking: No shrub stacks
+trees_no_stacking_tooltip: |
+  A tree or shrub can no longer be placed on a tile that already has one. Some shrubs (the
+  shrub of the top row and the four shrubs it was sorted with) used to pile up there, invisible
+  but each taking a place of the tree limit for good. The eraser now also takes away every
+  shrub piled up on a tile, so old stacks can be cleared.
 
 textures_group: Ground textures
 textures_group_descr: |
@@ -66,6 +72,19 @@ textures_gravel_and_iron: Gravel and iron in the Textures menu
 textures_gravel_and_iron_tooltip: |
   Adds Gravel to the top row and Iron to the bottom row, and spreads both rows evenly. The
   gravel picture is images/gravel.png (with gravel_hover.png and gravel_selected.png).
+textures_no_heights_iron: Iron only in the Textures menu
+textures_no_heights_iron_tooltip: |
+  Takes the iron button out of the Heights menu, now that the Textures menu has one.
+
+water_group: Water
+water_group_descr: |
+  The water menu of the landscape editor.
+water_decorations: Foam and small waves
+water_decorations_tooltip: |
+  Brings back two river decorations from the first Stronghold's editor, which Crusader still
+  supports but has no buttons for: Foam (white water and rising spray, as below a waterfall,
+  on every river tile under the brush) and Small waves (on the one river tile under the
+  mouse). Both only go on river tiles and are saved in the map.
 
 rocks_group: Rocks
 rocks_group_descr: |
@@ -144,6 +163,10 @@ castle_keep_parts_tooltip: |
   stockpile" (keep, entrance and campfire area). Choosing a keep in the menu places the whole
   keep again.
   The preview and the check for room show only those parts.
+castle_hover_text: Building names further left
+castle_hover_text_tooltip: |
+  The name of the building under the mouse ("Player 1's Keep") moves 100 pixels to the left,
+  so it no longer runs into the building counts above the minimap.
 castle_damaged_walls: Damaged walls and stairs
 castle_damaged_walls_tooltip: |
   While the stairs, low wall, high wall or crenellated wall is chosen, a row above the castle

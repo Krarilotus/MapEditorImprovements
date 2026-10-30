@@ -84,13 +84,14 @@ local DEFAULTS = {
   counts = { enabled = true, shown = true },
   menu = { always_update = true },
   trees = { growth_from_brush = true, apple = true, shrubs = true, felled = true, random_mix = true,
-    obstacles = true, sorted_rows = true },
-  textures = { gravel_and_iron = true },
+    obstacles = true, sorted_rows = true, no_shrub_stacking = true },
+  textures = { gravel_and_iron = true, no_heights_iron = true },
+  water = { decorations = true },
   rocks = { signpost = true, random_preview = true, variants = true, extra_rock = true, invisible = true,
     erase_invisible = true },
   castle = { building_counts = true, tower_ruins = true, tunnel_and_tents = true, statues_and_shrines = true,
     barrier = true, several_keeps = true, several_storage_and_recruitment = true, tower_engines_anywhere = true,
-    keep_parts = true, damaged_walls = true },
+    keep_parts = true, damaged_walls = true, hover_text_left = true },
   herds = { panel = true },
 }
 
@@ -257,6 +258,25 @@ K.AOB_ERASE_TABLES = "F6 84 86 ? ? ? ? 30 75 ? 0F BF 84 46 ? ? ? ? 85 C0 74"
 K.ERASE_TABLES = { flags = 3, numbers = 14 }
 K.ROCK_TILE_FLAG = 0x80
 K.ERASE_SITES = 2
+-- ... and its tree branch, `push eax / call removeTree` (the tile's tree; shrubs stacked on the
+-- tile stay in the tree list). A tree's tile is 0x24 after its "in use" word.
+K.ERASE_TREE = { site = 0x21, size = 6, call = 1, bytes = { 0x50, 0xE8 } }
+K.TREE_TILE_FROM_IN_USE = 0x24
+-- Shrub stacking: placeTree's obstacle check site follows `jne <refuse>` (a blocked tile).
+K.OBSTACLES_REFUSE = { -6, { 0x0F, 0x85 } }
+-- The water menu's two decorations (Stronghold's foam and small waves): commands the click
+-- handler still sends to setTerrain as river with decoration 0x10 / 0x20, and the menu
+-- pictures that are still in the image table (mapedit_buttons.gm1).
+K.WATER = 236
+K.RIVER = 14
+K.WATER_DECORATIONS = { { command = 150, image = 286, name = "foam" }, { command = 151, image = 287, name = "waves" } }
+K.NAMES.foam = { en = "Foam", de = "Gischt" }
+K.NAMES.waves = { en = "Small waves", de = "Kleine Wellen" }
+K.ROW_GAP = 8
+-- Castle mode's building hover text ("Player 1's Keep"): RenderPlayerInfoOnHoverDisplayElement's
+-- map editor branch, `mov eax,[esp+0x10] (x) / mov ecx,[hovered player]` before renderText.
+K.AOB_HOVER_TEXT = "8B 44 24 10 8B 0D ? ? ? ? 53 6A 10 53 68 ? ? ? ? 6A 01 83 C5 EC 55 50"
+K.HOVER_TEXT_SIZE, K.HOVER_TEXT_PLAYER, K.HOVER_TEXT_SHIFT = 10, 6, 100
 
 -- Castle mode: the build menu (found by its minimap item, item 17), its tabs (the menu
 -- category values) and the commands (placement ids) the module adds.
@@ -1650,7 +1670,9 @@ local function buildTable(G, O)
   end
   insert(MAP_CLICK_ITEM, "guard")
   if O.counts then insert(INFO_BEFORE_ITEM, "info") end
-  if O.counts or O.obstacles or O.invisibleRocks or O.apple or O.textures then insert(G.firstBlock, "tooltip") end
+  if O.counts or O.obstacles or O.invisibleRocks or O.apple or O.textures or O.waterDecorations then
+    insert(G.firstBlock, "tooltip")
+  end
   local animalsEnd = G.blockEnd[ANIMALS]
   if O.herds then
     insert(animalsEnd, "herdCheck")
@@ -1673,6 +1695,9 @@ local function buildTable(G, O)
   if O.textures then
     insert(G.blockEnd[TEXTURES], "gravel")
     insert(G.blockEnd[TEXTURES], "iron")
+  end
+  if O.waterDecorations and G.blockEnd[K.WATER] ~= nil then
+    for _, decoration in ipairs(K.WATER_DECORATIONS) do insert(G.blockEnd[K.WATER], "water" .. decoration.command) end
   end
   for _, tab in ipairs(rockTabs) do
     for v = 1, K.ROCK_VARIANTS + 1 do insert(G.blockEnd[tab], "rock" .. tab .. "/" .. v) end
@@ -1955,6 +1980,63 @@ local function buildTable(G, O)
       return true
     end
   end
+  -- Foam and small waves: copies of the river button with their own command and picture, put
+  -- at the end of the water menu's shortest rows once the menu has placed its buttons.
+  if O.waterDecorations and G.blockEnd[K.WATER] ~= nil then
+    local waters, decorations = {}, {}
+    for _, button in pairs(G.buttons) do
+      if button.block == K.WATER then waters[#waters + 1] = item(newTable, moved(button.index)) end
+    end
+    for _, decoration in ipairs(K.WATER_DECORATIONS) do
+      local into = added["water" .. decoration.command]
+      copyOf(K.RIVER, into)
+      wr32(into + ITEM_X, 0)
+      wr32(into + ITEM_Y, 0)
+      wr32(into + ITEM_PARAM, decoration.command)
+      wr32(into + ITEM_IMAGE, decoration.image)
+      wr32(into + ITEM_TEXT, 0)
+      wr16(into + ITEM_CONTROL, -1)
+      wr16(into + ITEM_HIDDEN, 1)
+      decorations[#decorations + 1] = into
+      tooltips[#tooltips + 1] = { item = into, name = K.NAMES[decoration.name][language] }
+    end
+    places[#places + 1] = function(measure)
+      local rowsByY = {}
+      for _, address in ipairs(waters) do
+        local x = rd32(address + ITEM_X)
+        if (x & 0xFFFFFFFF) == PLACED_BY_CONTROL then return false end
+        local width, height = measure(address)
+        if width == nil then return false end
+        local y = rd32(address + ITEM_Y)
+        rowsByY[y] = rowsByY[y] or { y = y, count = 0, right = 0, height = height }
+        local row = rowsByY[y]
+        row.count, row.right = row.count + 1, math.max(row.right, x + width)
+      end
+      local list = {}
+      for _, row in pairs(rowsByY) do list[#list + 1] = row end
+      if #list == 0 then return false end
+      table.sort(list, function(a, b) return a.y < b.y end)
+      for _, into in ipairs(decorations) do
+        local width, height = measure(into)
+        if width == nil then return false end
+        local shortest = list[1]
+        for _, row in ipairs(list) do
+          if row.count < shortest.count then shortest = row end
+        end
+        wr32(into + ITEM_X, shortest.right + K.ROW_GAP)
+        wr32(into + ITEM_Y, shortest.y + (shortest.height - height) // 2)
+        wr16(into + ITEM_HIDDEN, 0)
+        shortest.count, shortest.right = shortest.count + 1, shortest.right + K.ROW_GAP + width
+      end
+      return true
+    end
+  end
+  -- The heights menu's iron goes; the Textures menu's copy of it stays.
+  if O.noHeightsIron and O.textures then
+    local iron = button(IRON_COMMAND)
+    wr16(iron + ITEM_CONTROL, -1)
+    wr16(iron + ITEM_HIDDEN, 1)
+  end
   local layout = makeLayout(G, rows, newButtons, sizeOf, places)
 
   -- A panel item at the end of a tab: shows its panel (lua) while one of its tools is chosen.
@@ -2182,16 +2264,23 @@ local function patchTrees(self, G, O, data)
       RANDOM_INCREMENT = K.RANDOM_INCREMENT, BACK = site + PLACE_TREE.createdSize,
     }))
   end
-  if O.obstacles then
+  if O.obstacles or O.noStacking then
     local site = scan(K.AOB_OBSTACLES, "the tree placement's obstacle check")
+    local tables = scan(K.AOB_ERASE_TABLES, "the map tables")
+    local stacking = core.allocate(4, true)
+    wr32(stacking, O.noStacking and 1 or 0)
+    expectBytes(site + K.OBSTACLES_REFUSE[1], K.OBSTACLES_REFUSE[2], "the tree placement's tile test")
     if site < G.placeTree - K.OBSTACLES_NEAR or site > G.placeTree + K.OBSTACLES_NEAR then
       error(MODULE_NAME .. ": the obstacle check is not in the tree placement")
     end
     local past = site + K.OBSTACLES_SIZE + (rd8(site + K.OBSTACLES_JUMP) & 0xFF)
     patchJump(self, site, K.OBSTACLES_SIZE, core.allocateAssembly(templates.nearObstacles, {
-      FLAG = data.nearObstacles, CHECK = site + K.OBSTACLES_SIZE, PAST_CHECK = past,
+      FLAG = data.nearObstacles, CHECK = site + K.OBSTACLES_SIZE, PAST_CHECK = past, NO_STACKING = stacking,
+      NUMBERS = rd32(tables + K.ERASE_TABLES.numbers), ROCK_BASE = rd32(C.eraseSites()[1] + K.ERASE_ROCK.base),
+      REFUSE = (site + rd32(site - 4)) & 0xFFFFFFFF,
     }))
   end
+  if O.noStacking then C.patchEraseStacks(self, G) end
 end
 
 -- The rock number the editor places and previews follows the variant row.
@@ -2221,8 +2310,8 @@ end
 
 -- The eraser frees an invisible rock's tile the way removing a rock frees the rock's tiles: the
 -- rock flag and the tile's rock number go.
-function C.patchEraser(self)
-  local tables = scan(K.AOB_ERASE_TABLES, "the eraser's map tables")
+function C.eraseSites()
+  if C.erasers ~= nil then return C.erasers end
   local sites, from = {}, 0x400000
   while #sites <= K.ERASE_SITES do
     local ok, found = pcall(core.scanForAOB, K.AOB_ERASE_ROCK, from, K.HERD_SEARCH_END)
@@ -2231,12 +2320,32 @@ function C.patchEraser(self)
     from = found + 1
   end
   if #sites ~= K.ERASE_SITES then error(MODULE_NAME .. ": the eraser is not the one this module knows") end
-  for _, found in ipairs(sites) do
+  C.erasers = sites
+  return sites
+end
+
+function C.patchEraser(self)
+  local tables = scan(K.AOB_ERASE_TABLES, "the eraser's map tables")
+  for _, found in ipairs(C.eraseSites()) do
     local site = found + K.ERASE_ROCK.site
     patchJump(self, site, K.ERASE_ROCK.size, core.allocateAssembly(templates.eraseInvisible, {
       ROCK_BASE = rd32(found + K.ERASE_ROCK.base), FLAGS = rd32(tables + K.ERASE_TABLES.flags),
       NUMBERS = rd32(tables + K.ERASE_TABLES.numbers), KEEP_FLAGS = (~K.ROCK_TILE_FLAG) & 0xFFFFFFFF,
       REMOVE_ROCK = readCallTarget(site, K.ERASE_ROCK.call, "removeRock"), BACK = site + K.ERASE_ROCK.size,
+    }))
+  end
+end
+
+-- The eraser takes every tree and shrub off a tile, not only the one the tile names: shrubs
+-- that were stacked there stay in the tree list otherwise, invisible and for good.
+function C.patchEraseStacks(self, G)
+  for _, found in ipairs(C.eraseSites()) do
+    local site = found + K.ERASE_TREE.site
+    expectBytes(site, K.ERASE_TREE.bytes, "the eraser's tree branch")
+    patchJump(self, site, K.ERASE_TREE.size, core.allocateAssembly(templates.eraseStack, {
+      REMOVE_TREE = readCallTarget(site, K.ERASE_TREE.call, "removeTree"), LANDSCAPE = G.landscape,
+      FIRST_TREE = G.firstTree, TREE_SIZE = G.treeSize, TREE_SLOTS = G.treeSlots,
+      TILE_FROM_IN_USE = K.TREE_TILE_FROM_IN_USE, BACK = site + K.ERASE_TREE.size,
     }))
   end
 end
@@ -2925,6 +3034,15 @@ function C.patchDamagedWalls(self, G, data)
   }))
 end
 
+-- The building hover text of castle mode ("Player 1's Keep") moves left, clear of the building
+-- counts. The code is the map editor's branch only.
+function C.patchHoverText(self)
+  local site = scan(K.AOB_HOVER_TEXT, "the building hover text")
+  patchJump(self, site, K.HOVER_TEXT_SIZE, core.allocateAssembly(templates.hoverTextLeft, {
+    SHIFT = K.HOVER_TEXT_SHIFT, PLAYER = rd32(site + K.HOVER_TEXT_PLAYER), BACK = site + K.HOVER_TEXT_SIZE,
+  }))
+end
+
 -- Tower ruins get the size of their tower (the game has none for them) in the map editor.
 function C.patchRuinSizes(self, G)
   local size = scan(K.AOB_BUILDING_SIZE, "the building sizes")
@@ -2968,6 +3086,7 @@ function C.enable(self, O)
   try(O.towerEngines, C.patchTowerEngines, "tower engines anywhere", G)
   try(O.keepParts, C.patchKeepParts, "the keep choices", G, data)
   try(O.damagedWalls, C.patchDamagedWalls, "damaged walls", G, data)
+  try(O.hoverTextLeft, C.patchHoverText, "the hover text move")
   log(INFO, string.format("%s: build menu changed (menu 0x%X, items 0x%X)", MODULE_NAME, B.menu, B.table))
 end
 
@@ -3010,6 +3129,9 @@ local function enable(self, config)
     extraRock = setting(config, "rocks", "extra_rock") == true,
     herds = setting(config, "herds", "panel") == true,
     invisibleRocks = setting(config, "rocks", "invisible") == true,
+    noStacking = setting(config, "trees", "no_shrub_stacking") == true,
+    noHeightsIron = setting(config, "textures", "no_heights_iron") == true,
+    waterDecorations = setting(config, "water", "decorations") == true,
   }
   local castle = {
     buildingCounts = setting(config, "castle", "building_counts") == true,
@@ -3022,15 +3144,16 @@ local function enable(self, config)
     towerEngines = setting(config, "castle", "tower_engines_anywhere") == true,
     keepParts = setting(config, "castle", "keep_parts") == true,
     damagedWalls = setting(config, "castle", "damaged_walls") == true,
+    hoverTextLeft = setting(config, "castle", "hover_text_left") == true,
   }
   if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.sortedRows or O.textures
-      or O.variants or O.herds or O.invisibleRocks then
+      or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations then
     local ok, problem = pcall(enableMenu, self, O)
     if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
   end
   if castle.buildingCounts or castle.towerRuins or castle.armyExtras or castle.statues or castle.barrier
       or castle.severalKeeps or castle.looseBuildings or castle.towerEngines or castle.keepParts
-      or castle.damagedWalls then
+      or castle.damagedWalls or castle.hoverTextLeft then
     local ok, problem = pcall(C.enable, self, castle)
     if not ok then log(WARNING, tostring(problem) .. "; the build menu is left as it is") end
   end

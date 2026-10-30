@@ -362,12 +362,21 @@ jmp BACK
 -- Trees next to obstacles
 ---------------------------------------------------------------------------------------
 
--- placeTree, `xor ebx,ebx / test eax,eax / mov [esp+0x10],esi / jle <past the check>`:
--- with the flag set, the check of the tiles around a new tree is skipped, as for a tree
--- type that needs no room.
+-- placeTree, `xor ebx,ebx / test eax,eax / mov [esp+0x10],esi / jle <past the check>`
+-- (ebp: the tile, edi: TileMapState): with NO_STACKING set, a tile that already has a tree or
+-- shrub is refused (the shrubs that need no room would stack there); with the flag set, the
+-- check of the tiles around a new tree is skipped, as for a tree type that needs no room.
 templates.nearObstacles = [[
 xor ebx,ebx
 mov [esp+0x10],esi
+cmp byte [NO_STACKING],0
+je no_stack_test
+movzx ecx,word [edi+ebp*2+NUMBERS]
+test ecx,ecx
+je no_stack_test
+cmp ecx,ROCK_BASE
+jb refuse_tile
+no_stack_test:
 cmp byte [FLAG],0
 jne skip_check
 test eax,eax
@@ -375,6 +384,8 @@ jle skip_check
 jmp CHECK
 skip_check:
 jmp PAST_CHECK
+refuse_tile:
+jmp REFUSE
 ]]
 
 ---------------------------------------------------------------------------------------
@@ -907,6 +918,45 @@ jmp BACK
 real_rock:
 push eax
 call REMOVE_ROCK
+jmp BACK
+]]
+
+-- An eraser brush taking a tree off a tile, replacing `push eax / call removeTree` (eax: the
+-- tree the tile names, [esp+0x20]: the tile): every other tree in use on that tile goes too.
+templates.eraseStack = [[
+push eax
+call REMOVE_TREE
+push ebx
+push esi
+push edi
+mov ebx,[esp+0x2C]
+mov esi,FIRST_TREE
+mov edi,1
+next_tree:
+cmp word [esi],0
+je other_tile
+cmp [esi+TILE_FROM_IN_USE],ebx
+jne other_tile
+push edi
+mov ecx,LANDSCAPE
+call REMOVE_TREE
+other_tile:
+add esi,TREE_SIZE
+inc edi
+cmp edi,TREE_SLOTS
+jbe next_tree
+pop edi
+pop esi
+pop ebx
+jmp BACK
+]]
+
+-- RenderPlayerInfoOnHoverDisplayElement, map editor branch: `mov eax,[esp+0x10] / mov ecx,
+-- [PLAYER]`, the text's x and player, with the x SHIFT further left.
+templates.hoverTextLeft = [[
+mov eax,[esp+0x10]
+sub eax,SHIFT
+mov ecx,[PLAYER]
 jmp BACK
 ]]
 

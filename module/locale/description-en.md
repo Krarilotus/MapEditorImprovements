@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.17
+**Version**: 1.0.18
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -69,6 +69,11 @@ right to make room for it.
 - **Tidier rows.** The top row holds the trees (and the apple tree and the check box); the
   shrub that sat there moves to the bottom row, whose shrubs are sorted.
 
+- **No shrub stacks.** A tree or shrub can no longer be placed on a tile that already has
+  one. Some shrubs used to pile up on one tile, invisible but each taking a place of the tree
+  limit for good; the eraser now also clears every shrub piled up on a tile, so old stacks can
+  be removed.
+
 The row above the Vegetation menu sits over the map; clicking it does not place anything on
 the map.
 
@@ -77,6 +82,20 @@ the map.
 The Textures menu gets **Gravel** at the end of the top row and **Iron** at the end of the
 bottom row (the same iron as in the Heights menu, which keeps its button too). Both rows are
 spread evenly over the panel to make room.
+
+With the Textures menu's iron in place, the Heights menu's iron button goes (a setting).
+
+## Water
+
+The water menu gets back two river decorations from the first Stronghold's editor, which
+Crusader still supports but has no buttons for:
+
+- **Foam**: white water and rising spray, as below a waterfall, on every river tile under the
+  brush.
+- **Small waves**: on the one river tile under the mouse.
+
+Both only go on river tiles and are saved in the map (see `docs/river-decorations.md` in the
+module's repository).
 
 ## Rocks
 
@@ -136,6 +155,8 @@ In the building menu of the map editor's castle mode:
 - **Damaged walls.** While the stairs, low wall, high wall or crenellated wall is chosen, a row
   above the castle buildings menu offers it **Damaged**: the walls you place get the top of a
   damaged wall and keep their height. Choosing the wall in the menu places normal walls again.
+- **Building names further left.** The name of the building under the mouse ("Player 1's
+  Keep") moves 100 pixels to the left, clear of the building counts.
 - **Barrier.** The Ruins menu gets a Barrier button in its free spot at the bottom right: a
   1x1 barrier that can be deleted again.
 

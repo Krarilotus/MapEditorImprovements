@@ -60,6 +60,14 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.trees.no_shrub_stacking
+    name: map-editor-improvements-trees-no-shrub-stacking
+    text: '{{trees_no_stacking}}'
+    tooltip: '{{trees_no_stacking_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.trees.random_mix
     name: map-editor-improvements-trees-random-mix
     text: '{{trees_random_mix}}'
@@ -95,6 +103,29 @@ options:
     name: map-editor-improvements-textures-gravel-and-iron
     text: '{{textures_gravel_and_iron}}'
     tooltip: '{{textures_gravel_and_iron_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.textures.no_heights_iron
+    name: map-editor-improvements-textures-no-heights-iron
+    text: '{{textures_no_heights_iron}}'
+    tooltip: '{{textures_no_heights_iron_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+
+- display: GroupBox
+  category: [Map Editor Improvements]
+  header: '{{water_group}}'
+  text: '{{water_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.water.decorations
+    name: map-editor-improvements-water-decorations
+    text: '{{water_decorations}}'
+    tooltip: '{{water_decorations_tooltip}}'
     display: Switch
     contents:
       type: boolean
@@ -229,6 +260,14 @@ options:
     name: map-editor-improvements-castle-keep-parts
     text: '{{castle_keep_parts}}'
     tooltip: '{{castle_keep_parts_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.castle.hover_text_left
+    name: map-editor-improvements-castle-hover-text-left
+    text: '{{castle_hover_text}}'
+    tooltip: '{{castle_hover_text_tooltip}}'
     display: Switch
     contents:
       type: boolean

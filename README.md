@@ -14,7 +14,7 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
 | Folder | |
 |---|---|
 | `module/` | the module itself - this is the source of truth, edited in place |
-| `docs/` | notes on how parts of the game work (`size-4-rocks.md`) |
+| `docs/` | notes on how parts of the game work: the size 4 rock (`size-4-rocks.md`) and the river decorations (`river-decorations.md`) |
 | `tools/publish.py` | copies `module/` into a game's `ucp/modules` folder as `map-editor-improvements-<version>`. Options: `--bump` (raise the version first), `--keep` (remove no older copies), `--game "<game folder>"` (where to publish). The comment at the top of the script explains each, and how the game folder is remembered in `tools/publish-config.json` (created by the script, not committed) |
 | `tools/make_icons.py` | made `module/images/apple*.png` and `gravel*.png` once, from the game's own pictures. Only used while building the module, not needed to use or work on it |
 
