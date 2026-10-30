@@ -1006,4 +1006,160 @@ cmp [esp+0x1F60],ebp
 jmp BACK
 ]]
 
+---------------------------------------------------------------------------------------
+-- Undo and redo
+---------------------------------------------------------------------------------------
+
+-- The game's clock (cdecl, no arguments) and GetAsyncKeyState (cdecl, the key).
+templates.undoClock = [[
+call dword [IMPORT]
+ret
+]]
+
+templates.undoKeyState = [[
+push dword [esp+4]
+call dword [IMPORT]
+ret
+]]
+
+-- Compares the map sections with their snapshot: SECTIONS lists { live, snapshot, size }, 0 at
+-- the end. Every changed run (ended by GAP unchanged bytes) goes to OUT_BEGIN as { address,
+-- length, old bytes, new bytes }. Returns the bytes written, or 0xFFFFFFFF if OUT_LIMIT is passed.
+templates.undoDiff = [[
+push ebx
+push esi
+push edi
+push ebp
+cld
+mov dword [WRITE_AT],OUT_BEGIN
+mov dword [ENTRY_AT],SECTIONS
+next_section:
+mov eax,[ENTRY_AT]
+mov ebx,[eax]
+test ebx,ebx
+je diff_done
+mov edx,[eax+4]
+mov ebp,[eax+8]
+add eax,12
+mov [ENTRY_AT],eax
+xor ecx,ecx
+skip_dwords:
+lea eax,[ecx+4]
+cmp eax,ebp
+ja skip_bytes
+mov eax,[ebx+ecx]
+cmp eax,[edx+ecx]
+jne skip_bytes
+add ecx,4
+jmp skip_dwords
+skip_bytes:
+cmp ecx,ebp
+jae next_section
+mov al,[ebx+ecx]
+cmp al,[edx+ecx]
+jne run_found
+inc ecx
+jmp skip_bytes
+run_found:
+mov esi,ecx
+mov edi,ecx
+run_next:
+inc ecx
+cmp ecx,ebp
+jae run_end
+mov al,[ebx+ecx]
+cmp al,[edx+ecx]
+je run_same
+mov edi,ecx
+jmp run_next
+run_same:
+mov eax,ecx
+sub eax,edi
+cmp eax,GAP
+jb run_next
+run_end:
+inc edi
+sub edi,esi
+mov eax,[WRITE_AT]
+lea ecx,[eax+edi*2+8]
+cmp ecx,OUT_LIMIT
+ja diff_full
+mov [RUN_FROM],esi
+mov [RUN_LENGTH],edi
+lea ecx,[ebx+esi]
+mov [eax],ecx
+mov [eax+4],edi
+mov ecx,edi
+add esi,edx
+lea edi,[eax+8]
+rep movsb
+mov ecx,[RUN_LENGTH]
+mov esi,[RUN_FROM]
+add esi,ebx
+rep movsb
+mov [WRITE_AT],edi
+mov ecx,[RUN_FROM]
+add ecx,[RUN_LENGTH]
+jmp skip_dwords
+diff_done:
+mov eax,[WRITE_AT]
+sub eax,OUT_BEGIN
+jmp diff_exit
+diff_full:
+mov eax,0xFFFFFFFF
+diff_exit:
+pop ebp
+pop edi
+pop esi
+pop ebx
+ret
+]]
+
+-- A command dispatch's `mov reg, [index*4+COMMANDS]` (ORIGINAL): lua first, in the map editor.
+templates.undoCommand = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne command_run
+pushad
+pushfd
+call PAD
+popfd
+popad
+command_run:
+ORIGINAL
+jmp BACK
+]]
+
+-- Z's key case past its guard, replacing `cmp [TESTED],ebx` (esi: the key): in the map editor
+-- lua first; when lua takes the key (HANDLED), the dispatcher's end instead of Z's action.
+templates.undoKeys = [[
+cmp esi,KEY
+jne key_original
+cmp dword [GAME_MODE],MAP_EDITOR
+jne key_original
+mov dword [HANDLED],0
+pushad
+pushfd
+call PAD
+popfd
+popad
+cmp dword [HANDLED],0
+je key_original
+jmp TAIL
+key_original:
+cmp [TESTED],ebx
+jmp BACK
+]]
+
+-- prepareMap's start, replacing `push ecx / mov eax, [LOADED]`: lua forgets the history first.
+templates.undoForget = [[
+pushad
+pushfd
+call PAD
+popfd
+popad
+push ecx
+mov eax,[LOADED]
+jmp BACK
+]]
+
 return templates

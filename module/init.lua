@@ -88,6 +88,7 @@ local DEFAULTS = {
   textures = { gravel_and_iron = true, no_heights_iron = true },
   water = { decorations = true, foam_on_sea = true },
   brushes = { full_shape = true },
+  undo = { enabled = true },
   rocks = { signpost = true, random_preview = true, variants = true, extra_rock = true, invisible = true,
     erase_invisible = true },
   castle = { building_counts = true, tower_ruins = true, tunnel_and_tents = true, statues_and_shrines = true,
@@ -297,6 +298,49 @@ K.AOB_BRUSH_START = "39 AC 24 60 1F 00 00 89 44 24 1C 89 8C 24 BC 0F 00 00 7F"
 K.BRUSH_START_SIZE = 18
 K.AOB_BRUSH_MARKS = "0F BF 2C 45 ? ? ? ? 3B 6F 04 74"
 K.BRUSH_MARKS = 4
+
+-- Undo and redo. The map sections: `push SECTION TABLE / mov ecx, ... / mov [esp+0x50],edx /
+-- mov [esp+0xBC],eax / call` (the map file's writer); entries { address, 0, size, number << 16 |
+-- flag }, ending at address 0.
+K.AOB_SECTION_TABLE = "68 ? ? ? ? B9 ? ? ? ? 89 54 24 50 89 84 24 BC 00 00 00 E8"
+K.SECTION_TABLE = 1
+K.SECTION = { address = 0, size = 8, stride = 16 }
+K.MOST_SECTIONS = 1000
+-- The command dispatch: `movsx eax, byte [edx+esi+0x3C684] / mov ecx, [eax*4+COMMANDS] / call ecx`;
+-- six places call through COMMANDS with `mov reg, [reg*4+COMMANDS]` (7 bytes) and `call reg`.
+K.AOB_COMMAND_DISPATCH = "0F BE 84 32 84 C6 03 00 8B 0C 85 ? ? ? ? FF D1"
+K.COMMAND_TABLE = 11
+K.COMMAND_SITES = 6
+K.COMMAND_LOAD = 7
+-- The key dispatcher's case for Z (esi: the key), after the guard all in-game keys share:
+-- `test ecx,0x40000000 / jne TAIL / ... isInGameScreen / je TAIL / cmp [menu guard],-1 /
+-- jne TAIL`, then `cmp [..],ebx` (the hook, past the guard: no repeats, no text input) and
+-- the Z action. resolution-based-zoom detours the dispatcher's own jump and reads the guard.
+K.AOB_Z_KEY = "F7 C1 00 00 00 40 0F 85 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 85 C0 0F 84 ? ? ? ? 83 3D ? ? ? ? FF "
+  .. "0F 85 ? ? ? ? 39 1D ? ? ? ? 0F 85 ? ? ? ? 39 1D ? ? ? ? B9 ? ? ? ? 74 0B 53 E8"
+K.Z_KEY = { site = 43, size = 6, test = 45, tail = 12, tailRel = 8 }
+K.VK_SHIFT, K.VK_CONTROL, K.VK_Z = 0x10, 0x11, 0x5A
+-- `push VK_DOWN / call [GetAsyncKeyState] / test ax,ax` and `mov [..],ecx / call [clock] / mov [..],eax`.
+K.AOB_ASYNC_KEY = "6A 28 FF 15 ? ? ? ? 66 85 C0"
+K.ASYNC_KEY_IMPORT = 4
+K.AOB_CLOCK = "89 0D ? ? ? ? FF 15 ? ? ? ? A3 ? ? ? ? EB"
+K.CLOCK_IMPORT = 8
+-- prepareMap's start (`push ecx / mov eax, [LOADED] / push ebx / push ebp / ...`) and its calls
+-- after loading a map, from `call / mov ecx, PATHFINDING / call linkTiles / push edi / ...`.
+K.AOB_PREPARE_MAP = "51 A1 ? ? ? ? 53 55 8B 2D ? ? ? ? 56 89 44 24 0C B8 63 00 00 00"
+K.PREPARE_MAP_SIZE = 6
+K.PREPARE_MAP_LOADED = 2
+K.AOB_PREPARE_BLOCK = "E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 57 B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8"
+K.PREPARE = { pathFinding = 0x06, linkTiles = 0x0A, areas = 0x15, buildings = 0x1B, linkBuildings = 0x1F,
+  climb = 0x29, cliffs = 0x4E, hovered = 0xD3, unhover = 0xDD, changedAll = -0xFB }
+-- `push edi / mov ecx, MINIMAP / call triggerMinimapRedraw / mov eax, 2000 / mov ecx`.
+K.AOB_MINIMAP_REDRAW = "57 B9 ? ? ? ? E8 ? ? ? ? B8 D0 07 00 00 B9"
+K.MINIMAP_REDRAW = { object = 2, call = 6 }
+K.UNDO_STEPS = 20
+K.UNDO_PAUSE = 750                        -- ms without a command that end a step
+K.UNDO_GAP_BYTES = 16                     -- unchanged bytes that end a changed run
+K.UNDO_SCRATCH = 16 * 1024 * 1024         -- the largest single step
+K.UNDO_MOST_BYTES = 64 * 1024 * 1024      -- all steps together
 -- Castle mode's building hover text ("Player 1's Keep"): RenderPlayerInfoOnHoverDisplayElement's
 -- map editor branch, `mov eax,[esp+0x10] (x) / mov ecx,[hovered player]` before renderText.
 K.AOB_HOVER_TEXT = "8B 44 24 10 8B 0D ? ? ? ? 53 6A 10 53 68 ? ? ? ? 6A 01 83 C5 EC 55 50"
@@ -2443,6 +2487,197 @@ function C.patchBrushShape(self)
   }))
 end
 
+---------------------------------------------------------------------------------------
+-- Undo and redo
+---------------------------------------------------------------------------------------
+
+-- What a map is: the sections the game saves a map with (its section table). Before the first
+-- editor command after a pause the module copies them (the snapshot); when the step ends -
+-- after a pause, or at Ctrl+Z / Ctrl+Shift+Z - it compares them and keeps only the bytes that
+-- changed, old and new. Undo writes the old bytes back, redo the new ones, and then the things
+-- the game works out from the map are worked out again, as after loading a map.
+
+-- The section list for the diff: { live address, snapshot address, size } per section, 0 at the end.
+function C.undoSections()
+  local sections, total = {}, 0
+  local at = rd32(scan(K.AOB_SECTION_TABLE, "the map sections") + K.SECTION_TABLE)
+  while rd32(at + K.SECTION.address) ~= 0 do
+    local size = rd32(at + K.SECTION.size)
+    sections[#sections + 1] = { address = rd32(at + K.SECTION.address), size = size }
+    total = total + size
+    at = at + K.SECTION.stride
+    if #sections > K.MOST_SECTIONS then error(MODULE_NAME .. ": the map section table has no end") end
+  end
+  return sections, total
+end
+
+function C.enableUndo(self)
+  local U = { open = false, last = 0, steps = {}, redo = {}, bytes = 0 }
+  local sections, total = C.undoSections()
+  U.shadow = core.allocate(total, true)
+  U.list = core.allocate((#sections + 1) * 12, true)
+  local offset = 0
+  for i, section in ipairs(sections) do
+    section.shadow = U.shadow + offset
+    wr32(U.list + (i - 1) * 12, section.address)
+    wr32(U.list + (i - 1) * 12 + 4, section.shadow)
+    wr32(U.list + (i - 1) * 12 + 8, section.size)
+    offset = offset + section.size
+  end
+  U.scratch = core.allocate(K.UNDO_SCRATCH, false)
+  local state = core.allocate(16, true)
+  local diff = core.exposeCode(core.allocateAssembly(templates.undoDiff, {
+    SECTIONS = U.list, OUT_BEGIN = U.scratch, OUT_LIMIT = U.scratch + K.UNDO_SCRATCH, GAP = K.UNDO_GAP_BYTES,
+    WRITE_AT = state, ENTRY_AT = state + 4, RUN_FROM = state + 8, RUN_LENGTH = state + 12,
+  }), 0, 0)
+
+  -- The game's clock (milliseconds) and the keyboard's state, through thunks to its imports.
+  local clock = core.exposeCode(core.allocateAssembly(templates.undoClock, {
+    IMPORT = rd32(scan(K.AOB_CLOCK, "the game's clock") + K.CLOCK_IMPORT),
+  }), 0, 0)
+  local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, {
+    IMPORT = rd32(scan(K.AOB_ASYNC_KEY, "the key state") + K.ASYNC_KEY_IMPORT),
+  }), 1, 0)
+  local function down(key) return (asyncKey(key) % 0x10000) >= 0x8000 end
+
+  -- What the game works out from the map after loading it (prepareMap's own calls).
+  local block = scan(K.AOB_PREPARE_BLOCK, "the map preparation")
+  local P = K.PREPARE
+  local tileMap = rd32(scan(K.AOB_ROCK_PREVIEW, "the tile map") + K.ROCK_PREVIEW.tileMap)
+  local pathFinding, buildingsState = rd32(block + P.pathFinding), rd32(block + P.buildings)
+  local hovered = rd32(block + P.hovered)
+  local function call(offset, args) return core.exposeCode(readCallTarget(block, offset, "the map preparation"), args, 1) end
+  local changedAll = call(P.changedAll, 1)
+  local linkTiles, areas, linkBuildings = call(P.linkTiles, 1), call(P.areas, 2), call(P.linkBuildings, 1)
+  local climb, cliffs, unhover = call(P.climb, 1), call(P.cliffs, 1), call(P.unhover, 1)
+  local minimapSite = scan(K.AOB_MINIMAP_REDRAW, "the minimap redraw")
+  local minimap = rd32(minimapSite + K.MINIMAP_REDRAW.object)
+  local redrawMinimap = core.exposeCode(readCallTarget(minimapSite, K.MINIMAP_REDRAW.call, "the minimap redraw"), 2, 1)
+  local function refresh()
+    changedAll(tileMap)
+    linkTiles(pathFinding)
+    areas(pathFinding, 1)
+    linkBuildings(buildingsState)
+    climb(pathFinding)
+    cliffs(tileMap)
+    unhover(hovered)
+    redrawMinimap(minimap, 1)
+  end
+
+  local function forget(list)
+    for i = #list, 1, -1 do
+      U.bytes = U.bytes - list[i].size
+      core.deallocate(list[i].address)
+      list[i] = nil
+    end
+  end
+  local function snapshot()
+    for _, section in ipairs(sections) do core.copyMemory(section.shadow, section.address, section.size) end
+  end
+  local function closeStep()
+    U.open = false
+    local size = diff() & 0xFFFFFFFF
+    if size == 0 then return end
+    if size == 0xFFFFFFFF then
+      log(WARNING, MODULE_NAME .. ": an editor change too big to undo; the undo history starts afresh")
+      forget(U.steps)
+      forget(U.redo)
+      return
+    end
+    local record = { address = core.allocate(size, false), size = size }
+    core.copyMemory(record.address, U.scratch, size)
+    forget(U.redo)
+    U.steps[#U.steps + 1] = record
+    U.bytes = U.bytes + size
+    while #U.steps > K.UNDO_STEPS or (U.bytes > K.UNDO_MOST_BYTES and #U.steps > 1) do
+      local oldest = table.remove(U.steps, 1)
+      U.bytes = U.bytes - oldest.size
+      core.deallocate(oldest.address)
+    end
+  end
+  -- Writes a step's old (undo) or new (redo) bytes back: records of address, length, old, new.
+  local function apply(record, new)
+    local at, finish = record.address, record.address + record.size
+    while at < finish do
+      local address, length = rd32(at), rd32(at + 4)
+      core.copyMemory(address, at + 8 + (new and length or 0), length)
+      at = at + 8 + 2 * length
+    end
+    refresh()
+  end
+
+  -- Every command the editor carries out: the first one after a pause opens a step.
+  local function onCommand()
+    local now = clock() & 0xFFFFFFFF
+    if U.open and now - U.last > K.UNDO_PAUSE then closeStep() end
+    if not U.open then
+      snapshot()
+      U.open = true
+    end
+    U.last = now
+  end
+  local commandPad = C.luaPad(onCommand, "the undo history")
+  local dispatch = scan(K.AOB_COMMAND_DISPATCH, "the command dispatch")
+  local commands = rd32(dispatch + K.COMMAND_TABLE)
+  local tableBytes = bytesOf(commands)
+  local sites, from = {}, 0x400000
+  while #sites <= K.COMMAND_SITES do
+    local ok, found = pcall(core.scanForAOB, "8B ? ? " .. tableBytes .. " FF ?", from, K.HERD_SEARCH_END)
+    if not ok or found == nil or found == 0 then break end
+    sites[#sites + 1] = found
+    from = found + 1
+  end
+  if #sites ~= K.COMMAND_SITES then error(MODULE_NAME .. ": the command dispatch is not the one this module knows") end
+  local gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
+  for _, site in ipairs(sites) do
+    local original = {}
+    for i, byte in ipairs(core.readBytes(site, K.COMMAND_LOAD)) do original[i] = string.format("0x%02X", byte & 0xFF) end
+    patchJump(self, site, K.COMMAND_LOAD, core.allocateAssembly(
+      templates.undoCommand:gsub("ORIGINAL", "db " .. table.concat(original, ",")), {
+        GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, PAD = commandPad, BACK = site + K.COMMAND_LOAD,
+      }))
+  end
+
+  -- Ctrl+Z / Ctrl+Shift+Z in the map editor, in Z's own key case (Z's action is left out while
+  -- Ctrl is held). The game's guard before it already drops held keys' repeats.
+  local handled = core.allocate(4, true)
+  local function onKey()
+    if not down(K.VK_CONTROL) then return end
+    wr32(handled, 1)
+    if U.open then closeStep() end
+    if down(K.VK_SHIFT) then
+      local record = table.remove(U.redo)
+      if record == nil then return end
+      apply(record, true)
+      U.steps[#U.steps + 1] = record
+    else
+      local record = table.remove(U.steps)
+      if record == nil then return end
+      apply(record, false)
+      U.redo[#U.redo + 1] = record
+    end
+  end
+  local zKey = scan(K.AOB_Z_KEY, "the Z key")
+  local Z = K.Z_KEY
+  patchJump(self, zKey + Z.site, Z.size, core.allocateAssembly(templates.undoKeys, {
+    KEY = K.VK_Z, GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, HANDLED = handled,
+    PAD = C.luaPad(onKey, "the undo keys"), TAIL = zKey + Z.tail + rd32(zKey + Z.tailRel),
+    TESTED = rd32(zKey + Z.test), BACK = zKey + Z.site + Z.size,
+  }))
+
+  -- Another map: the history is about the old one.
+  local prepare = scan(K.AOB_PREPARE_MAP, "the map preparation")
+  patchJump(self, prepare, K.PREPARE_MAP_SIZE, core.allocateAssembly(templates.undoForget, {
+    PAD = C.luaPad(function()
+      U.open = false
+      forget(U.steps)
+      forget(U.redo)
+    end, "the undo history"),
+    LOADED = rd32(prepare + K.PREPARE_MAP_LOADED), BACK = prepare + K.PREPARE_MAP_SIZE,
+  }))
+  log(INFO, string.format("%s: undo and redo ready (%d map sections, %.1f MB)", MODULE_NAME, #sections, total / 1e6))
+end
+
 -- Herds of the brush size while the herd panel's check box is on.
 local function patchHerds(self, G, data)
   for _, herd in pairs(G.herds) do
@@ -3258,6 +3493,10 @@ local function enable(self, config)
   if setting(config, "brushes", "full_shape") == true then
     local ok, problem = pcall(C.patchBrushShape, self)
     if not ok then log(WARNING, tostring(problem) .. "; the brushes keep their missing corner") end
+  end
+  if setting(config, "undo", "enabled") == true then
+    local ok, problem = pcall(C.enableUndo, self)
+    if not ok then log(WARNING, tostring(problem) .. "; the editor has no undo") end
   end
   if setting(config, "rocks", "erase_invisible") == true then
     local ok, problem = pcall(C.patchEraser, self)

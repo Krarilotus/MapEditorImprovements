@@ -102,5 +102,12 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   which is what the game does once its 4000 rocks are used up: the tiles get rock number 2000.
   The eraser takes a rock off by number - 2000, so for such a tile it would clear empty slot 0;
   both erase brushes now free the tile itself instead (rock flag 0x80 and the tile's number).
+* **Undo and redo.** The map is the sections the game saves a map file with (its section
+  table, 122 sections: 13.8 MB in Crusader, 25.2 MB in Extreme). The first editor command after
+  a pause of 750 ms (the six places that call through the command table) copies them all; the
+  step ends at the next command after a pause, or at Ctrl+Z / Ctrl+Shift+Z, when an asm diff
+  keeps only the changed runs, old and new bytes. Undo and redo write them back and then run
+  prepareMap's own updates (path links, areas, climbing, waterfall foam, hovered state, the
+  minimap). Ctrl+Z comes in through the key dispatcher; prepareMap's start clears the history.
 * Every address is found by pattern scan or read out of the instruction that uses it, and
   checked against the bytes the module expects. Verified offline against both exes.

@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.22
+**Version**: 1.0.23
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -179,6 +179,15 @@ the buttons.
 The game's brushes count the tile under the mouse twice and leave out one tile, the top left
 corner of the shape on screen - in the preview and when placing. With this setting every brush
 has its whole shape.
+
+## Undo and redo
+
+In the map editor, Ctrl+Z takes back the last thing done on the map - placing or removing
+buildings, trees, rocks and animals, painting textures and water, changing heights - and
+Ctrl+Shift+Z puts it back. Up to the last 20 steps are kept. Everything done without a pause
+of about a second is one step, so a whole brush stroke is undone at once. Doing something new
+after an undo drops the steps that could have been redone, and loading another map starts the
+history afresh.
 
 ## Always keep the menu up to date
 

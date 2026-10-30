@@ -196,6 +196,16 @@ brushes_full_shape_tooltip: |
   be their top left corner, in the preview and when placing. With this on they have their
   whole shape (in the map editor; the game's own use of the same walk is left alone).
 
+undo_group: Undo and redo
+undo_group_descr: |
+  Ctrl+Z and Ctrl+Shift+Z in the map editor.
+undo_enabled: Undo and redo
+undo_enabled_tooltip: |
+  Ctrl+Z takes back the last thing done on the map - placing, removing, painting, heights -
+  and Ctrl+Shift+Z puts it back, for up to 20 steps. Everything done without a pause of
+  about a second counts as one step (a whole brush stroke, for example). Loading another map
+  starts the history afresh.
+
 menu_group: Editor menu
 menu_group_descr: |
   How the editor's menu at the bottom of the screen is drawn.

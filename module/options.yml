@@ -321,6 +321,21 @@ options:
 
 - display: GroupBox
   category: [Map Editor Improvements]
+  header: '{{undo_group}}'
+  text: '{{undo_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.undo.enabled
+    name: map-editor-improvements-undo-enabled
+    text: '{{undo_enabled}}'
+    tooltip: '{{undo_enabled_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+
+- display: GroupBox
+  category: [Map Editor Improvements]
   header: '{{menu_group}}'
   text: '{{menu_group_descr}}'
   hasHeader: true
