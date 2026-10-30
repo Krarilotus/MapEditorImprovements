@@ -1110,7 +1110,7 @@ pop ebx
 ret
 ]]
 
--- A command dispatch's `mov reg, [index*4+COMMANDS]` (ORIGINAL): lua first, in the map editor.
+-- An instruction of queueCommand (ORIGINAL): lua first, in the map editor.
 templates.undoCommand = [[
 cmp dword [GAME_MODE],MAP_EDITOR
 jne command_run
@@ -1125,15 +1125,14 @@ jmp BACK
 ]]
 
 
--- prepareMap's start, replacing `push ecx / mov eax, [LOADED]`: lua forgets the history first.
+-- prepareMap after loading a map, replacing `mov ecx, PATHFINDING`: lua forgets the history.
 templates.undoForget = [[
 pushad
 pushfd
 call PAD
 popfd
 popad
-push ecx
-mov eax,[LOADED]
+mov ecx,PATHFINDING
 jmp BACK
 ]]
 

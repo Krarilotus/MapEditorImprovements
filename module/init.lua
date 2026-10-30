@@ -306,12 +306,12 @@ K.AOB_SECTION_TABLE = "68 ? ? ? ? B9 ? ? ? ? 89 54 24 50 89 84 24 BC 00 00 00 E8
 K.SECTION_TABLE = 1
 K.SECTION = { address = 0, size = 8, stride = 16 }
 K.MOST_SECTIONS = 1000
--- The command dispatch: `movsx eax, byte [edx+esi+0x3C684] / mov ecx, [eax*4+COMMANDS] / call ecx`;
--- six places call through COMMANDS with `mov reg, [reg*4+COMMANDS]` (7 bytes) and `call reg`.
-K.AOB_COMMAND_DISPATCH = "0F BE 84 32 84 C6 03 00 8B 0C 85 ? ? ? ? FF D1"
-K.COMMAND_TABLE = 11
-K.COMMAND_SITES = 6
-K.COMMAND_LOAD = 7
+-- queueCommand, which every command of the player goes through before it is carried out:
+-- `mov eax, [esi+0x6A4] / imul edx, edx, 0x4F8 / mov ebx, [esp+0x10] / mov [edx+esi+...], eax`
+-- (+0x4B). The protocol module finds queueCommand by its first 0x45 bytes and hooks the six
+-- calls through the command table, so neither is touched here.
+K.AOB_QUEUE_COMMAND = "8B 86 ? ? ? ? 69 D2 F8 04 00 00 8B 5C 24 10 89 84 32"
+K.QUEUE_COMMAND_SIZE = 6
 -- The two buttons in the screen's top left corner (screen pixels; their items are moved there
 -- every frame, whatever the menu's position), and a hidden item's place.
 K.UNDO_BUTTONS = { left = 10, top = 10, gap = 8, padding = 4 }
@@ -319,13 +319,11 @@ K.FAR_AWAY = -100000
 -- `mov [..],ecx / call [clock] / mov [..],eax`.
 K.AOB_CLOCK = "89 0D ? ? ? ? FF 15 ? ? ? ? A3 ? ? ? ? EB"
 K.CLOCK_IMPORT = 8
--- prepareMap's start (`push ecx / mov eax, [LOADED] / push ebx / push ebp / ...`) and its calls
--- after loading a map, from `call / mov ecx, PATHFINDING / call linkTiles / push edi / ...`.
-K.AOB_PREPARE_MAP = "51 A1 ? ? ? ? 53 55 8B 2D ? ? ? ? 56 89 44 24 0C B8 63 00 00 00"
-K.PREPARE_MAP_SIZE = 6
-K.PREPARE_MAP_LOADED = 2
+-- prepareMap's calls after loading a map, from `call / mov ecx, PATHFINDING / call linkTiles /
+-- push edi / ...`; its `mov ecx, PATHFINDING` (forget) is where a new map clears the history.
+-- (interface-visual-fixes patches prepareMap's first bytes.)
 K.AOB_PREPARE_BLOCK = "E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 57 B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8"
-K.PREPARE = { pathFinding = 0x06, linkTiles = 0x0A, areas = 0x15, buildings = 0x1B, linkBuildings = 0x1F,
+K.PREPARE = { forget = 0x05, forgetSize = 5, pathFinding = 0x06, linkTiles = 0x0A, areas = 0x15, buildings = 0x1B, linkBuildings = 0x1F,
   climb = 0x29, cliffs = 0x4E, hovered = 0xD3, unhover = 0xDD, changedAll = -0xFB }
 -- `push edi / mov ecx, MINIMAP / call triggerMinimapRedraw / mov eax, 2000 / mov ecx`.
 K.AOB_MINIMAP_REDRAW = "57 B9 ? ? ? ? E8 ? ? ? ? B8 D0 07 00 00 B9"
@@ -2602,7 +2600,8 @@ function C.enableUndo(self)
     refresh()
   end
 
-  -- Every command the editor carries out: the first one after a pause opens a step.
+  -- Every command the editor queues (before it is carried out): the first one after a pause
+  -- opens a step.
   local function onCommand()
     local now = clock() & 0xFFFFFFFF
     if U.open and now - U.last > K.UNDO_PAUSE then closeStep() end
@@ -2612,27 +2611,15 @@ function C.enableUndo(self)
     end
     U.last = now
   end
-  local commandPad = C.luaPad(onCommand, "the undo history")
-  local dispatch = scan(K.AOB_COMMAND_DISPATCH, "the command dispatch")
-  local commands = rd32(dispatch + K.COMMAND_TABLE)
-  local tableBytes = bytesOf(commands)
-  local sites, from = {}, 0x400000
-  while #sites <= K.COMMAND_SITES do
-    local ok, found = pcall(core.scanForAOB, "8B ? ? " .. tableBytes .. " FF ?", from, K.HERD_SEARCH_END)
-    if not ok or found == nil or found == 0 then break end
-    sites[#sites + 1] = found
-    from = found + 1
-  end
-  if #sites ~= K.COMMAND_SITES then error(MODULE_NAME .. ": the command dispatch is not the one this module knows") end
   local gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
-  for _, site in ipairs(sites) do
-    local original = {}
-    for i, byte in ipairs(core.readBytes(site, K.COMMAND_LOAD)) do original[i] = string.format("0x%02X", byte & 0xFF) end
-    patchJump(self, site, K.COMMAND_LOAD, core.allocateAssembly(
-      templates.undoCommand:gsub("ORIGINAL", "db " .. table.concat(original, ",")), {
-        GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, PAD = commandPad, BACK = site + K.COMMAND_LOAD,
-      }))
-  end
+  local queue = scan(K.AOB_QUEUE_COMMAND, "the command queue")
+  local original = {}
+  for i, byte in ipairs(core.readBytes(queue, K.QUEUE_COMMAND_SIZE)) do original[i] = string.format("0x%02X", byte & 0xFF) end
+  patchJump(self, queue, K.QUEUE_COMMAND_SIZE, core.allocateAssembly(
+    templates.undoCommand:gsub("ORIGINAL", "db " .. table.concat(original, ",")), {
+      GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, PAD = C.luaPad(onCommand, "the undo history"),
+      BACK = queue + K.QUEUE_COMMAND_SIZE,
+    }))
 
   -- What the two buttons do (see C.undoButtons), in the map editor only.
   local function editor() return rd32(gameMode) == K.MAP_EDITOR end
@@ -2661,14 +2648,14 @@ function C.enableUndo(self)
   }
 
   -- Another map: the history is about the old one.
-  local prepare = scan(K.AOB_PREPARE_MAP, "the map preparation")
-  patchJump(self, prepare, K.PREPARE_MAP_SIZE, core.allocateAssembly(templates.undoForget, {
+  expectBytes(block + P.forget, { 0xB9 }, "the map preparation")
+  patchJump(self, block + P.forget, P.forgetSize, core.allocateAssembly(templates.undoForget, {
     PAD = C.luaPad(function()
       U.open = false
       forget(U.steps)
       forget(U.redo)
     end, "the undo history"),
-    LOADED = rd32(prepare + K.PREPARE_MAP_LOADED), BACK = prepare + K.PREPARE_MAP_SIZE,
+    PATHFINDING = pathFinding, BACK = block + P.forget + P.forgetSize,
   }))
   log(INFO, string.format("%s: undo and redo ready (%d map sections, %.1f MB)", MODULE_NAME, #sections, total / 1e6))
 end

@@ -105,12 +105,13 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   both erase brushes now free the tile itself instead (rock flag 0x80 and the tile's number).
 * **Undo and redo.** The map is the sections the game saves a map file with (its section
   table, 122 sections: 13.8 MB in Crusader, 25.2 MB in Extreme). The first editor command after
-  a pause of 750 ms (the six places that call through the command table) copies them all; the
+  a pause of 750 ms (hooked in queueCommand, past the bytes the protocol module searches for)
+  copies them all; the
   step ends at the next command after a pause, or at a click on undo or redo, when an asm diff
   keeps only the changed runs, old and new bytes. Undo and redo write them back and then run
   prepareMap's own updates (path links, areas, climbing, waterfall foam, hovered state, the
   minimap). The two buttons are items of the landscape and the build menu that move themselves
   to the screen's top left every frame (an item's place is relative to its menu) and are drawn
-  on the map surface; prepareMap's start clears the history.
+  on the map surface; prepareMap's refresh after loading clears the history.
 * Every address is found by pattern scan or read out of the instruction that uses it, and
   checked against the bytes the module expects. Verified offline against both exes.
