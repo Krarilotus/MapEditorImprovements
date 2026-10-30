@@ -306,6 +306,21 @@ options:
 
 - display: GroupBox
   category: [Map Editor Improvements]
+  header: '{{brushes_group}}'
+  text: '{{brushes_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.brushes.full_shape
+    name: map-editor-improvements-brushes-full-shape
+    text: '{{brushes_full_shape}}'
+    tooltip: '{{brushes_full_shape_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+
+- display: GroupBox
+  category: [Map Editor Improvements]
   header: '{{menu_group}}'
   text: '{{menu_group_descr}}'
   hasHeader: true

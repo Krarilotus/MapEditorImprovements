@@ -990,4 +990,20 @@ tile_ok:
 jmp TILE_OK
 ]]
 
+-- getTileInSquareBrush's start (edi: PathFindingState, eax: y, ecx: the cursor tile), replacing
+-- `cmp [esp+0x1F60],ebp / mov [esp+0x1C],eax / mov [esp+0xFBC],ecx` before its `jg`: the cursor
+-- tile is marked as visited by this walk too, so the walk does not count it a second time (in
+-- the map editor).
+templates.brushStart = [[
+mov [esp+0x1C],eax
+mov [esp+0xFBC],ecx
+cmp dword [GAME_MODE],MAP_EDITOR
+jne brush_unmarked
+mov edx,[edi+4]
+mov [ecx*2+MARKS],dx
+brush_unmarked:
+cmp [esp+0x1F60],ebp
+jmp BACK
+]]
+
 return templates

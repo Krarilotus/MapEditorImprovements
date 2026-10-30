@@ -187,6 +187,15 @@ herds_panel_tooltip: |
   uses. Its check box makes herds as big as the brush: 2 x brush size - 1 animals (1 to 13),
   with no random part.
 
+brushes_group: Brushes
+brushes_group_descr: |
+  The brushes of the landscape editor.
+brushes_full_shape: Brushes with their full shape
+brushes_full_shape_tooltip: |
+  The game's brushes count the tile under the mouse twice and leave out the tile that should
+  be their top left corner, in the preview and when placing. With this on they have their
+  whole shape (in the map editor; the game's own use of the same walk is left alone).
+
 menu_group: Editor menu
 menu_group_descr: |
   How the editor's menu at the bottom of the screen is drawn.

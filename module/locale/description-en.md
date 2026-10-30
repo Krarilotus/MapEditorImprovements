@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.21
+**Version**: 1.0.22
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -173,6 +173,12 @@ The apple tree and gravel buttons use the pictures in the module's `images` fold
 `apple.png`, `apple_hover.png`, `apple_selected.png` and `gravel.png`, `gravel_hover.png`,
 `gravel_selected.png` (normal, mouse over it, chosen). Replace them with your own to change
 the buttons.
+
+## Brushes
+
+The game's brushes count the tile under the mouse twice and leave out one tile, the top left
+corner of the shape on screen - in the preview and when placing. With this setting every brush
+has its whole shape.
 
 ## Always keep the menu up to date
 

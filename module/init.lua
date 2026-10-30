@@ -87,6 +87,7 @@ local DEFAULTS = {
     obstacles = true, sorted_rows = true, no_shrub_stacking = true },
   textures = { gravel_and_iron = true, no_heights_iron = true },
   water = { decorations = true, foam_on_sea = true },
+  brushes = { full_shape = true },
   rocks = { signpost = true, random_preview = true, variants = true, extra_rock = true, invisible = true,
     erase_invisible = true },
   castle = { building_counts = true, tower_ruins = true, tunnel_and_tents = true, statues_and_shrines = true,
@@ -286,6 +287,16 @@ K.RIVER_TERRAIN = 0x100000
 K.AOB_DECORATION_TILE = "83 7D 1C 00 74 1A 8B 55 0C 8B 45 E0 8B 8C 90 ? ? ? ? 81 E1 00 00 10 00 75 05 E9"
 K.DECORATION_TILE = { site = 0x0C, size = 15, flags = 3 }
 K.FOAM, K.SEA_TILE = 0x10, 0x1
+-- The brushes: getTileInSquareBrush(index, x, y) walks outwards from the cursor tile (four
+-- directions, a visited mark per tile) and answers the index-th tile it reaches. It never marks
+-- the cursor tile, so it comes back to it from the first ring and counts it twice: the last
+-- tile of every brush (its top left corner on screen) is left out. At its start, `cmp [esp+
+-- 0x1F60], ebp (index) / mov [esp+0x1C], eax / mov [esp+0xFBC], ecx (the tile) / jg <walk>`;
+-- the visited marks: `movsx ebp, word [eax*2 + marks] / cmp ebp, [edi+4] (this walk's mark)`.
+K.AOB_BRUSH_START = "39 AC 24 60 1F 00 00 89 44 24 1C 89 8C 24 BC 0F 00 00 7F"
+K.BRUSH_START_SIZE = 18
+K.AOB_BRUSH_MARKS = "0F BF 2C 45 ? ? ? ? 3B 6F 04 74"
+K.BRUSH_MARKS = 4
 -- Castle mode's building hover text ("Player 1's Keep"): RenderPlayerInfoOnHoverDisplayElement's
 -- map editor branch, `mov eax,[esp+0x10] (x) / mov ecx,[hovered player]` before renderText.
 K.AOB_HOVER_TEXT = "8B 44 24 10 8B 0D ? ? ? ? 53 6A 10 53 68 ? ? ? ? 6A 01 83 C5 EC 55 50"
@@ -2421,6 +2432,17 @@ function C.patchFoamOnSea(self)
   }))
 end
 
+-- Every brush gets its full shape: the walk marks the cursor tile as visited before it starts.
+-- In the map editor only: the walk also gives the area of collateral damage in the game.
+function C.patchBrushShape(self)
+  local site = scan(K.AOB_BRUSH_START, "the brush walk")
+  patchJump(self, site, K.BRUSH_START_SIZE, core.allocateAssembly(templates.brushStart, {
+    MARKS = rd32(scan(K.AOB_BRUSH_MARKS, "the brush walk's marks") + K.BRUSH_MARKS),
+    GAME_MODE = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND), MAP_EDITOR = K.MAP_EDITOR,
+    BACK = site + K.BRUSH_START_SIZE,
+  }))
+end
+
 -- Herds of the brush size while the herd panel's check box is on.
 local function patchHerds(self, G, data)
   for _, herd in pairs(G.herds) do
@@ -3232,6 +3254,10 @@ local function enable(self, config)
   if setting(config, "rocks", "signpost") == true then
     local ok, problem = pcall(enableSignpost, self)
     if not ok then log(WARNING, tostring(problem) .. "; skirmish maps keep their own Rocks menu") end
+  end
+  if setting(config, "brushes", "full_shape") == true then
+    local ok, problem = pcall(C.patchBrushShape, self)
+    if not ok then log(WARNING, tostring(problem) .. "; the brushes keep their missing corner") end
   end
   if setting(config, "rocks", "erase_invisible") == true then
     local ok, problem = pcall(C.patchEraser, self)
