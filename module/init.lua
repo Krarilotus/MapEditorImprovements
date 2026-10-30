@@ -272,7 +272,7 @@ K.RIVER = 14
 K.WATER_DECORATIONS = { { command = 150, image = 286, name = "foam" }, { command = 151, image = 287, name = "waves" } }
 K.NAMES.foam = { en = "Foam", de = "Gischt" }
 K.NAMES.waves = { en = "Small waves", de = "Kleine Wellen" }
-K.ROW_GAP = 8
+K.ROW_TOLERANCE = 20                     -- buttons whose middles are this close are one row
 -- setTerrain in the map editor first turns the brush area to land for the land types (`cmp
 -- [ebp+0x18], 0x40000000 / je <skip> / cmp [ebp+0x1C], 2 ...`), and 0x10 / 0x20 are among them:
 -- river terrain (0x100000) with a decoration skips that, or the decoration finds no river.
@@ -2006,48 +2006,62 @@ local function buildTable(G, O)
       decorations[#decorations + 1] = into
       tooltips[#tooltips + 1] = { item = into, name = K.NAMES[decoration.name][language] }
     end
-    -- Once the menu has placed its buttons: the two join its shortest rows, and every row is
-    -- spread evenly over the panel like the Textures menu's.
+    -- Once the menu has placed its buttons: the two join its shortest rows (a row: buttons whose
+    -- middles are within K.ROW_TOLERANCE of each other). Every button keeps its height on the
+    -- panel; a row keeps its left edge and only its gaps shrink, so that it ends no further
+    -- right than ROW_RIGHT (or its own right edge, if that is further).
     places[#places + 1] = function(measure)
-      local rowsByY, sizes = {}, {}
+      local buttons = {}
       for _, address in ipairs(waters) do
         local x = rd32(address + ITEM_X)
         if (x & 0xFFFFFFFF) == PLACED_BY_CONTROL then return false end
         local width, height = measure(address)
         if width == nil then return false end
-        sizes[address] = { width, height }
         local y = rd32(address + ITEM_Y)
-        rowsByY[y] = rowsByY[y] or { y = y, height = height, items = {} }
-        table.insert(rowsByY[y].items, address)
+        buttons[#buttons + 1] = { address = address, x = x, y = y, width = width, height = height,
+          middle = y + height / 2 }
       end
+      if #buttons == 0 then return false end
+      table.sort(buttons, function(a, b) return a.middle < b.middle end)
       local list = {}
-      for _, row in pairs(rowsByY) do list[#list + 1] = row end
-      if #list == 0 then return false end
-      table.sort(list, function(a, b) return a.y < b.y end)
+      for _, button in ipairs(buttons) do
+        local row = list[#list]
+        if row == nil or button.middle - row.middle > K.ROW_TOLERANCE then
+          row = { middle = button.middle, items = {} }
+          list[#list + 1] = row
+        end
+        table.insert(row.items, button)
+      end
       for _, row in ipairs(list) do
-        table.sort(row.items, function(a, b) return rd32(a + ITEM_X) < rd32(b + ITEM_X) end)
+        table.sort(row.items, function(a, b) return a.x < b.x end)
+        row.left = row.items[1].x
+        row.right = row.items[#row.items].x + row.items[#row.items].width
       end
       for _, into in ipairs(decorations) do
         local width, height = measure(into)
         if width == nil then return false end
-        sizes[into] = { width, height }
         local shortest = list[1]
         for _, row in ipairs(list) do
           if #row.items < #shortest.items then shortest = row end
         end
-        table.insert(shortest.items, into)
+        table.insert(shortest.items, { address = into, width = width, height = height,
+          y = math.floor(shortest.middle - height / 2 + 0.5), added = true })
       end
       for _, row in ipairs(list) do
         local sum = 0
-        for _, address in ipairs(row.items) do sum = sum + sizes[address][1] end
-        local gap = #row.items > 1 and (ROW_RIGHT - ROW_LEFT - sum) / (#row.items - 1) or 0
-        local x = ROW_LEFT
-        for _, address in ipairs(row.items) do
-          wr32(address + ITEM_X, math.floor(x + 0.5))
-          wr32(address + ITEM_Y, row.y + (row.height - sizes[address][2]) // 2)
-          wr16(address + ITEM_CONTROL, -1)
-          wr16(address + ITEM_HIDDEN, 0)
-          x = x + sizes[address][1] + gap
+        for _, button in ipairs(row.items) do sum = sum + button.width end
+        local right = math.max(row.right, ROW_RIGHT)
+        local gap = #row.items > 1 and (right - row.left - sum) / (#row.items - 1) or 0
+        if not row.items[#row.items].added then gap = nil end   -- no new button: left alone
+        local x = row.left
+        for _, button in ipairs(row.items) do
+          if gap ~= nil then
+            wr32(button.address + ITEM_X, math.floor(x + 0.5))
+            wr32(button.address + ITEM_Y, button.y)
+            wr16(button.address + ITEM_CONTROL, -1)
+            x = x + button.width + gap
+          end
+          wr16(button.address + ITEM_HIDDEN, 0)
         end
       end
       return true
