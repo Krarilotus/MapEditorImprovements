@@ -17,6 +17,7 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
 | `docs/` | notes on how parts of the game work: the size 4 rock (`size-4-rocks.md`) and the river decorations (`river-decorations.md`) |
 | `tools/publish.py` | copies `module/` into a game's `ucp/modules` folder as `map-editor-improvements-<version>`. Options: `--bump` (raise the version first), `--keep` (remove no older copies), `--game "<game folder>"` (where to publish). The comment at the top of the script explains each, and how the game folder is remembered in `tools/publish-config.json` (created by the script, not committed) |
 | `tools/make_icons.py` | made `module/images/apple*.png` and `gravel*.png` once, from the game's own pictures. Only used while building the module, not needed to use or work on it |
+| `tools/make_undo_icons.py` | made the undo and redo arrows, `module/images/undo*.png` and `redo*.png`. Only used while building the module |
 
 ## Development workflow
 
@@ -105,9 +106,11 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
 * **Undo and redo.** The map is the sections the game saves a map file with (its section
   table, 122 sections: 13.8 MB in Crusader, 25.2 MB in Extreme). The first editor command after
   a pause of 750 ms (the six places that call through the command table) copies them all; the
-  step ends at the next command after a pause, or at Ctrl+Z / Ctrl+Shift+Z, when an asm diff
+  step ends at the next command after a pause, or at a click on undo or redo, when an asm diff
   keeps only the changed runs, old and new bytes. Undo and redo write them back and then run
   prepareMap's own updates (path links, areas, climbing, waterfall foam, hovered state, the
-  minimap). Ctrl+Z comes in through the key dispatcher; prepareMap's start clears the history.
+  minimap). The two buttons are items of the landscape and the build menu that move themselves
+  to the screen's top left every frame (an item's place is relative to its menu) and are drawn
+  on the map surface; prepareMap's start clears the history.
 * Every address is found by pattern scan or read out of the instruction that uses it, and
   checked against the bytes the module expects. Verified offline against both exes.

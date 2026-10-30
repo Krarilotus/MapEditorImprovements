@@ -312,17 +312,11 @@ K.AOB_COMMAND_DISPATCH = "0F BE 84 32 84 C6 03 00 8B 0C 85 ? ? ? ? FF D1"
 K.COMMAND_TABLE = 11
 K.COMMAND_SITES = 6
 K.COMMAND_LOAD = 7
--- The key dispatcher's case for Z (esi: the key), after the guard all in-game keys share:
--- `test ecx,0x40000000 / jne TAIL / ... isInGameScreen / je TAIL / cmp [menu guard],-1 /
--- jne TAIL`, then `cmp [..],ebx` (the hook, past the guard: no repeats, no text input) and
--- the Z action. resolution-based-zoom detours the dispatcher's own jump and reads the guard.
-K.AOB_Z_KEY = "F7 C1 00 00 00 40 0F 85 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 85 C0 0F 84 ? ? ? ? 83 3D ? ? ? ? FF "
-  .. "0F 85 ? ? ? ? 39 1D ? ? ? ? 0F 85 ? ? ? ? 39 1D ? ? ? ? B9 ? ? ? ? 74 0B 53 E8"
-K.Z_KEY = { site = 43, size = 6, test = 45, tail = 12, tailRel = 8 }
-K.VK_SHIFT, K.VK_CONTROL, K.VK_Z = 0x10, 0x11, 0x5A
--- `push VK_DOWN / call [GetAsyncKeyState] / test ax,ax` and `mov [..],ecx / call [clock] / mov [..],eax`.
-K.AOB_ASYNC_KEY = "6A 28 FF 15 ? ? ? ? 66 85 C0"
-K.ASYNC_KEY_IMPORT = 4
+-- The two buttons in the screen's top left corner (screen pixels; their items are moved there
+-- every frame, whatever the menu's position), and a hidden item's place.
+K.UNDO_BUTTONS = { left = 10, top = 10, gap = 8, padding = 4 }
+K.FAR_AWAY = -100000
+-- `mov [..],ecx / call [clock] / mov [..],eax`.
 K.AOB_CLOCK = "89 0D ? ? ? ? FF 15 ? ? ? ? A3 ? ? ? ? EB"
 K.CLOCK_IMPORT = 8
 -- prepareMap's start (`push ecx / mov eax, [LOADED] / push ebx / push ebp / ...`) and its calls
@@ -1737,6 +1731,10 @@ local function buildTable(G, O)
     table.insert(inserts[before], kind)
   end
   insert(MAP_CLICK_ITEM, "guard")
+  if O.undo then
+    insert(MAP_CLICK_ITEM, "undo")
+    insert(MAP_CLICK_ITEM, "redo")
+  end
   if O.counts then insert(INFO_BEFORE_ITEM, "info") end
   if O.counts or O.obstacles or O.invisibleRocks or O.apple or O.textures or O.waterDecorations then
     insert(G.firstBlock, "tooltip")
@@ -2278,6 +2276,8 @@ local function buildTable(G, O)
     wr32(tooltip + ITEM_RENDER_TYPE, RENDER_SIMPLE)
   end
 
+  if O.undo then C.undoButtons(G, added, guarded, O.undo) end
+
   -- The guard, in front of the game's map click handler; it also runs the layout until it
   -- has worked.
   data.laidOut = core.allocate(4, true)
@@ -2493,7 +2493,7 @@ end
 
 -- What a map is: the sections the game saves a map with (its section table). Before the first
 -- editor command after a pause the module copies them (the snapshot); when the step ends -
--- after a pause, or at Ctrl+Z / Ctrl+Shift+Z - it compares them and keeps only the bytes that
+-- after a pause, or at a click on undo or redo - it compares them and keeps only the bytes that
 -- changed, old and new. Undo writes the old bytes back, redo the new ones, and then the things
 -- the game works out from the map are worked out again, as after loading a map.
 
@@ -2531,14 +2531,10 @@ function C.enableUndo(self)
     WRITE_AT = state, ENTRY_AT = state + 4, RUN_FROM = state + 8, RUN_LENGTH = state + 12,
   }), 0, 0)
 
-  -- The game's clock (milliseconds) and the keyboard's state, through thunks to its imports.
+  -- The game's clock (milliseconds), through a thunk to its import.
   local clock = core.exposeCode(core.allocateAssembly(templates.undoClock, {
     IMPORT = rd32(scan(K.AOB_CLOCK, "the game's clock") + K.CLOCK_IMPORT),
   }), 0, 0)
-  local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, {
-    IMPORT = rd32(scan(K.AOB_ASYNC_KEY, "the key state") + K.ASYNC_KEY_IMPORT),
-  }), 1, 0)
-  local function down(key) return (asyncKey(key) % 0x10000) >= 0x8000 end
 
   -- What the game works out from the map after loading it (prepareMap's own calls).
   local block = scan(K.AOB_PREPARE_BLOCK, "the map preparation")
@@ -2638,32 +2634,31 @@ function C.enableUndo(self)
       }))
   end
 
-  -- Ctrl+Z / Ctrl+Shift+Z in the map editor, in Z's own key case (Z's action is left out while
-  -- Ctrl is held). The game's guard before it already drops held keys' repeats.
-  local handled = core.allocate(4, true)
-  local function onKey()
-    if not down(K.VK_CONTROL) then return end
-    wr32(handled, 1)
-    if U.open then closeStep() end
-    if down(K.VK_SHIFT) then
-      local record = table.remove(U.redo)
-      if record == nil then return end
-      apply(record, true)
-      U.steps[#U.steps + 1] = record
-    else
+  -- What the two buttons do (see C.undoButtons), in the map editor only.
+  local function editor() return rd32(gameMode) == K.MAP_EDITOR end
+  self.undo = {
+    editor = editor,
+    undo = function()
+      if not editor() then return end
+      if U.open then closeStep() end
       local record = table.remove(U.steps)
       if record == nil then return end
       apply(record, false)
       U.redo[#U.redo + 1] = record
-    end
-  end
-  local zKey = scan(K.AOB_Z_KEY, "the Z key")
-  local Z = K.Z_KEY
-  patchJump(self, zKey + Z.site, Z.size, core.allocateAssembly(templates.undoKeys, {
-    KEY = K.VK_Z, GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, HANDLED = handled,
-    PAD = C.luaPad(onKey, "the undo keys"), TAIL = zKey + Z.tail + rd32(zKey + Z.tailRel),
-    TESTED = rd32(zKey + Z.test), BACK = zKey + Z.site + Z.size,
-  }))
+    end,
+    redo = function()
+      if not editor() then return end
+      if U.open then closeStep() end   -- something new done since the undo: nothing to redo
+      local record = table.remove(U.redo)
+      if record == nil then return end
+      apply(record, true)
+      U.steps[#U.steps + 1] = record
+    end,
+    available = {
+      undo = function() return U.open or #U.steps > 0 end,
+      redo = function() return not U.open and #U.redo > 0 end,
+    },
+  }
 
   -- Another map: the history is about the old one.
   local prepare = scan(K.AOB_PREPARE_MAP, "the map preparation")
@@ -2676,6 +2671,63 @@ function C.enableUndo(self)
     LOADED = rd32(prepare + K.PREPARE_MAP_LOADED), BACK = prepare + K.PREPARE_MAP_SIZE,
   }))
   log(INFO, string.format("%s: undo and redo ready (%d map sections, %.1f MB)", MODULE_NAME, #sections, total / 1e6))
+end
+
+-- The undo and redo buttons (items added as "undo" and "redo") in the screen's top left
+-- corner, drawn on the map surface like the tooltips. Shown in the map editor only.
+function C.undoButtons(G, added, guarded, actions)
+  if G.blit == nil then
+    G.blit = core.allocateAssembly(templates.blit, {
+      PENCIL = G.pencil, SETUP_SURFACE = G.setupSurface, SETUP_PENCIL = G.setupPencil,
+      SCRATCH = core.allocate(32, true), PIXEL_FORMAT = G.pixelFormat,
+    })
+  end
+  local blit = core.exposeCode(G.blit, 3, 0)
+  local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
+  if actions.pictures == nil then
+    actions.pictures = {}
+    for _, kind in ipairs({ "undo", "redo" }) do
+      local normal, hover, off = loadPicture(kind), loadPicture(kind .. "_hover"), loadPicture(kind .. "_off")
+      local width = math.max(normal.width, hover.width, off.width)
+      local height = math.max(normal.height, hover.height, off.height)
+      actions.pictures[kind] = { width = width, height = height, normal = storePicture(normal, width, height),
+        hover = storePicture(hover, width, height), off = storePicture(off, width, height) }
+    end
+  end
+  local B, left = K.UNDO_BUTTONS, K.UNDO_BUTTONS.left
+  for _, kind in ipairs({ "undo", "redo" }) do
+    local button, P, x = added[kind], actions.pictures[kind], left
+    left = left + P.width + B.gap
+    wr32(button + ITEM_TYPE, TYPE_CLICKABLE)
+    wr32(button + ITEM_Y, K.FAR_AWAY)
+    wr32(button + ITEM_WIDTH, P.width)
+    wr32(button + ITEM_HEIGHT, P.height)
+    wr32(button + ITEM_ACTION, C.luaPad(actions[kind], "the " .. kind .. " button"))
+    wr32(button + ITEM_RENDER, C.luaPad(function()
+      local menu = rd32(button + ITEM_MENU)
+      if menu == 0 or not actions.editor() then
+        wr32(button + ITEM_Y, K.FAR_AWAY)
+        return
+      end
+      wr32(button + ITEM_X, x - rd32(menu + MENU_X))
+      wr32(button + ITEM_Y, B.top - rd32(menu + MENU_Y))
+      local sx, sy = x + rd32(G.cameraX), B.top + rd32(G.cameraY)
+      local picture = P.off
+      if actions.available[kind]() then
+        picture = rd16(button + ITEM_HOVERED) ~= 0 and P.hover or P.normal
+      end
+      local target = rd32(G.pencil + PENCIL_TARGET)
+      wr32(G.pencil + PENCIL_TARGET, MAP_LAYER)
+      roundedBox(G.pencil, sx - B.padding, sy - B.padding, sx + P.width - 1 + B.padding,
+        sy + P.height - 1 + B.padding, BOX_BLEND)
+      blit(picture, sx, sy)
+      wr32(G.pencil + PENCIL_TARGET, target)
+    end, "the " .. kind .. " button"))
+    wr32(button + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+    wr32(button + ITEM_TEXT, 0)
+    guarded[#guarded + 1] = button
+    guarded[#guarded + 1] = 0
+  end
 end
 
 -- Herds of the brush size while the herd panel's check box is on.
@@ -2989,6 +3041,10 @@ function C.build(G, B, O)
     table.insert(inserts[before], kind)
   end
   insert(0, "guard")
+  if O.undo then
+    insert(0, "undo")
+    insert(0, "redo")
+  end
   if O.buildingCounts then insert(B.firstBlock, "counts") end
   local panels = {}
   local function lookup(tab, command) return B.buttons[tab][command].image end
@@ -3176,6 +3232,8 @@ function C.build(G, B, O)
       ROCK_LOCK = reset[3], ACTION = button.action,
     }))
   end
+
+  if O.undo then C.undoButtons(G, added, guarded, O.undo) end
 
   -- The guard in front of the click handlers, which also places the barrier.
   local laidOut = core.allocate(4, true)
@@ -3392,7 +3450,8 @@ function C.enable(self, O)
   end
   local B = C.resolve(G)
   local data = nil
-  if O.buildingCounts or O.towerRuins or O.armyExtras or O.statues or O.barrier or O.keepParts or O.damagedWalls then
+  if O.buildingCounts or O.towerRuins or O.armyExtras or O.statues or O.barrier or O.keepParts or O.damagedWalls
+      or O.undo then
     local newTable
     newTable, data = C.build(G, B, O)
     core.writeCodeInteger(B.site + 1, newTable)
@@ -3442,6 +3501,14 @@ end
 
 local function enable(self, config)
   config = config or {}
+  -- Undo first: its buttons go into the menus below.
+  if setting(config, "undo", "enabled") == true then
+    local ok, problem = pcall(C.enableUndo, self)
+    if not ok then
+      self.undo = nil
+      log(WARNING, tostring(problem) .. "; the editor has no undo")
+    end
+  end
   local O = {
     counts = setting(config, "counts", "enabled") == true,
     shown = setting(config, "counts", "shown") == true,
@@ -3461,6 +3528,7 @@ local function enable(self, config)
     noHeightsIron = setting(config, "textures", "no_heights_iron") == true,
     waterDecorations = setting(config, "water", "decorations") == true,
     foamOnSea = setting(config, "water", "foam_on_sea") == true,
+    undo = self.undo,
   }
   local castle = {
     buildingCounts = setting(config, "castle", "building_counts") == true,
@@ -3474,15 +3542,17 @@ local function enable(self, config)
     keepParts = setting(config, "castle", "keep_parts") == true,
     damagedWalls = setting(config, "castle", "damaged_walls") == true,
     hoverTextLeft = setting(config, "castle", "hover_text_left") == true,
+    undo = self.undo,
   }
   if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.sortedRows or O.textures
-      or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations then
+      or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
+      or O.undo then
     local ok, problem = pcall(enableMenu, self, O)
     if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
   end
   if castle.buildingCounts or castle.towerRuins or castle.armyExtras or castle.statues or castle.barrier
       or castle.severalKeeps or castle.looseBuildings or castle.towerEngines or castle.keepParts
-      or castle.damagedWalls or castle.hoverTextLeft then
+      or castle.damagedWalls or castle.hoverTextLeft or castle.undo then
     local ok, problem = pcall(C.enable, self, castle)
     if not ok then log(WARNING, tostring(problem) .. "; the build menu is left as it is") end
   end
@@ -3493,10 +3563,6 @@ local function enable(self, config)
   if setting(config, "brushes", "full_shape") == true then
     local ok, problem = pcall(C.patchBrushShape, self)
     if not ok then log(WARNING, tostring(problem) .. "; the brushes keep their missing corner") end
-  end
-  if setting(config, "undo", "enabled") == true then
-    local ok, problem = pcall(C.enableUndo, self)
-    if not ok then log(WARNING, tostring(problem) .. "; the editor has no undo") end
   end
   if setting(config, "rocks", "erase_invisible") == true then
     local ok, problem = pcall(C.patchEraser, self)

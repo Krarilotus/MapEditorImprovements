@@ -1010,17 +1010,12 @@ jmp BACK
 -- Undo and redo
 ---------------------------------------------------------------------------------------
 
--- The game's clock (cdecl, no arguments) and GetAsyncKeyState (cdecl, the key).
+-- The game's clock (cdecl, no arguments).
 templates.undoClock = [[
 call dword [IMPORT]
 ret
 ]]
 
-templates.undoKeyState = [[
-push dword [esp+4]
-call dword [IMPORT]
-ret
-]]
 
 -- Compares the map sections with their snapshot: SECTIONS lists { live, snapshot, size }, 0 at
 -- the end. Every changed run (ended by GAP unchanged bytes) goes to OUT_BEGIN as { address,
@@ -1129,26 +1124,6 @@ ORIGINAL
 jmp BACK
 ]]
 
--- Z's key case past its guard, replacing `cmp [TESTED],ebx` (esi: the key): in the map editor
--- lua first; when lua takes the key (HANDLED), the dispatcher's end instead of Z's action.
-templates.undoKeys = [[
-cmp esi,KEY
-jne key_original
-cmp dword [GAME_MODE],MAP_EDITOR
-jne key_original
-mov dword [HANDLED],0
-pushad
-pushfd
-call PAD
-popfd
-popad
-cmp dword [HANDLED],0
-je key_original
-jmp TAIL
-key_original:
-cmp [TESTED],ebx
-jmp BACK
-]]
 
 -- prepareMap's start, replacing `push ecx / mov eax, [LOADED]`: lua forgets the history first.
 templates.undoForget = [[

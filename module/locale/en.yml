@@ -198,11 +198,13 @@ brushes_full_shape_tooltip: |
 
 undo_group: Undo and redo
 undo_group_descr: |
-  Ctrl+Z and Ctrl+Shift+Z in the map editor.
+  Undo and redo buttons in the map editor's top left corner.
 undo_enabled: Undo and redo
 undo_enabled_tooltip: |
-  Ctrl+Z takes back the last thing done on the map - placing, removing, painting, heights -
-  and Ctrl+Shift+Z puts it back, for up to 20 steps. Everything done without a pause of
+  Two arrow buttons in the top left corner of the map editor: the left one takes back the last
+  thing done on the map - placing, removing, painting, heights - and the right one puts it
+  back, for up to 20 steps. A button is greyed out while there is nothing to take back or put
+  back. Everything done without a pause of
   about a second counts as one step (a whole brush stroke, for example). Loading another map
   starts the history afresh.
 
