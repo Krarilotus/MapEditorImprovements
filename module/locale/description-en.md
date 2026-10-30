@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.20
+**Version**: 1.0.21
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -91,7 +91,7 @@ The water menu gets back two river decorations from the first Stronghold's edito
 Crusader still supports but has no buttons for:
 
 - **Foam**: white water and rising spray, as below a waterfall, on every river tile under the
-  brush.
+  brush. It can also go on ocean tiles, which then become river with foam (a setting).
 - **Small waves**: on the one river tile under the mouse.
 
 Both only go on river tiles and are saved in the map (see `docs/river-decorations.md` in the

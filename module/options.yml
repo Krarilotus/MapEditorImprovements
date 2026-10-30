@@ -130,6 +130,14 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.water.foam_on_sea
+    name: map-editor-improvements-water-foam-on-sea
+    text: '{{water_foam_on_sea}}'
+    tooltip: '{{water_foam_on_sea_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
 
 - display: GroupBox
   category: [Map Editor Improvements]

@@ -971,4 +971,23 @@ je SKIP_LAND
 jmp BACK
 ]]
 
+-- setTerrain's tile test for a decoration, replacing `mov ecx,[eax+edx*4+FLAGS] / and ecx,
+-- RIVER / jne TILE_OK` (eax: TileMapState, edx: the tile): a river tile as before, and for foam
+-- laid as river also an ocean tile.
+templates.foamOnSea = [[
+mov ecx,[eax+edx*4+FLAGS]
+test ecx,RIVER
+jne tile_ok
+cmp dword [ebp+0x18],RIVER
+jne tile_refused
+cmp dword [ebp+0x1C],FOAM
+jne tile_refused
+test ecx,SEA
+jne tile_ok
+tile_refused:
+jmp BACK
+tile_ok:
+jmp TILE_OK
+]]
+
 return templates

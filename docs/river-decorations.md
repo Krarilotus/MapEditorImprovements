@@ -79,3 +79,7 @@ It adds two buttons to the water menu - copies of the river button with placemen
 and the menu pictures that are still in the image table (entries 286 and 287, `mapedit_buttons.gm1`
 pictures 154 and 145) - and skips the land step above for river terrain. Placing and drawing are
 otherwise the game's own.
+
+With its "foam on the ocean too" setting, the decoration tile test (VAN `0x512CFD`) also accepts an
+ocean tile (tile flag 0x1, the sea terrain's flag) for foam laid as river; the river path then clears
+the ocean flag, so the tile becomes river with foam.

@@ -86,7 +86,7 @@ local DEFAULTS = {
   trees = { growth_from_brush = true, apple = true, shrubs = true, felled = true, random_mix = true,
     obstacles = true, sorted_rows = true, no_shrub_stacking = true },
   textures = { gravel_and_iron = true, no_heights_iron = true },
-  water = { decorations = true },
+  water = { decorations = true, foam_on_sea = true },
   rocks = { signpost = true, random_preview = true, variants = true, extra_rock = true, invisible = true,
     erase_invisible = true },
   castle = { building_counts = true, tower_ruins = true, tunnel_and_tents = true, statues_and_shrines = true,
@@ -279,6 +279,13 @@ K.ROW_TOLERANCE = 20                     -- buttons whose middles are this close
 K.AOB_TERRAIN_LAND = "83 3D ? ? ? ? 01 75 ? 81 7D 18 00 00 00 40 74 ? 83 7D 1C 02 74"
 K.TERRAIN_LAND = { site = 9, size = 9 }
 K.RIVER_TERRAIN = 0x100000
+-- ... and in its tile loop, a decoration only goes on a river tile: `cmp [ebp+0x1C],0 / je /
+-- mov edx,[ebp+0xC] / mov eax,[ebp-0x20] / mov ecx,[eax+edx*4+flags] / and ecx,0x100000 / jne
+-- <river> / jmp <skip>`. Foam may also take an ocean tile (flag 1, the sea terrain's own flag,
+-- which the river path clears).
+K.AOB_DECORATION_TILE = "83 7D 1C 00 74 1A 8B 55 0C 8B 45 E0 8B 8C 90 ? ? ? ? 81 E1 00 00 10 00 75 05 E9"
+K.DECORATION_TILE = { site = 0x0C, size = 15, flags = 3 }
+K.FOAM, K.SEA_TILE = 0x10, 0x1
 -- Castle mode's building hover text ("Player 1's Keep"): RenderPlayerInfoOnHoverDisplayElement's
 -- map editor branch, `mov eax,[esp+0x10] (x) / mov ecx,[hovered player]` before renderText.
 K.AOB_HOVER_TEXT = "8B 44 24 10 8B 0D ? ? ? ? 53 6A 10 53 68 ? ? ? ? 6A 01 83 C5 EC 55 50"
@@ -2325,6 +2332,7 @@ local function patchTrees(self, G, O, data)
   end
   if O.noStacking then C.patchEraseStacks(self, G) end
   if O.waterDecorations then C.patchRiverDecorations(self) end
+  if O.waterDecorations and O.foamOnSea then C.patchFoamOnSea(self) end
 end
 
 -- The rock number the editor places and previews follows the variant row.
@@ -2400,6 +2408,16 @@ function C.patchRiverDecorations(self)
   patchJump(self, site, K.TERRAIN_LAND.size, core.allocateAssembly(templates.riverDecorations, {
     RIVER = K.RIVER_TERRAIN, SKIP_LAND = site + K.TERRAIN_LAND.size + (rd8(site + K.TERRAIN_LAND.size - 1) & 0xFF),
     BACK = site + K.TERRAIN_LAND.size,
+  }))
+end
+
+-- Foam goes on ocean tiles too (they become river with foam).
+function C.patchFoamOnSea(self)
+  local D = K.DECORATION_TILE
+  local site = scan(K.AOB_DECORATION_TILE, "the decoration's tile test") + D.site
+  patchJump(self, site, D.size, core.allocateAssembly(templates.foamOnSea, {
+    FLAGS = rd32(site + D.flags), RIVER = K.RIVER_TERRAIN, FOAM = K.FOAM, SEA = K.SEA_TILE,
+    TILE_OK = site + D.size + (rd8(site + D.size - 1) & 0xFF), BACK = site + D.size,
   }))
 end
 
@@ -3185,6 +3203,7 @@ local function enable(self, config)
     noStacking = setting(config, "trees", "no_shrub_stacking") == true,
     noHeightsIron = setting(config, "textures", "no_heights_iron") == true,
     waterDecorations = setting(config, "water", "decorations") == true,
+    foamOnSea = setting(config, "water", "foam_on_sea") == true,
   }
   local castle = {
     buildingCounts = setting(config, "castle", "building_counts") == true,

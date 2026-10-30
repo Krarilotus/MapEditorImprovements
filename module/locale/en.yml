@@ -85,6 +85,10 @@ water_decorations_tooltip: |
   supports but has no buttons for: Foam (white water and rising spray, as below a waterfall,
   on every river tile under the brush) and Small waves (on the one river tile under the
   mouse). Both only go on river tiles and are saved in the map.
+water_foam_on_sea: Foam on the ocean too
+water_foam_on_sea_tooltip: |
+  Foam can also be laid on ocean tiles, which then become river with foam (with the foam
+  setting on).
 
 rocks_group: Rocks
 rocks_group_descr: |
