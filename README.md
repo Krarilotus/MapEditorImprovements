@@ -17,6 +17,7 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
 | `docs/` | notes on how parts of the game work: the size 4 rock (`size-4-rocks.md`) and the river decorations (`river-decorations.md`) |
 | `tools/publish.py` | copies `module/` into a game's `ucp/modules` folder as `map-editor-improvements-<version>`. Options: `--bump` (raise the version first), `--keep` (remove no older copies), `--game "<game folder>"` (where to publish). The comment at the top of the script explains each, and how the game folder is remembered in `tools/publish-config.json` (created by the script, not committed) |
 | `tools/make_icons.py` | made `module/images/apple*.png` and `gravel*.png` once, from the game's own pictures. Only used while building the module, not needed to use or work on it |
+| `tools/make_pipette_icons.py` | made the pipette button, `module/images/pipette*.png`, from the eraser button's parchment (reads the game's `gm/mapedit_buttons.gm1`). Only used while building the module |
 | `tools/make_undo_icons.py` | made the undo and redo arrows, `module/images/undo*.png` and `redo*.png`. Only used while building the module |
 
 ## Development workflow
@@ -110,6 +111,14 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   mode 3 normally sets every tile under the brush to height 8 and clears its decoration byte;
   the module's mode 3 only clears moat flags and the moat entry (height 8 for dug tiles).
   The branch's marsh test is skipped in the editor.
+* **Pipette.** Its own tool id (0x1F4), which no click handler acts on and which the brush
+  preview shows as the plain brush (a patch on the preview's brush read shows one tile while
+  it takes a tile). An every-frame item in front of the map click handler watches the mouse.
+  Heights are written like useTerrainHeightBrush does (base height, live height 8 lower on
+  river), textures as the ground flags of the tile word plus the decoration byte and direction
+  word; then, as the game's tools do, path links per tile, the logic and macro layer flags,
+  updateWalkAndPathLayer and a minimap redraw. Keys are polled with GetAsyncKeyState (the key
+  dispatcher is resolution-based-zoom's), and not while a text box has the keyboard.
 * **Undo and redo.** The map is the sections the game saves a map file with (its section
   table, 122 sections: 13.8 MB in Crusader, 25.2 MB in Extreme). The first map edit command
   (ids 0x12-0x1D and a few more, hooked in queueCommand past the bytes the protocol module

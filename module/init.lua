@@ -89,6 +89,8 @@ local DEFAULTS = {
   water = { decorations = true, foam_on_sea = true },
   brushes = { full_shape = true },
   undo = { enabled = true },
+  pipette = { enabled = true, select_key_on = true, select_key = "letter_p", read_key_on = true, read_key = "ctrl",
+    any_tile_key_on = true, any_tile_key = "alt" },
   rocks = { signpost = true, random_preview = true, variants = true, extra_rock = true, invisible = true,
     erase_invisible = true },
   castle = { building_counts = true, tower_ruins = true, tunnel_and_tents = true, statues_and_shrines = true,
@@ -501,6 +503,74 @@ K.MOAT_MODE = { site = 23, size = 6, height = 9, logic = 9, clear = 0x46, done =
 -- The same branch's marsh test: `mov eax,[edx+ecx*4+LOGIC] / and eax,0x20000000 / je +5 / jmp <skip>`.
 K.AOB_MOAT_MARSH = "8B 84 8A ? ? ? ? 25 00 00 00 20 74 05 E9"
 K.MOAT_MARSH = { site = 7, size = 5 }
+
+-- The pipette. Its tool id is above the landscape click handler's last case (0x155: anything
+-- higher does nothing) and outside getBuildingSizeForCommandBuildingType's range (0x2C-0x172),
+-- and no wall tool; renderPreviewMapperWithBrush shows it as the plain brush.
+K.PIPETTE_TOOL = 0x1F4
+K.PIPETTE_HEIGHTS, K.PIPETTE_TEXTURES, K.PIPETTE_ALL = 1, 2, 3
+K.PIPETTE_MODES = {
+  { label = "Heights", what = "heights", image = 240 },        -- the Heights category's picture
+  { label = "Textures", what = "textures", image = 241 },      -- the Textures category's picture
+  { label = "All", what = "textures and heights" },             -- the pipette's own picture
+}
+-- The landscape menu's left column (UC_MAP_BRUSH 82,464 / UC_MAP_SNAP 82,507 / UC_MAP_DELETE
+-- 82,552): the pipette on top, then brush size (and its second item, 331), ruler and eraser.
+K.PIPETTE_COLUMN = { x = 82, tops = { 456, 490, 524, 562 }, moved = { { 1, 331 }, { 204 }, { 39 } } }
+K.PIPETTE_TEXT_ABOVE = 18
+K.MAP_SIZE, K.MAP_TILES = 400, 80400
+-- TileMapState layers (the same offsets in both exes): decoration byte, direction word, building.
+K.TMS = { decoration = 0x1B3FE0, direction = 0x13DD40, building = 0x2029B0 }
+K.MAP_BORDER = 0x30
+-- The tile flags that are ground: sea, plain 1/2, earth, boulders, pebbles, iron, river, ford,
+-- marsh, oil.
+K.TEXTURE_FLAGS = 0xA03E800D
+-- Heights stay off sea, rocks, walls, crenels, stairs, buildings, keeps, marsh and moat (and
+-- beach, a decoration); textures off rocks, walls, crenels, stairs, buildings and keeps.
+K.HEIGHT_REFUSED = 0x70004F81
+K.TEXTURE_REFUSED = 0x10000F80
+K.BEACH_DECORATION = 0x20
+K.RIVER_DEPTH = 8                        -- a river tile lies this far below its base height
+K.WALK_RADIUS = 9                        -- what the height tools hand updateWalkAndPathLayer
+K.TEXTURE_NAMES = { { 0x1, "sea" }, { 0x100000, "river" }, { 0x200000, "ford" }, { 0x20000000, "marsh" },
+  { 0x20000, "boulders" }, { 0x40000, "pebbles" }, { 0x80000, "iron" }, { 0x80000000, "oil" },
+  { 0x4, "plain 1" }, { 0x8, "plain 2" }, { 0x8000, "earth" } }
+K.DECORATION_NAMES = { { 0x1, "scrub" }, { 0x2, "earth and stones" }, { 0x4, "plateau" }, { 0x8, "high plateau" },
+  { 0x10, "oasis grass" }, { 0x20, "beach" }, { 0x40, "stones" }, { 0x80, "thick scrub" } }
+K.RIVER_DECORATION_NAMES = { { 0x10, "foam" }, { 0x20, "small waves" } }
+-- The landscape click handler: `cmp [click start],ebx / mov eax,[..] / jne / cmp [..],eax / je /
+-- push ebp / mov ecx, viewport / mov [..],eax / call / cmp [click start],ebx / mov ebp,[..] /
+-- mov ebx,[..] / mov esi,[mouse tile y] / mov edi,[mouse tile x]`; and its `cmp [click held],
+-- ebx / jne` before the preview.
+K.AOB_MOUSE_CLICK = "39 1D ? ? ? ? A1 ? ? ? ? 75 0C 39 05 ? ? ? ? 0F 84 ? ? ? ? 55 B9 ? ? ? ? A3 ? ? ? ? "
+  .. "E8 ? ? ? ? 39 1D ? ? ? ? 8B 2D ? ? ? ? 8B 1D ? ? ? ? 8B 35 ? ? ? ? 8B 3D"
+K.MOUSE_CLICK = { start = 2, y = 0x3D, x = 0x43 }
+K.AOB_CLICK_HELD = "39 1D ? ? ? ? 0F 85 91 00 00 00 B9 ? ? ? ? E8 ? ? ? ? 8B 15"
+K.CLICK_HELD = 2
+-- renderPreviewMapperWithBrush: `mov edx,[esi+BRUSH] / mov eax,[edx*4+SIZES] / mov [esp+0x14],eax /
+-- lea eax,[ebx+ebx*2] / mov eax,[eax*4+ROWS]`; its brush loop `push edx / push edi / push 1 /
+-- mov ecx,esi / call getTileForBrush / ...`.
+K.AOB_PIPETTE_PREVIEW = "8B 96 ? ? ? ? 8B 04 95 ? ? ? ? 89 44 24 14 8D 04 5B"
+K.PIPETTE_PREVIEW = { size = 6, brush = 2, sizes = 9, rows = { 0x14, { 0x8B, 0x04, 0x85 } } }
+K.AOB_BRUSH_TILE = "52 57 6A 01 8B CE E8 ? ? ? ? 8B 44 24 18 83 C7 01 3B 7C 24 1C 66 89 AC 46"
+K.BRUSH_TILE_CALL = 6
+-- useTerrainHeightBrush: per tile `push ebp / push ebx / mov ecx, PathFindingState / call
+-- updatePathLinkagesInAllEightDirections`, after the loop `mov dword [edi+FLAG],1`; and its
+-- height writes `mov al,[edi+ebp+HEIGHT] / mov [edi+ebp+DEFAULT],al / test [edi+ebp*4+LOGIC],river`.
+K.AOB_HEIGHT_TAIL = "55 53 B9 ? ? ? ? E8 ? ? ? ? 8B 5C 24 1C 8B 74 24 2C 83 C6 01 3B 74 24 14 89 74 24 2C "
+  .. "0F 8C ? ? ? ? C7 87 ? ? ? ? 01 00 00 00"
+K.HEIGHT_TAIL = { pathFinding = 3, links = 7, flag = 0x27 }
+K.AOB_HEIGHTS = "8A 84 2F ? ? ? ? 88 84 2F ? ? ? ? F7 84 AF ? ? ? ? 00 00 10 00"
+K.HEIGHTS = { height = 3, default = 10, logic = 17 }
+-- The height and terrain commands' end: `push 9 / mov ecx, PathFindingState / call
+-- updateWalkAndPathLayer / push 2 / mov ecx, minimap / mov [macro layer flag],1 / call
+-- triggerMinimapRedraw` (five commands share it).
+K.AOB_HEIGHT_TOOL = "6A 09 B9 ? ? ? ? E8 ? ? ? ? 6A 02 B9 ? ? ? ? C7 05 ? ? ? ? 01 00 00 00 E8"
+K.HEIGHT_TOOL = { walk = 7, minimap = 0x0F, macro = 0x15, redraw = 0x1D }
+-- The in-game key handlers' guard (five share it): `... cmp [menu guard],-1`, -1 while nothing
+-- takes the keyboard (no text box).
+K.AOB_KEY_GUARD = "F7 C1 00 00 00 40 0F 85 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 85 C0 0F 84 ? ? ? ? 83 3D ? ? ? ? FF"
+K.KEY_GUARD = 32
 
 -- MenuItemRenderFunction_MapEditorLandscaping_GeneralButtons: the item position globals
 -- (width follows the position), the hover flag, the open tab, the brush size, the chosen
@@ -1769,6 +1839,16 @@ local function buildTable(G, O)
     insert(MAP_CLICK_ITEM, "redo")
   end
   if O.counts then insert(INFO_BEFORE_ITEM, "info") end
+  local pipetteItems = { "pipetteTick", "pipette", "pipettePanel" }
+  if O.pipette then
+    insert(MAP_CLICK_ITEM, "pipetteTick")
+    insert(INFO_BEFORE_ITEM, "pipette")
+    for i = 1, #K.PIPETTE_MODES do
+      insert(INFO_BEFORE_ITEM, "pipetteMode" .. i)
+      pipetteItems[#pipetteItems + 1] = "pipetteMode" .. i
+    end
+    insert(INFO_BEFORE_ITEM, "pipettePanel")
+  end
   if O.counts or O.obstacles or O.invisibleRocks or O.apple or O.textures or O.waterDecorations then
     insert(G.firstBlock, "tooltip")
   end
@@ -2310,6 +2390,28 @@ local function buildTable(G, O)
   end
 
   if O.undo then C.undoButtons(G, added, guarded, O.undo) end
+  if O.pipette then
+    if G.blit == nil then
+      G.blit = core.allocateAssembly(templates.blit, {
+        PENCIL = G.pencil, SETUP_SURFACE = G.setupSurface, SETUP_PENCIL = G.setupPencil,
+        SCRATCH = core.allocate(32, true), PIXEL_FORMAT = G.pixelFormat,
+      })
+    end
+    local count = #guarded
+    local ok, problem = pcall(C.pipette, G, O, data, added, guarded, places, button)
+    if not ok then
+      log(WARNING, tostring(problem) .. "; the pipette is left out")
+      for i = #guarded, count + 1, -1 do guarded[i] = nil end
+      for _, kind in ipairs(pipetteItems) do      -- harmless: never hit, never drawn, no action
+        local into = added[kind]
+        wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
+        wr32(into + ITEM_WIDTH, 0)
+        wr32(into + ITEM_HEIGHT, 0)
+        wr32(into + ITEM_RENDER_TYPE, RENDER_NONE)
+        wr16(into + ITEM_HIDDEN, 1)
+      end
+    end
+  end
 
   -- The guard, in front of the game's map click handler; it also runs the layout until it
   -- has worked.
@@ -2642,14 +2744,16 @@ function C.enableUndo(self)
   -- Every command the editor queues (before it is carried out): a map edit after the mouse
   -- buttons were let go starts a new step.
   local command = core.allocate(4, true)
-  local function onCommand()
-    if not edits[rd32(command) & 0xFF] then return end
+  local function beginEdit()
     if U.open and U.released then closeStep() end
     if not U.open then
       snapshot()
       U.open = true
     end
     U.released = false
+  end
+  local function onCommand()
+    if edits[rd32(command) & 0xFF] then beginEdit() end
   end
   local gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
   local queue = scan(K.AOB_QUEUE_COMMAND, "the command queue")
@@ -2665,6 +2769,7 @@ function C.enableUndo(self)
   local function editor() return rd32(gameMode) == K.MAP_EDITOR end
   self.undo = {
     editor = editor,
+    beginEdit = beginEdit,       -- for the module's own map edits (the pipette)
     undo = function()
       if not editor() then return end
       if U.open then closeStep() end
@@ -2739,6 +2844,340 @@ function C.patchMoatMarsh(self)
   patchJump(self, site, K.MOAT_MARSH.size, core.allocateAssembly(templates.moatMarsh, {
     GAME_MODE = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND), MAP_EDITOR = K.MAP_EDITOR,
     BACK = site + K.MOAT_MARSH.size,
+  }))
+end
+
+---------------------------------------------------------------------------------------
+-- Pipette
+---------------------------------------------------------------------------------------
+
+-- The pipette is a tool of its own (K.PIPETTE_TOOL, an id the game's click handlers leave
+-- alone; its preview is the plain brush). Every frame, before the map click handler, lua
+-- looks at the mouse: in read mode a click on the map takes the tile's heights and/or
+-- textures, in write mode clicking and dragging gives them to the tiles under the brush.
+-- The writes are the ones the game's own height and terrain tools make, followed by the
+-- same updates.
+
+local function keyCode(name)
+  if name == nil then return nil end
+  local special = { ctrl = 0x11, shift = 0x10, alt = 0x12, space = 0x20, tab = 0x09 }
+  if special[name] ~= nil then return special[name] end
+  local letter = name:match("^letter_(%a)$")
+  if letter ~= nil then return string.byte(letter:upper()) end
+  local digit = name:match("^digit_(%d)$")
+  if digit ~= nil then return 0x30 + tonumber(digit) end
+  local f = name:match("^f(%d+)$")
+  if f ~= nil and tonumber(f) >= 1 and tonumber(f) <= 12 then return 0x6F + tonumber(f) end
+  return nil
+end
+C.keyCode = keyCode
+
+-- What the game needs for the pipette, from the code that uses it.
+function C.resolvePipette(G)
+  local R = {}
+  local mouse = scan(K.AOB_MOUSE_CLICK, "the map click")
+  local M = K.MOUSE_CLICK
+  R.clickStart, R.mouseX, R.mouseY = rd32(mouse + M.start), rd32(mouse + M.x), rd32(mouse + M.y)
+  R.clickHeld = rd32(scan(K.AOB_CLICK_HELD, "the map click state") + K.CLICK_HELD)
+  local preview = scan(K.AOB_PIPETTE_PREVIEW, "the brush preview")
+  local P = K.PIPETTE_PREVIEW
+  R.previewSite, R.brushField, R.brushSizes = preview, rd32(preview + P.brush), rd32(preview + P.sizes)
+  expectBytes(preview + P.rows[1], P.rows[2], "the brush preview's rows")
+  R.rows = rd32(preview + P.rows[1] + #P.rows[2])
+  local walk = scan(K.AOB_BRUSH_TILE, "the brush walk")
+  R.tileForBrush = readCallTarget(walk, K.BRUSH_TILE_CALL, "getTileForBrush")
+  local tail = scan(K.AOB_HEIGHT_TAIL, "the height brush")
+  local H = K.HEIGHT_TAIL
+  R.pathFinding, R.links, R.logicFlag = rd32(tail + H.pathFinding), readCallTarget(tail, H.links, "the path links"),
+    rd32(tail + H.flag)
+  local heights = scan(K.AOB_HEIGHTS, "the tile heights")
+  R.height, R.defaultHeight, R.logic = rd32(heights + K.HEIGHTS.height), rd32(heights + K.HEIGHTS.default),
+    rd32(heights + K.HEIGHTS.logic)
+  local after = scan(K.AOB_HEIGHT_TOOL, "the height tool")
+  local A = K.HEIGHT_TOOL
+  R.walk, R.minimap = readCallTarget(after, A.walk, "the walk layer update"), rd32(after + A.minimap)
+  R.macroFlag, R.redraw = rd32(after + A.macro), readCallTarget(after, A.redraw, "the minimap redraw")
+  R.menuGuard = rd32(scan(K.AOB_KEY_GUARD, "the key guard") + K.KEY_GUARD)
+  R.keyState = rd32(scan(K.AOB_ASYNC_KEY, "the key state") + K.ASYNC_KEY_IMPORT)
+  R.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
+  R.tileMap = rd32(scan(K.AOB_ROCK_PREVIEW, "the tile map") + K.ROCK_PREVIEW.tileMap)
+  return R
+end
+
+-- Names of what the textures pipette took, for the line above its panel.
+function C.textureNames(logic, decoration)
+  local names = {}
+  for _, flag in ipairs(K.TEXTURE_NAMES) do
+    if logic & flag[1] ~= 0 then names[#names + 1] = flag[2] end
+  end
+  local river = logic & K.RIVER_TERRAIN ~= 0
+  for _, flag in ipairs(river and K.RIVER_DECORATION_NAMES or K.DECORATION_NAMES) do
+    if decoration & flag[1] ~= 0 then names[#names + 1] = flag[2] end
+  end
+  if #names == 0 then names[1] = "plain ground" end
+  return table.concat(names, ", ")
+end
+
+-- The pipette button, its panel and the per-frame work, in the landscape menu being built.
+function C.pipette(G, O, data, added, guarded, places, button)
+  local S = O.pipette
+  local R = C.resolvePipette(G)
+  local T = R.tileMap
+  local blit = core.exposeCode(G.blit, 3, 0)
+  local tileForBrush = core.exposeCode(R.tileForBrush, 7, 1)
+  local links = core.exposeCode(R.links, 3, 1)
+  local walk = core.exposeCode(R.walk, 4, 1)
+  local redraw = core.exposeCode(R.redraw, 2, 1)
+  local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = R.keyState }), 1, 0)
+  local function down(key) return key ~= nil and (asyncKey(key) % 0x10000) >= 0x8000 end
+  local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
+  local textWidth = core.exposeCode(G.textWidth, 4, 1)
+  local text = core.allocate(256, true)
+  local out = core.allocate(8, true)
+  data.pipetteRead = core.allocate(4, true)
+  local P = { mode = 1, stored = nil, held = false, waitRelease = false, last = nil, keys = {} }
+  local selectKey, readKey, anyKey = keyCode(S.selectKey), keyCode(S.readKey), keyCode(S.anyKey)
+
+  local function chosen() return rd32(G.subtype) == K.PIPETTE_TOOL end
+  local function choose()
+    wr32(G.subtype, K.PIPETTE_TOOL)
+    P.stored, P.waitRelease, P.last = nil, true, nil
+  end
+  local function reading() return P.stored == nil or P.reading end
+
+  -- The tile at map x, y and the tiles of the brush around it (write mode: the brush size).
+  local function tileOf(x, y) return rd32(R.rows + y * 12) + x end
+  local function brushTiles(x, y, size)
+    local count = rd32(R.brushSizes + size * 4)
+    local base, list = tileOf(x, y), {}
+    for i = 0, count - 1 do
+      tileForBrush(T, 1, i, out, out + 4, base, y)
+      local tile, ty = rd32(out), rd32(out + 4)
+      if tile >= 0 and tile < K.MAP_TILES and ty >= 0 and ty < K.MAP_SIZE then list[#list + 1] = { tile, ty } end
+    end
+    return list
+  end
+
+  local function logicAt(tile) return rd32(T + R.logic + tile * 4) & 0xFFFFFFFF end
+  local function read(x, y)
+    local tile = tileOf(x, y)
+    local logic = logicAt(tile)
+    P.stored = {
+      mode = P.mode, base = rd8(T + R.defaultHeight + tile) & 0xFF, live = rd8(T + R.height + tile) & 0xFF,
+      texture = logic & K.TEXTURE_FLAGS, decoration = rd8(T + K.TMS.decoration + tile) & 0xFF,
+      direction = rd16(T + K.TMS.direction + tile * 2),
+    }
+  end
+
+  -- Gives one tile the stored heights or textures; answers whether it changed it.
+  local function blocked(tile, logic, mask)
+    return logic & mask ~= 0 or rd16(T + K.TMS.building + tile * 2) ~= 0
+  end
+  local function setLive(tile, logic)
+    local base = rd8(T + R.defaultHeight + tile) & 0xFF
+    local live = base
+    if logic & K.RIVER_TERRAIN ~= 0 then live = math.max(0, base - K.RIVER_DEPTH) end
+    core.writeByte(T + R.height + tile, live)
+  end
+  local function giveHeights(tile, logic, any)
+    if not any and (blocked(tile, logic, K.HEIGHT_REFUSED)
+        or (rd8(T + K.TMS.decoration + tile) & 0xFF) & K.BEACH_DECORATION ~= 0) then
+      return false
+    end
+    core.writeByte(T + R.defaultHeight + tile, P.stored.base)
+    setLive(tile, logic)
+    return true
+  end
+  local function giveTextures(tile, logic, any)
+    if not any and blocked(tile, logic, K.TEXTURE_REFUSED) then return false end
+    local new = (logic & ~K.TEXTURE_FLAGS & 0xFFFFFFFF) | P.stored.texture
+    wr32(T + R.logic + tile * 4, new)
+    core.writeByte(T + K.TMS.decoration + tile, P.stored.decoration)
+    wr16(T + K.TMS.direction + tile * 2, P.stored.direction)
+    if (new ~ logic) & K.RIVER_TERRAIN ~= 0 then setLive(tile, new) end
+    return true
+  end
+
+  local function apply(x, y)
+    local any = S.anyKeyOn and down(anyKey)
+    local changed = false
+    local tiles = brushTiles(x, y, rd32(T + R.brushField))
+    if O.undo ~= nil then O.undo.beginEdit() end
+    for _, at in ipairs(tiles) do
+      local tile, ty = at[1], at[2]
+      local logic = logicAt(tile)
+      if logic & K.MAP_BORDER == 0 then
+        local done = false
+        if P.mode == K.PIPETTE_TEXTURES or P.mode == K.PIPETTE_ALL then
+          done = giveTextures(tile, logic, any) or done
+          logic = logicAt(tile)
+        end
+        if P.mode == K.PIPETTE_HEIGHTS or P.mode == K.PIPETTE_ALL then done = giveHeights(tile, logic, any) or done end
+        if done then
+          links(R.pathFinding, ty, tile)
+          changed = true
+        end
+      end
+    end
+    if not changed then return end
+    -- What the game's height and terrain tools do afterwards.
+    wr32(T + R.logicFlag, 1)
+    wr32(R.macroFlag, 1)
+    walk(R.pathFinding, K.WALK_RADIUS, x, y)
+    redraw(R.minimap, 2)
+  end
+
+  local function editor() return rd32(R.gameMode) == K.MAP_EDITOR end
+  local function typing() return rd32(R.menuGuard) ~= -1 end
+  local function pressed(key)
+    local now = down(key)
+    local was = P.keys[key]
+    P.keys[key] = now
+    return now and not was
+  end
+
+  -- Every frame, before the map click handler.
+  local function tick()
+    if not editor() then return end
+    if S.selectKeyOn and selectKey ~= nil and pressed(selectKey) and not typing() then
+      if chosen() then P.mode = P.mode % #K.PIPETTE_MODES + 1 end
+      choose()
+    end
+    if not chosen() then
+      P.held, P.waitRelease = false, false
+      wr32(data.pipetteRead, 0)
+      return
+    end
+    P.reading = S.readKeyOn and down(readKey)
+    wr32(data.pipetteRead, reading() and 1 or 0)
+    local held = rd32(R.clickHeld) ~= 0
+    if not held then
+      P.held, P.waitRelease, P.last = false, false, nil
+      return
+    end
+    if P.waitRelease or rd32(G.onMap) == 0 then return end
+    local x, y = rd32(R.mouseX), rd32(R.mouseY)
+    if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return end
+    if reading() then
+      read(x, y)
+      P.waitRelease = true       -- the next click writes
+      return
+    end
+    local tile = tileOf(x, y)
+    if tile == P.last then return end
+    P.last = tile
+    apply(x, y)
+  end
+
+  -- The button, in the column of brush size, ruler and eraser (all moved down for it).
+  local pictures = buttonPictures("pipette")
+  local pipette = added.pipette
+  wr32(pipette + ITEM_TYPE, TYPE_CLICKABLE)
+  wr32(pipette + ITEM_X, K.PIPETTE_COLUMN.x)
+  wr32(pipette + ITEM_Y, K.PIPETTE_COLUMN.tops[1])
+  wr32(pipette + ITEM_WIDTH, pictures.width)
+  wr32(pipette + ITEM_HEIGHT, pictures.height)
+  wr32(pipette + ITEM_ACTION, C.luaPad(choose, "the pipette button"))
+  wr32(pipette + ITEM_RENDER, core.allocateAssembly(templates.pictureButton, {
+    NORMAL = pictures.normal, HOVERED = pictures.hover, CHOSEN = pictures.chosen, COMMAND = K.PIPETTE_TOOL,
+    SUBTYPE = G.subtype, HOVER = G.hover, PENCIL = G.pencil, PENCIL_TARGET = PENCIL_TARGET,
+    ITEM_X = G.itemX, ITEM_Y = G.itemY, BLIT = G.blit,
+  }))
+  wr32(pipette + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+  wr32(pipette + ITEM_TEXT, 0)
+  guarded[#guarded + 1] = pipette
+  guarded[#guarded + 1] = 0
+  for i, param in ipairs(K.PIPETTE_COLUMN.moved) do
+    local top = K.PIPETTE_COLUMN.tops[i + 1]
+    for _, extra in ipairs(param) do
+      if G.buttons[extra] ~= nil then
+        local into = button(extra)
+        wr32(into + ITEM_X, K.PIPETTE_COLUMN.x)
+        wr32(into + ITEM_Y, top)
+        wr16(into + ITEM_CONTROL, -1)
+      end
+    end
+  end
+
+  -- The panel: heights, textures, all; and above it what the pipette holds.
+  local panel = { items = {}, info = added.info }
+  local entries = {}
+  for i, mode in ipairs(K.PIPETTE_MODES) do
+    local into = added["pipetteMode" .. i]
+    wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
+    wr32(into + ITEM_ACTION, C.luaPad(function()
+      P.mode = i
+      P.stored, P.waitRelease = nil, true
+    end, "the pipette panel"))
+    wr32(into + ITEM_RENDER_TYPE, RENDER_NONE)
+    wr16(into + ITEM_HIDDEN, 1)
+    panel.items[i] = into
+    guarded[#guarded + 1] = into
+    guarded[#guarded + 1] = 0
+    entries[i] = { item = into, label = mode.label }
+    if mode.image ~= nil then
+      entries[i].image = mode.image
+    else
+      entries[i].picture = { address = pictures.normal, width = pictures.width, height = pictures.height }
+    end
+  end
+  local paint = makePanel(G, { counts = false }, data, panel, function()
+    local list = {}
+    for i, entry in ipairs(entries) do
+      list[i] = { item = entry.item, image = entry.image, picture = entry.picture, label = entry.label,
+        chosen = P.mode == i }
+    end
+    return list
+  end)
+  local function storedLine()
+    local mode = K.PIPETTE_MODES[P.mode]
+    if P.stored == nil then return "Pipette: click a tile to take its " .. mode.what end
+    local parts = {}
+    if P.mode ~= K.PIPETTE_HEIGHTS then
+      parts[#parts + 1] = "textures: " .. C.textureNames(P.stored.texture, P.stored.decoration)
+    end
+    if P.mode ~= K.PIPETTE_TEXTURES then
+      local line = "height " .. P.stored.base
+      if P.stored.live ~= P.stored.base then line = line .. " (water " .. P.stored.live .. ")" end
+      parts[#parts + 1] = line
+    end
+    local prefix = reading() and "Pipette (taking): " or "Pipette holds "
+    return prefix .. table.concat(parts, "; ")
+  end
+  local function painter()
+    paint()
+    local first = panel.items[1]
+    if rd16(first + ITEM_HIDDEN) ~= 0 then return end
+    local line = storedLine()
+    writeCString(text, line:sub(1, 250))
+    local width = textWidth(G.textManager, text, math.min(#line, 250), TOOLTIP_FONT)
+    local x = (rd32(G.screenWidth) - width) // 2 + rd32(G.cameraX)
+    local y = rd32(G.menu + MENU_Y) + rd32(first + ITEM_Y) - K.PIPETTE_TEXT_ABOVE + rd32(G.cameraY)
+    local layer = rd32(G.textLayer)
+    wr32(G.textLayer, MAP_LAYER)
+    shadowedText(G.textManager, text, x, y, ALIGN_LEFT, TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
+    wr32(G.textLayer, layer)
+  end
+  local scratch = core.allocate(8, true)       -- the panel template's felled tree state, unused here
+  local painterItem = added.pipettePanel
+  wr32(painterItem + ITEM_TYPE, TYPE_CLICKABLE)
+  wr32(painterItem + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+  wr32(painterItem + ITEM_RENDER, core.allocateAssembly(templates.panel, {
+    SUBTYPE = G.subtype, FELLED_LOGS = scratch, FELLED_COMMAND = scratch + 4,
+    FIRST_TREE = K.PIPETTE_TOOL, LAST_TREE = K.PIPETTE_TOOL, FIRST_SHRUB = 1, LAST_SHRUB = 0,
+    PANEL_ITEMS = dwordList(panel.items), ITEM_HIDDEN = ITEM_HIDDEN, PAD = C.luaPad(painter, "the pipette panel"),
+  }))
+
+  local tickItem = added.pipetteTick
+  wr32(tickItem + ITEM_TYPE, TYPE_EVERY_FRAME)
+  wr32(tickItem + ITEM_ACTION, C.luaPad(tick, "the pipette"))
+  data.pipette = R
+end
+
+-- The brush preview while the pipette takes a tile: one tile, whatever the brush size.
+function C.patchPipettePreview(self, R, readFlag)
+  patchJump(self, R.previewSite, K.PIPETTE_PREVIEW.size, core.allocateAssembly(templates.pipettePreview, {
+    PIPETTE = K.PIPETTE_TOOL, READ_MODE = readFlag, BRUSH = R.brushField, BACK = R.previewSite + K.PIPETTE_PREVIEW.size,
   }))
 end
 
@@ -2835,6 +3274,10 @@ local function enableMenu(self, O)
   if data.rockTabs > 0 then patchRocks(self, G, data) end
   if O.herds then patchHerds(self, G, data) end
   if O.invisibleRocks then C.patchInvisibleRocks(self, data) end
+  if data.pipette ~= nil then
+    local ok, problem = pcall(C.patchPipettePreview, self, data.pipette, data.pipetteRead)
+    if not ok then log(WARNING, tostring(problem) .. "; the pipette shows the whole brush while taking a tile") end
+  end
   self.shownFlag = data.shown
   self.landscape = G
   log(INFO, string.format("%s: editor menu changed (menu 0x%X, items 0x%X -> 0x%X; %d tree, %d rock, "
@@ -3617,6 +4060,13 @@ local function enable(self, config)
     foamOnSea = setting(config, "water", "foam_on_sea") == true,
     undo = self.undo,
   }
+  if setting(config, "pipette", "enabled") == true then
+    O.pipette = {
+      selectKeyOn = setting(config, "pipette", "select_key_on") == true, selectKey = setting(config, "pipette", "select_key"),
+      readKeyOn = setting(config, "pipette", "read_key_on") == true, readKey = setting(config, "pipette", "read_key"),
+      anyKeyOn = setting(config, "pipette", "any_tile_key_on") == true, anyKey = setting(config, "pipette", "any_tile_key"),
+    }
+  end
   local castle = {
     buildingCounts = setting(config, "castle", "building_counts") == true,
     towerRuins = setting(config, "castle", "tower_ruins") == true,
@@ -3636,7 +4086,7 @@ local function enable(self, config)
   }
   if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.sortedRows or O.textures
       or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
-      or O.undo then
+      or O.undo or O.pipette then
     local ok, problem = pcall(enableMenu, self, O)
     if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
   end

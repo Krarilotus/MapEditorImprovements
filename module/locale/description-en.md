@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.27
+**Version**: 1.0.28
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -199,6 +199,22 @@ back. Up to the last 20 steps are kept. Every click is one step, and a brush str
 undone at once. Clicks that change nothing on the map, like a click with no tool chosen, make
 no step, so they do not get in the way of a redo. Doing something new after an undo drops the steps that could have been redone, and loading another map starts the
 history afresh.
+
+## Pipette
+
+A pipette button sits in the landscape editor's left column, above the brush size (brush size,
+ruler and eraser move down a little for it). Choosing it shows a row above the menu - **Heights**,
+**Textures**, **All** - and above that a line with what the pipette holds.
+
+- **Taking:** click a tile. The pipette shows a single tile while it takes one.
+- **Giving:** then click or drag: the tiles under the brush get the heights, the textures or
+  both. Heights leave the ground's texture alone and textures leave the heights alone.
+- Heights are not given to sea, beach, marsh, moat, rocks, walls or buildings; textures not to
+  rocks, walls or buildings. Holding **Alt** gives to every tile anyway (experimental).
+- Choosing the pipette or one of its kinds again empties it. **P** chooses the pipette, and
+  pressed again goes on to the next kind. Holding **Ctrl** takes a new tile while the pipette
+  holds something; letting go gives again. All three keys can be changed or switched off.
+- Undo takes pipette strokes back like any other change.
 
 ## Always keep the menu up to date
 

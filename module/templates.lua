@@ -1083,6 +1083,24 @@ jmp BACK
 ]]
 
 ---------------------------------------------------------------------------------------
+-- Pipette
+---------------------------------------------------------------------------------------
+
+-- renderPreviewMapperWithBrush, replacing `mov edx,[esi+BRUSH]` (the brush size, after three
+-- pushes: the tool is at [esp+0x18]): the pipette taking a tile shows one tile.
+templates.pipettePreview = [[
+cmp dword [esp+0x18],PIPETTE
+jne preview_brush
+cmp dword [READ_MODE],0
+je preview_brush
+mov edx,1
+jmp BACK
+preview_brush:
+mov edx,[esi+BRUSH]
+jmp BACK
+]]
+
+---------------------------------------------------------------------------------------
 -- Undo and redo
 ---------------------------------------------------------------------------------------
 
