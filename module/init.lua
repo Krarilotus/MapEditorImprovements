@@ -508,11 +508,48 @@ K.MOAT_MARSH = { site = 7, size = 5 }
 -- higher does nothing) and outside getBuildingSizeForCommandBuildingType's range (0x2C-0x172),
 -- and no wall tool; renderPreviewMapperWithBrush shows it as the plain brush.
 K.PIPETTE_TOOL = 0x1F4
-K.PIPETTE_HEIGHTS, K.PIPETTE_TEXTURES, K.PIPETTE_ALL = 1, 2, 3
+K.PIPETTE_HEIGHTS, K.PIPETTE_TEXTURES, K.PIPETTE_OBJECTS, K.PIPETTE_ALL = 1, 2, 3, 4
 K.PIPETTE_MODES = {
   { label = "Heights", what = "heights", image = 240 },        -- the Heights category's picture
   { label = "Textures", what = "textures", image = 241 },      -- the Textures category's picture
+  { label = "Objects", what = "building or wall", image = 242 }, -- the Objects category's picture
   { label = "All", what = "textures and heights" },             -- the pipette's own picture
+}
+-- The objects pipette takes a building or wall and then simply chooses that tool: the game's own
+-- building and wall handlers (also in the landscape menu's item table) show and place it; the
+-- landscape click handler only acts on its own tools (36-49, shrubs, foam, rocks, animals).
+-- Buildings: building layer -> building (stride and type field from updateLogicalTileMapRelated-
+-- Sections: `movsx eax, word [esi+edi*2+LAYER] / test eax,eax / je / imul eax,eax,STRIDE / cmp
+-- word [eax+TYPE],0x31`) -> convertBuildingTypeToCommandBuildingType (`mov eax,[esp+4] / add
+-- eax,-1 / cmp eax,0x6A / ja`, 0 for none).
+K.AOB_BUILDING_TYPE = "0F BF 84 7E ? ? ? ? 85 C0 74 ? 69 C0 ? ? ? ? 66 83 B8 ? ? ? ? 31"
+K.BUILDING_TYPE = { stride = 14, type = 21 }
+K.AOB_COMMAND_OF_TYPE = "8B 44 24 04 83 C0 FF 83 F8 6A 0F 87"
+-- Walls by their tile flags: stairs, crenellation, wall (high wall 90 above the ground, low 60).
+K.STAIRS_FLAG, K.CRENEL_FLAG, K.WALL_FLAG, K.STOCKPILE_FLAG = 0x800, 0x200, 0x100, 0x2
+K.STAIRS_TOOL, K.CRENEL_TOOL, K.HIGH_WALL_TOOL, K.LOW_WALL_TOOL = 27, 26, 25, 46
+K.HIGH_WALL_ABOVE = 75
+-- Names for the line above the pipette panel, by tool.
+K.OBJECT_NAMES = {
+  [25] = "high wall", [26] = "crenellated wall", [27] = "stairs", [46] = "low wall", [50] = "fletcher",
+  [51] = "woodsman", [52] = "stockpile", [53] = "outpost bedouin", [54] = "hovel", [55] = "ox tether",
+  [56] = "quarry", [57] = "tunnel", [58] = "campfire", [59] = "signpost", [60] = "keep", [61] = "keep",
+  [62] = "keep", [63] = "keep", [64] = "keep", [65] = "stables", [66] = "tunnel construction",
+  [70] = "wheatfarm", [71] = "hopsfarm", [72] = "applefarm", [73] = "cattlefarm", [74] = "mill",
+  [75] = "baker", [76] = "brewer", [77] = "tradepost", [78] = "hunter", [79] = "bedouin stockade",
+  [80] = "granary", [81] = "armoury", [82] = "poleturner", [83] = "blacksmith", [84] = "armourer",
+  [85] = "tanner", [86] = "barracks", [87] = "mercenary post", [88] = "engineers guild",
+  [89] = "tunnelers guild", [90] = "iron mine", [91] = "pitch rig", [92] = "inn", [93] = "healer",
+  [94] = "siege tower base", [95] = "chapel", [96] = "church", [97] = "cathedral",
+  [98] = "killing pit", [99] = "pitch ditch", [100] = "gatehouse", [101] = "large gatehouse",
+  [102] = "small gatehouse", [103] = "wooden gatehouse", [104] = "postern gate", [105] = "drawbridge",
+  [106] = "moat", [107] = "antimoat", [108] = "generic", [109] = "quarrypile", [110] = "lookout tower",
+  [111] = "perimeter turret", [112] = "defence turret", [113] = "square tower", [114] = "round tower",
+  [115] = "tower1 ruin", [116] = "tower2 ruin", [117] = "tower3 ruin", [118] = "tower4 ruin",
+  [119] = "tower5 ruin", [120] = "flag type0", [121] = "flag type1", [122] = "flag type2",
+  [123] = "flag type3", [124] = "flag type4", [125] = "flag type5", [126] = "flag type6",
+  [127] = "flag type7", [128] = "flag type8", [129] = "heads", [190] = "catapult", [191] = "trebuchet",
+  [192] = "siege tower", [193] = "battering ram", [194] = "portable shield"
 }
 -- The landscape menu's left column (UC_MAP_BRUSH 82,464 / UC_MAP_SNAP 82,507 / UC_MAP_DELETE
 -- 82,552): the pipette on top, then brush size (and its second item, 331), ruler and eraser.
@@ -525,10 +562,19 @@ K.MAP_BORDER = 0x30
 -- The tile flags that are ground: sea, plain 1/2, earth, boulders, pebbles, iron, river, ford,
 -- marsh, oil.
 K.TEXTURE_FLAGS = 0xA03E800D
--- Heights stay off sea, rocks, walls, crenels, stairs, buildings, keeps, marsh and moat (and
--- beach, a decoration); textures off rocks, walls, crenels, stairs, buildings and keeps.
-K.HEIGHT_REFUSED = 0x70004F81
-K.TEXTURE_REFUSED = 0x10000F80
+-- Heights stay off sea, walls, crenels, stairs, buildings, keeps, marsh and moat (and beach, a
+-- decoration); textures off walls, crenels, stairs, buildings and keeps. Both stay off rocks,
+-- but not off cliff rocks: in the map editor updateGfxLayer marks cliff edges rocky (0x80)
+-- without a rock, and does so again wherever a cliff remains, so the pipette clears that flag.
+K.HEIGHT_REFUSED = 0x70004F01
+K.TEXTURE_REFUSED = 0x10000F00
+K.ROCKY = 0x80
+K.FIRST_ROCK_NUMBER = 2000               -- the organism layer: rock slot + 2000
+-- useTerrainHeightBrush taking a rock off a tile it changes: `test byte [edi+ebp*4+LOGIC],0x80 /
+-- je / movsx eax, word [edi+ebp*2+ORGANISM] / cmp eax,2000 / jl / add eax,-2000 / push eax /
+-- mov ecx, LandscapeState / call removeRock`.
+K.AOB_HEIGHT_ROCK = "F6 84 AF ? ? ? ? 80 74 1F 0F BF 84 6F ? ? ? ? 3D D0 07 00 00 7C 10 05 30 F8 FF FF 50 B9 ? ? ? ? E8"
+K.HEIGHT_ROCK = { organism = 14, landscape = 32, remove = 36 }
 K.BEACH_DECORATION = 0x20
 K.RIVER_DEPTH = 8                        -- a river tile lies this far below its base height
 K.WALK_RADIUS = 9                        -- what the height tools hand updateWalkAndPathLayer
@@ -2897,6 +2943,12 @@ function C.resolvePipette(G)
   local A = K.HEIGHT_TOOL
   R.walk, R.minimap = readCallTarget(after, A.walk, "the walk layer update"), rd32(after + A.minimap)
   R.macroFlag, R.redraw = rd32(after + A.macro), readCallTarget(after, A.redraw, "the minimap redraw")
+  local rock = scan(K.AOB_HEIGHT_ROCK, "the height brush's rock removal")
+  R.organism, R.landscape = rd32(rock + K.HEIGHT_ROCK.organism), rd32(rock + K.HEIGHT_ROCK.landscape)
+  R.removeRock = readCallTarget(rock, K.HEIGHT_ROCK.remove, "removeRock")
+  local building = scan(K.AOB_BUILDING_TYPE, "the building types")
+  R.buildingStride, R.buildingType = rd32(building + K.BUILDING_TYPE.stride), rd32(building + K.BUILDING_TYPE.type)
+  R.commandOfType = scan(K.AOB_COMMAND_OF_TYPE, "convertBuildingTypeToCommandBuildingType")
   R.menuGuard = rd32(scan(K.AOB_KEY_GUARD, "the key guard") + K.KEY_GUARD)
   R.keyState = rd32(scan(K.AOB_ASYNC_KEY, "the key state") + K.ASYNC_KEY_IMPORT)
   R.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
@@ -2926,6 +2978,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
   local blit = core.exposeCode(G.blit, 3, 0)
   local tileForBrush = core.exposeCode(R.tileForBrush, 7, 1)
   local links = core.exposeCode(R.links, 3, 1)
+  local removeRock = core.exposeCode(R.removeRock, 2, 1)
   local walk = core.exposeCode(R.walk, 4, 1)
   local redraw = core.exposeCode(R.redraw, 2, 1)
   local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = R.keyState }), 1, 0)
@@ -2934,11 +2987,22 @@ function C.pipette(G, O, data, added, guarded, places, button)
   local textWidth = core.exposeCode(G.textWidth, 4, 1)
   local text = core.allocate(256, true)
   local out = core.allocate(8, true)
+  local commandOfType = core.exposeCode(R.commandOfType, 2, 1)
   data.pipetteRead = core.allocate(4, true)
+  local activeFlag = core.allocate(4, true)    -- the pipette (or the tool it chose) is in use
   local P = { mode = 1, stored = nil, held = false, waitRelease = false, last = nil, keys = {} }
   local selectKey, readKey, anyKey = keyCode(S.selectKey), keyCode(S.readKey), keyCode(S.anyKey)
 
   local function chosen() return rd32(G.subtype) == K.PIPETTE_TOOL end
+  -- The objects pipette's tool, while it holds an object.
+  local function objectTool()
+    if P.mode == K.PIPETTE_OBJECTS and P.stored ~= nil then return P.stored.command end
+    return nil
+  end
+  local function active()
+    local tool = objectTool()
+    return chosen() or (tool ~= nil and rd32(G.subtype) == tool)
+  end
   local function choose()
     wr32(G.subtype, K.PIPETTE_TOOL)
     P.stored, P.waitRelease, P.last = nil, true, nil
@@ -2969,6 +3033,34 @@ function C.pipette(G, O, data, added, guarded, places, button)
     }
   end
 
+  -- The building or wall on a tile, as the tool that places it.
+  local function readObject(x, y)
+    local tile = tileOf(x, y)
+    local id = rd16(T + K.TMS.building + tile * 2)
+    local command = 0
+    if id > 0 then
+      command = commandOfType(0, rd16(R.buildingType + id * R.buildingStride)) & 0xFFFF
+    else
+      local logic = logicAt(tile)
+      if logic & K.STOCKPILE_FLAG ~= 0 then
+        command = 0
+      elseif logic & K.STAIRS_FLAG ~= 0 then
+        command = K.STAIRS_TOOL
+      elseif logic & K.CRENEL_FLAG ~= 0 then
+        command = K.CRENEL_TOOL
+      elseif logic & K.WALL_FLAG ~= 0 then
+        local above = (rd8(T + R.height + tile) & 0xFF) - (rd8(T + R.defaultHeight + tile) & 0xFF)
+        command = above >= K.HIGH_WALL_ABOVE and K.HIGH_WALL_TOOL or K.LOW_WALL_TOOL
+      end
+    end
+    if command == 0 then
+      P.nothing = true
+      return
+    end
+    P.nothing = false
+    P.stored = { command = command, name = K.OBJECT_NAMES[command] or ("object " .. command) }
+  end
+
   -- Gives one tile the stored heights or textures; answers whether it changed it.
   local function blocked(tile, logic, mask)
     return logic & mask ~= 0 or rd16(T + K.TMS.building + tile * 2) ~= 0
@@ -2979,17 +3071,34 @@ function C.pipette(G, O, data, added, guarded, places, button)
     if logic & K.RIVER_TERRAIN ~= 0 then live = math.max(0, base - K.RIVER_DEPTH) end
     core.writeByte(T + R.height + tile, live)
   end
+  -- A rocky tile: a rock stays (only the any-tile key takes it away, as the game's height tools
+  -- do), a cliff rock goes. Answers the tile word without the rocky flag, or nil.
+  local function unrock(tile, logic, any)
+    if logic & K.ROCKY == 0 then return logic end
+    local number = rd16(T + R.organism + tile * 2)
+    if number >= K.FIRST_ROCK_NUMBER then
+      if not any then return nil end
+      removeRock(R.landscape, number - K.FIRST_ROCK_NUMBER)
+      logic = logicAt(tile)
+    end
+    return logic & ~K.ROCKY & 0xFFFFFFFF
+  end
   local function giveHeights(tile, logic, any)
     if not any and (blocked(tile, logic, K.HEIGHT_REFUSED)
         or (rd8(T + K.TMS.decoration + tile) & 0xFF) & K.BEACH_DECORATION ~= 0) then
       return false
     end
+    logic = unrock(tile, logic, any)
+    if logic == nil then return false end
+    wr32(T + R.logic + tile * 4, logic)
     core.writeByte(T + R.defaultHeight + tile, P.stored.base)
     setLive(tile, logic)
     return true
   end
   local function giveTextures(tile, logic, any)
     if not any and blocked(tile, logic, K.TEXTURE_REFUSED) then return false end
+    logic = unrock(tile, logic, any)
+    if logic == nil then return false end
     local new = (logic & ~K.TEXTURE_FLAGS & 0xFFFFFFFF) | P.stored.texture
     wr32(T + R.logic + tile * 4, new)
     core.writeByte(T + K.TMS.decoration + tile, P.stored.decoration)
@@ -3040,29 +3149,43 @@ function C.pipette(G, O, data, added, guarded, places, button)
   local function tick()
     if not editor() then return end
     if S.selectKeyOn and selectKey ~= nil and pressed(selectKey) and not typing() then
-      if chosen() then P.mode = P.mode % #K.PIPETTE_MODES + 1 end
+      if active() then P.mode = P.mode % #K.PIPETTE_MODES + 1 end
       choose()
     end
-    if not chosen() then
+    if not active() then
       P.held, P.waitRelease = false, false
+      if P.mode == K.PIPETTE_OBJECTS then P.stored = nil end   -- another tool was chosen
       wr32(data.pipetteRead, 0)
+      wr32(activeFlag, 0)
       return
     end
+    wr32(activeFlag, 1)
     P.reading = S.readKeyOn and down(readKey)
     wr32(data.pipetteRead, reading() and 1 or 0)
     local held = rd32(R.clickHeld) ~= 0
+    if P.mode == K.PIPETTE_OBJECTS and not held then
+      -- Between clicks: the object's own tool to place it, the pipette to take one.
+      local tool = objectTool()
+      if reading() and not chosen() then
+        wr32(G.subtype, K.PIPETTE_TOOL)
+      elseif not reading() and tool ~= nil and chosen() then
+        wr32(G.subtype, tool)
+      end
+    end
     if not held then
       P.held, P.waitRelease, P.last = false, false, nil
       return
     end
+    if not chosen() then return end            -- the game places the object
     if P.waitRelease or rd32(G.onMap) == 0 then return end
     local x, y = rd32(R.mouseX), rd32(R.mouseY)
     if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return end
     if reading() then
-      read(x, y)
+      if P.mode == K.PIPETTE_OBJECTS then readObject(x, y) else read(x, y) end
       P.waitRelease = true       -- the next click writes
       return
     end
+    if P.mode == K.PIPETTE_OBJECTS then return end
     local tile = tileOf(x, y)
     if tile == P.last then return end
     P.last = tile
@@ -3078,10 +3201,10 @@ function C.pipette(G, O, data, added, guarded, places, button)
   wr32(pipette + ITEM_WIDTH, pictures.width)
   wr32(pipette + ITEM_HEIGHT, pictures.height)
   wr32(pipette + ITEM_ACTION, C.luaPad(choose, "the pipette button"))
-  wr32(pipette + ITEM_RENDER, core.allocateAssembly(templates.pictureButton, {
-    NORMAL = pictures.normal, HOVERED = pictures.hover, CHOSEN = pictures.chosen, COMMAND = K.PIPETTE_TOOL,
-    SUBTYPE = G.subtype, HOVER = G.hover, PENCIL = G.pencil, PENCIL_TARGET = PENCIL_TARGET,
-    ITEM_X = G.itemX, ITEM_Y = G.itemY, BLIT = G.blit,
+  wr32(pipette + ITEM_RENDER, core.allocateAssembly(templates.flagPictureButton, {
+    NORMAL = pictures.normal, HOVERED = pictures.hover, CHOSEN = pictures.chosen, FLAG = activeFlag,
+    HOVER = G.hover, PENCIL = G.pencil, PENCIL_TARGET = PENCIL_TARGET, ITEM_X = G.itemX, ITEM_Y = G.itemY,
+    BLIT = G.blit,
   }))
   wr32(pipette + ITEM_RENDER_TYPE, RENDER_SIMPLE)
   wr32(pipette + ITEM_TEXT, 0)
@@ -3107,7 +3230,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
     wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
     wr32(into + ITEM_ACTION, C.luaPad(function()
       P.mode = i
-      P.stored, P.waitRelease = nil, true
+      choose()
     end, "the pipette panel"))
     wr32(into + ITEM_RENDER_TYPE, RENDER_NONE)
     wr16(into + ITEM_HIDDEN, 1)
@@ -3131,7 +3254,15 @@ function C.pipette(G, O, data, added, guarded, places, button)
   end)
   local function storedLine()
     local mode = K.PIPETTE_MODES[P.mode]
-    if P.stored == nil then return "Pipette: click a tile to take its " .. mode.what end
+    if P.stored == nil then
+      if P.mode == K.PIPETTE_OBJECTS and P.nothing then
+        return "Pipette: no building or wall there - click one to take it"
+      end
+      return "Pipette: click a tile to take its " .. mode.what
+    end
+    if P.mode == K.PIPETTE_OBJECTS then
+      return (reading() and "Pipette (taking) holds: " or "Pipette places: ") .. P.stored.name
+    end
     local parts = {}
     if P.mode ~= K.PIPETTE_HEIGHTS then
       parts[#parts + 1] = "textures: " .. C.textureNames(P.stored.texture, P.stored.decoration)
@@ -3158,14 +3289,12 @@ function C.pipette(G, O, data, added, guarded, places, button)
     shadowedText(G.textManager, text, x, y, ALIGN_LEFT, TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
     wr32(G.textLayer, layer)
   end
-  local scratch = core.allocate(8, true)       -- the panel template's felled tree state, unused here
   local painterItem = added.pipettePanel
   wr32(painterItem + ITEM_TYPE, TYPE_CLICKABLE)
   wr32(painterItem + ITEM_RENDER_TYPE, RENDER_SIMPLE)
-  wr32(painterItem + ITEM_RENDER, core.allocateAssembly(templates.panel, {
-    SUBTYPE = G.subtype, FELLED_LOGS = scratch, FELLED_COMMAND = scratch + 4,
-    FIRST_TREE = K.PIPETTE_TOOL, LAST_TREE = K.PIPETTE_TOOL, FIRST_SHRUB = 1, LAST_SHRUB = 0,
-    PANEL_ITEMS = dwordList(panel.items), ITEM_HIDDEN = ITEM_HIDDEN, PAD = C.luaPad(painter, "the pipette panel"),
+  wr32(painterItem + ITEM_RENDER, core.allocateAssembly(templates.flagPanel, {
+    FLAG = activeFlag, PANEL_ITEMS = dwordList(panel.items), ITEM_HIDDEN = ITEM_HIDDEN,
+    PAD = C.luaPad(painter, "the pipette panel"),
   }))
 
   local tickItem = added.pipetteTick

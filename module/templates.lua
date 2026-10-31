@@ -1086,6 +1086,48 @@ jmp BACK
 -- Pipette
 ---------------------------------------------------------------------------------------
 
+-- A button with its own pictures (like pictureButton), chosen while FLAG is set.
+templates.flagPictureButton = [[
+mov eax,NORMAL
+cmp dword [FLAG],0
+je flag_not_chosen
+mov eax,CHOSEN
+jmp flag_draw
+flag_not_chosen:
+cmp dword [HOVER],0
+je flag_draw
+mov eax,HOVERED
+flag_draw:
+push dword [PENCIL+PENCIL_TARGET]
+mov dword [PENCIL+PENCIL_TARGET],0
+push dword [ITEM_Y]
+push dword [ITEM_X]
+push eax
+call BLIT
+add esp,12
+pop dword [PENCIL+PENCIL_TARGET]
+ret
+]]
+
+-- Render function of a panel item: lua draws the panel while FLAG is set, else every panel
+-- button is hidden.
+templates.flagPanel = [[
+cmp dword [FLAG],0
+je flag_hide
+jmp PAD
+flag_hide:
+mov ecx,PANEL_ITEMS
+flag_hide_next:
+mov eax,[ecx]
+test eax,eax
+je flag_hidden
+mov word [eax+ITEM_HIDDEN],1
+add ecx,4
+jmp flag_hide_next
+flag_hidden:
+ret
+]]
+
 -- renderPreviewMapperWithBrush, replacing `mov edx,[esi+BRUSH]` (the brush size, after three
 -- pushes: the tool is at [esp+0x18]): the pipette taking a tile shows one tile.
 templates.pipettePreview = [[

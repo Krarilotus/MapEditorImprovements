@@ -230,16 +230,18 @@ pipette_group_descr: |
 pipette_enabled: Pipette
 pipette_enabled_tooltip: |
   Adds the pipette button above the brush size (brush size, ruler and eraser move down a little).
-  Choosing it shows a row above the menu - Heights, Textures, All - and above that what the
-  pipette holds. Click a tile to take it (the pipette shows one tile), then click or drag to
+  Choosing it shows a row above the menu - Heights, Textures, Objects, All - and above that what
+  the pipette holds. Click a tile to take it (the pipette shows one tile), then click or drag to
   give it to the tiles under the brush. Heights leave the ground alone, textures leave the
-  heights alone. Choosing the pipette or one of its kinds again empties it.
+  heights alone. Objects takes the building or wall on a tile and then places it like its own
+  menu button does. Choosing the pipette or one of its kinds again empties it.
   Heights are not given to sea, beach, marsh, moat, rocks, walls or buildings; textures not to
-  rocks, walls or buildings. Undo takes pipette strokes back like any other.
+  rocks, walls or buildings. Cliff rocks (the ones the editor puts on steep edges) are cleared
+  and come back where an edge stays steep. Undo takes pipette strokes back like any other.
 pipette_select_key_on: Pipette key
 pipette_select_key_on_tooltip: |
   A key that chooses the pipette (and empties it). Pressed again while the pipette is chosen,
-  it goes on to the next kind: Heights, Textures, All.
+  it goes on to the next kind: Heights, Textures, Objects, All.
 pipette_select_key: Key for the pipette
 pipette_select_key_tooltip: |
   The key that chooses the pipette in the map editor. It still does its usual job as well.
@@ -253,7 +255,8 @@ pipette_read_key_tooltip: |
 pipette_any_tile_key_on: Hold to give to any tile
 pipette_any_tile_key_on_tooltip: |
   Experimental: while this key is held, the pipette gives heights and textures to every tile
-  under the brush, also sea, marsh, rocks, walls and buildings (never the map's edge).
+  under the brush, also sea, marsh, rocks (which it removes), walls and buildings (never the map's
+  edge). It does not change where objects may be placed.
 pipette_any_tile_key: Key to give to any tile
 pipette_any_tile_key_tooltip: |
   The key to hold so that the pipette ignores what a tile has on it.

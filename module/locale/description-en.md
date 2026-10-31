@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.29
+**Version**: 1.0.30
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -204,13 +204,17 @@ history afresh.
 
 A pipette button sits in the landscape editor's left column, above the brush size (brush size,
 ruler and eraser move down a little for it). Choosing it shows a row above the menu - **Heights**,
-**Textures**, **All** - and above that a line with what the pipette holds.
+**Textures**, **Objects**, **All** - and above that a line with what the pipette holds.
 
 - **Taking:** click a tile. The pipette shows a single tile while it takes one.
 - **Giving:** then click or drag: the tiles under the brush get the heights, the textures or
   both. Heights leave the ground's texture alone and textures leave the heights alone.
+- **Objects:** click a building or wall to take it; the pipette then places it the way its own
+  menu button does (with the same preview and checks).
 - Heights are not given to sea, beach, marsh, moat, rocks, walls or buildings; textures not to
-  rocks, walls or buildings. Holding **Alt** gives to every tile anyway (experimental).
+  rocks, walls or buildings. The cliff rocks the editor puts on steep edges are cleared (they
+  come back wherever an edge stays steep). Holding **Alt** gives heights and textures to every
+  tile anyway, removing rocks (experimental).
 - Choosing the pipette or one of its kinds again empties it. **P** chooses the pipette, and
   pressed again goes on to the next kind. Holding **Ctrl** takes a new tile while the pipette
   holds something; letting go gives again. All three keys can be changed or switched off.

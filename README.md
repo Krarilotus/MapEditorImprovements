@@ -117,7 +117,11 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   Heights are written like useTerrainHeightBrush does (base height, live height 8 lower on
   river), textures as the ground flags of the tile word plus the decoration byte and direction
   word; then, as the game's tools do, path links per tile, the logic and macro layer flags,
-  updateWalkAndPathLayer and a minimap redraw. Keys are polled with GetAsyncKeyState (the key
+  updateWalkAndPathLayer and a minimap redraw. Cliff rocks are the rocky flag (0x80) that
+  updateGfxLayer sets on steep edges in the editor without a rock: the pipette clears it (real
+  rocks, organism layer >= 2000, only go with the any-tile key, through removeRock). The objects
+  pipette reads the building (layer -> type -> convertBuildingTypeToCommandBuildingType) or the
+  wall kind (flags, height above the ground) and then just chooses that tool between clicks. Keys are polled with GetAsyncKeyState (the key
   dispatcher is resolution-based-zoom's), and not while a text box has the keyboard.
 * **Undo and redo.** The map is the sections the game saves a map file with (its section
   table, 122 sections: 13.8 MB in Crusader, 25.2 MB in Extreme). The first map edit command
