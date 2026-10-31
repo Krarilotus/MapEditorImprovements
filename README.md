@@ -122,7 +122,11 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   updateGfxLayer sets on steep edges in the editor without a rock: the pipette clears it (real
   rocks, organism layer >= 2000, only go with the any-tile key, through removeRock). The objects
   pipette reads the building (layer -> type -> convertBuildingTypeToCommandBuildingType) or the
-  wall kind (flags, height above the ground) and then just chooses that tool between clicks. Keys are polled with GetAsyncKeyState (the key
+  wall kind (flags, height above the ground) and then just chooses that tool between clicks.
+  Trees and rocks come from the organism layer (tree slot, or rock slot + 2000) and are placed
+  by calling placeTree / placeRock directly (a queued command would run after the module put
+  the brush, felled logs and rock turn back); the tree's stage goes through the growth-from-brush
+  hook (brush = stage + 1 for that one call), felled trees through the felled tree hook. Keys are polled with GetAsyncKeyState (the key
   dispatcher is resolution-based-zoom's), and not while a text box has the keyboard.
 * **Undo and redo.** The map is the sections the game saves a map file with (its section
   table, 122 sections: 13.8 MB in Crusader, 25.2 MB in Extreme). The first map edit command

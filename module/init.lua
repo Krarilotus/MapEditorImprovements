@@ -512,8 +512,8 @@ K.PIPETTE_HEIGHTS, K.PIPETTE_TEXTURES, K.PIPETTE_OBJECTS, K.PIPETTE_ALL = 1, 2, 
 K.PIPETTE_MODES = {
   { label = "Heights", what = "heights", image = 240 },        -- the Heights category's picture
   { label = "Textures", what = "textures", image = 241 },      -- the Textures category's picture
-  { label = "Objects", what = "building or wall", image = 242 }, -- the Objects category's picture
-  { label = "All", what = "textures and heights" },             -- the pipette's own picture
+  { label = "Objects", what = "building, wall, tree or rock", image = 242 }, -- the Objects category's picture
+  { label = "All", what = "textures, heights and 1x1 tree or rock" },          -- the pipette's own picture
 }
 -- The objects pipette takes a building or wall and then simply chooses that tool: the game's own
 -- building and wall handlers (also in the landscape menu's item table) show and place it; the
@@ -529,6 +529,21 @@ K.AOB_COMMAND_OF_TYPE = "8B 44 24 04 83 C0 FF 83 F8 6A 0F 87"
 K.STAIRS_FLAG, K.CRENEL_FLAG, K.WALL_FLAG, K.STOCKPILE_FLAG = 0x800, 0x200, 0x100, 0x2
 K.STAIRS_TOOL, K.CRENEL_TOOL, K.HIGH_WALL_TOOL, K.LOW_WALL_TOOL = 27, 26, 25, 46
 K.HIGH_WALL_ABOVE = 75
+-- Trees and rocks: the organism layer holds a tree's slot (tile flag 0x1000) or a rock's slot +
+-- 2000. The pipette places one the way the landscape editor's command 0x1A ends: placeRock(x,
+-- y, rock number) or placeTree(x, y, tree tool) on the tile map, called straight away (a queued
+-- command runs later, after the stage, logs and turn set for it would be back): `movzx eax, word
+-- [param 3] / mov ecx,[param 1] / mov edx,[param 0] / push eax / push ecx / push edx / mov ecx,
+-- TileMapState / call placeRock / ret / ... / call placeTree`. placeRock makes rock number n into rock type n + 1
+-- (sizes 1 to 4 for numbers 0-3, 4-7, 8-11, 12-15); a rock slot keeps its type at +0x10 and
+-- its turn at +0x18, which placeRock takes from the tile map's rotation.
+K.TREE_FLAG = 0x1000
+K.AOB_PLACE_PLANT = "0F B7 05 ? ? ? ? 8B 0D ? ? ? ? 8B 15 ? ? ? ? 50 51 52 B9 ? ? ? ? E8 ? ? ? ? C3 "
+  .. "8B 0D ? ? ? ? 50 A1 ? ? ? ? 50 51 B9 ? ? ? ? E8"
+K.PLACE_PLANT = { placeRock = 0x1B, placeTree = 0x34 }
+K.ROCK_SLOT = { type = 0x10, turn = 0x18, inUse = 0x0C }
+K.ROCK_TYPES = 16
+K.PLANT_NAMES = { [40] = "chestnut", [41] = "oak", [42] = "pine", [43] = "birch" }
 -- Names for the line above the pipette panel, by tool.
 K.OBJECT_NAMES = {
   [25] = "high wall", [26] = "crenellated wall", [27] = "stairs", [46] = "low wall", [50] = "fletcher",
@@ -2969,6 +2984,9 @@ function C.resolvePipette(G)
   local building = scan(K.AOB_BUILDING_TYPE, "the building types")
   R.buildingStride, R.buildingType = rd32(building + K.BUILDING_TYPE.stride), rd32(building + K.BUILDING_TYPE.type)
   R.commandOfType = scan(K.AOB_COMMAND_OF_TYPE, "convertBuildingTypeToCommandBuildingType")
+  local place = scan(K.AOB_PLACE_PLANT, "the rock and tree placement")
+  R.placeRock = readCallTarget(place, K.PLACE_PLANT.placeRock, "placeRock")
+  R.placeTree = readCallTarget(place, K.PLACE_PLANT.placeTree, "placeTree")
   R.menuGuard = rd32(scan(K.AOB_KEY_GUARD, "the key guard") + K.KEY_GUARD)
   R.keyState = rd32(scan(K.AOB_ASYNC_KEY, "the key state") + K.ASYNC_KEY_IMPORT)
   R.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
@@ -2990,6 +3008,40 @@ function C.textureNames(logic, decoration)
   return table.concat(names, ", ")
 end
 
+-- The tree or rock on a tile, for the pipette: what placing the same again takes. Rocks the
+-- game has no slot for (the invisible ones, number 2000) are left out.
+function C.readPlant(G, T, R, plantOf, tile, logic)
+  local number = rd16(T + R.organism + tile * 2)
+  if number >= K.FIRST_ROCK_NUMBER and logic & K.ROCKY ~= 0 then
+    local slot = number - K.FIRST_ROCK_NUMBER
+    if slot < 1 or slot > G.rockSlots then return nil end
+    local rock = G.firstRock - K.ROCK_SLOT.inUse + (slot - 1) * G.rockSize
+    local rockType = rd16(rock + K.ROCK_SLOT.type)
+    if rockType < 1 or rockType > K.ROCK_TYPES then return nil end
+    local id = rockType - 1
+    local size = id // 4 + 1
+    return { kind = "rock", number = id, size = size, turn = rd16(rock + K.ROCK_SLOT.turn) & 0xFFFF,
+      name = string.format("rock (size %d)", size) }
+  end
+  if number > 0 and number <= G.treeSlots and logic & K.TREE_FLAG ~= 0 then
+    local tree = G.landscape + TREES_IN_LANDSCAPE + number * G.treeSize
+    local treeType = rd16(tree + TREE.TYPE)
+    local command = plantOf[treeType]
+    if command == nil then return nil end
+    local stage = rd8(tree + TREE.STAGE) & 0xFF
+    local plant = { kind = "tree", command = command, stage = math.min(stage, MAX_STAGE) }
+    local name = treeType == APPLE_TYPE and "apple tree" or K.PLANT_NAMES[command] or "shrub"
+    if rd8(tree + TREE.LYING) & 0xFF == LYING_FELLED then
+      plant.logs = math.max(1, rd8(tree + TREE.LOGS) & 0xFF)
+      plant.name = string.format("felled %s, %d logs", name, plant.logs)
+    else
+      plant.name = string.format("%s, stage %d", name, plant.stage + 1)
+    end
+    return plant
+  end
+  return nil
+end
+
 -- The pipette button, its panel and the per-frame work, in the landscape menu being built.
 function C.pipette(G, O, data, added, guarded, places, button)
   local S = O.pipette
@@ -3009,6 +3061,12 @@ function C.pipette(G, O, data, added, guarded, places, button)
   local text = core.allocate(256, true)
   local out = core.allocate(8, true)
   local commandOfType = core.exposeCode(R.commandOfType, 2, 1)
+  local placeRock, placeTree = core.exposeCode(R.placeRock, 4, 1), core.exposeCode(R.placeTree, 4, 1)
+  -- Which tool plants each tree type (the game's own answer, read by resolveCounters).
+  local plantOf = {}
+  for command, treeType in pairs(G.plantTypes or {}) do
+    if plantOf[treeType] == nil or command < plantOf[treeType] then plantOf[treeType] = command end
+  end
   data.pipetteRead = core.allocate(4, true)
   local activeFlag = core.allocate(4, true)    -- the pipette (or the tool it chose) is in use
   local P = { mode = 1, stored = nil, held = false, waitRelease = false, last = nil, keys = {} }
@@ -3017,7 +3075,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
   local function chosen() return rd32(G.subtype) == K.PIPETTE_TOOL end
   -- The objects pipette's tool, while it holds an object.
   local function objectTool()
-    if P.mode == K.PIPETTE_OBJECTS and P.stored ~= nil then return P.stored.command end
+    if P.mode == K.PIPETTE_OBJECTS and P.stored ~= nil and P.stored.kind == "building" then return P.stored.command end
     return nil
   end
   local function active()
@@ -3077,12 +3135,41 @@ function C.pipette(G, O, data, added, guarded, places, button)
         command = above >= K.HIGH_WALL_ABOVE and K.HIGH_WALL_TOOL or K.LOW_WALL_TOOL
       end
     end
-    if command == 0 then
-      P.nothing = true
+    if command ~= 0 then
+      P.nothing = false
+      P.stored = { kind = "building", command = command, name = K.OBJECT_NAMES[command] or ("object " .. command) }
       return
     end
-    P.nothing = false
-    P.stored = { command = command, name = K.OBJECT_NAMES[command] or ("object " .. command) }
+    local plant = C.readPlant(G, T, R, plantOf, tile, logicAt(tile))
+    P.nothing = plant == nil
+    if plant ~= nil then P.stored = plant end
+  end
+
+  -- One tree or rock (as read by C.readPlant) at x, y, placed the way the landscape editor
+  -- places one; for a tree its stage and felled logs through the module's tree hooks.
+  local function placePlant(plant, x, y)
+    if plant.kind == "rock" then
+      local turn = T + K.TILE_MAP.rotation
+      local before = rd32(turn)
+      wr32(turn, plant.turn)
+      placeRock(T, x, y, plant.number)
+      wr32(turn, before)
+      return
+    end
+    local brush = rd32(G.brush)
+    local logs, felledCommand
+    if data.felledLogs ~= nil then
+      logs, felledCommand = rd32(data.felledLogs), rd32(data.felledCommand)
+      wr32(data.felledLogs, plant.logs or 0)
+      wr32(data.felledCommand, plant.logs ~= nil and plant.command or 0)
+    end
+    wr32(G.brush, plant.stage + 1)             -- the module's growth stage follows the brush size
+    placeTree(T, x, y, plant.command)
+    wr32(G.brush, brush)
+    if data.felledLogs ~= nil then
+      wr32(data.felledLogs, logs)
+      wr32(data.felledCommand, felledCommand)
+    end
   end
 
   -- Gives one tile the stored heights or textures; answers whether it changed it.
@@ -3157,6 +3244,12 @@ function C.pipette(G, O, data, added, guarded, places, button)
         end
       end
     end
+    if P.mode == K.PIPETTE_ALL and P.stored.plant ~= nil then
+      for _, at in ipairs(tiles) do
+        local tile, ty = at[1], at[2]
+        placePlant(P.stored.plant, tile - rd32(R.rows + ty * 12), ty)
+      end
+    end
     if not changed then return end
     -- What the game's height and terrain tools do afterwards.
     wr32(T + R.logicFlag, 1)
@@ -3211,11 +3304,27 @@ function C.pipette(G, O, data, added, guarded, places, button)
     local x, y = rd32(R.mouseX), rd32(R.mouseY)
     if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return end
     if reading() then
-      if P.mode == K.PIPETTE_OBJECTS then readObject(x, y) else read(x, y) end
+      if P.mode == K.PIPETTE_OBJECTS then
+        readObject(x, y)
+      else
+        read(x, y)
+        if P.mode == K.PIPETTE_ALL then
+          local tile = tileOf(x, y)
+          local plant = C.readPlant(G, T, R, plantOf, tile, logicAt(tile))
+          if plant ~= nil and (plant.kind == "tree" or plant.size == 1) then P.stored.plant = plant end
+        end
+      end
       P.waitRelease = true       -- the next click writes
       return
     end
-    if P.mode == K.PIPETTE_OBJECTS then return end
+    if P.mode == K.PIPETTE_OBJECTS then
+      if P.stored ~= nil and P.stored.kind ~= "building" then
+        if O.undo ~= nil then O.undo.beginEdit() end     -- no command goes through queueCommand
+        placePlant(P.stored, x, y)
+      end
+      P.waitRelease = true                     -- one object per click
+      return
+    end
     local tile = tileOf(x, y)
     if tile == P.last then return end
     P.last = tile
@@ -3286,7 +3395,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
     local mode = K.PIPETTE_MODES[P.mode]
     if P.stored == nil then
       if P.mode == K.PIPETTE_OBJECTS and P.nothing then
-        return "Pipette: no building or wall there - click one to take it"
+        return "Pipette: nothing to take there - click a building, wall, tree or rock"
       end
       return "Pipette: click a tile to take its " .. mode.what
     end
@@ -3297,6 +3406,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
     if P.mode ~= K.PIPETTE_HEIGHTS then
       parts[#parts + 1] = "textures: " .. C.textureNames(P.stored.texture, P.stored.decoration)
     end
+    if P.mode == K.PIPETTE_ALL and P.stored.plant ~= nil then parts[#parts + 1] = P.stored.plant.name end
     if P.mode ~= K.PIPETTE_TEXTURES then
       local line = "height " .. P.stored.base
       if P.stored.live ~= P.stored.base then line = line .. " (water " .. P.stored.live .. ")" end
