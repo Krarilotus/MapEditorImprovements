@@ -598,6 +598,11 @@ K.AOB_MOUSE_CLICK = "39 1D ? ? ? ? A1 ? ? ? ? 75 0C 39 05 ? ? ? ? 0F 84 ? ? ? ? 
 K.MOUSE_CLICK = { start = 2, y = 0x3D, x = 0x43 }
 K.AOB_CLICK_HELD = "39 1D ? ? ? ? 0F 85 91 00 00 00 B9 ? ? ? ? E8 ? ? ? ? 8B 15"
 K.CLICK_HELD = 2
+-- The tile under the mouse, as the click handlers work it out before using it (from the tile
+-- the renderer found under the cursor, so on raised ground too): `cmp [flat view],0 / mov ecx,
+-- viewport / je / call setupMouseTileXY2 / jmp / call setupMouseTileXY`.
+K.AOB_MOUSE_TILE = "83 3D ? ? ? ? 00 B9 ? ? ? ? 74 07 E8 ? ? ? ? EB 05 E8"
+K.MOUSE_TILE = { flat = 2, viewport = 8, flatSetup = 14, setup = 21 }
 -- renderPreviewMapperWithBrush: `mov edx,[esi+BRUSH] / mov eax,[edx*4+SIZES] / mov [esp+0x14],eax /
 -- lea eax,[ebx+ebx*2] / mov eax,[eax*4+ROWS]`; its brush loop `push edx / push edi / push 1 /
 -- mov ecx,esi / call getTileForBrush / ...`.
@@ -2935,6 +2940,11 @@ function C.resolvePipette(G)
   local M = K.MOUSE_CLICK
   R.clickStart, R.mouseX, R.mouseY = rd32(mouse + M.start), rd32(mouse + M.x), rd32(mouse + M.y)
   R.clickHeld = rd32(scan(K.AOB_CLICK_HELD, "the map click state") + K.CLICK_HELD)
+  local mouseTile = scan(K.AOB_MOUSE_TILE, "the mouse tile")
+  local MT = K.MOUSE_TILE
+  R.flatView, R.viewport = rd32(mouseTile + MT.flat), rd32(mouseTile + MT.viewport)
+  R.flatSetup = readCallTarget(mouseTile, MT.flatSetup, "setupMouseTileXY2")
+  R.mouseSetup = readCallTarget(mouseTile, MT.setup, "setupMouseTileXY")
   local preview = scan(K.AOB_PIPETTE_PREVIEW, "the brush preview")
   local P = K.PIPETTE_PREVIEW
   R.previewSite, R.brushField, R.brushSizes = preview, rd32(preview + P.brush), rd32(preview + P.sizes)
@@ -2991,6 +3001,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
   local removeRock = core.exposeCode(R.removeRock, 2, 1)
   local walk = core.exposeCode(R.walk, 4, 1)
   local redraw = core.exposeCode(R.redraw, 2, 1)
+  local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
   local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = R.keyState }), 1, 0)
   local function down(key) return key ~= nil and (asyncKey(key) % 0x10000) >= 0x8000 end
   local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
@@ -3037,10 +3048,13 @@ function C.pipette(G, O, data, added, guarded, places, button)
     local tile = tileOf(x, y)
     local logic = logicAt(tile)
     P.stored = {
-      mode = P.mode, base = rd8(T + R.defaultHeight + tile) & 0xFF, live = rd8(T + R.height + tile) & 0xFF,
+      -- The height that is shown (a river tile lies RIVER_DEPTH below its base height).
+      mode = P.mode, live = rd8(T + R.height + tile) & 0xFF,
       texture = logic & K.TEXTURE_FLAGS, decoration = rd8(T + K.TMS.decoration + tile) & 0xFF,
       random = rd16(T + K.TMS.random + tile * 2),
     }
+    P.stored.base = P.stored.live
+    if logic & K.RIVER_TERRAIN ~= 0 then P.stored.base = math.min(0xFF, P.stored.live + K.RIVER_DEPTH) end
   end
 
   -- The building or wall on a tile, as the tool that places it.
@@ -3193,6 +3207,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
     end
     if not chosen() then return end            -- the game places the object
     if P.waitRelease or rd32(G.onMap) == 0 then return end
+    if rd32(R.flatView) ~= 0 then flatSetup(R.viewport) else mouseSetup(R.viewport) end
     local x, y = rd32(R.mouseX), rd32(R.mouseY)
     if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return end
     if reading() then
