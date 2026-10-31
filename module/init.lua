@@ -556,8 +556,12 @@ K.OBJECT_NAMES = {
 K.PIPETTE_COLUMN = { x = 82, tops = { 456, 490, 524, 562 }, moved = { { 1, 331 }, { 204 }, { 39 } } }
 K.PIPETTE_TEXT_ABOVE = 18
 K.MAP_SIZE, K.MAP_TILES = 400, 80400
--- TileMapState layers (the same offsets in both exes): decoration byte, direction word, building.
-K.TMS = { decoration = 0x1B3FE0, direction = 0x13DD40, building = 0x2029B0 }
+-- TileMapState layers (the same offsets in both exes): decoration byte, building. The word layer
+-- at +0x13DD40 (OpenSHC's RandomLayer, a saved map section) is each tile's own random number: the
+-- renderers take its low bits (& 1, 3, 7, 15) to pick a picture, river foam and waves their
+-- direction. Never copied: a tile whose ground changes gets a new random number.
+K.TMS = { decoration = 0x1B3FE0, random = 0x13DD40, building = 0x2029B0 }
+K.RANDOM_LIMIT = 0x7FFF
 K.MAP_BORDER = 0x30
 -- The tile flags that are ground: sea, plain 1/2, earth, boulders, pebbles, iron, river, ford,
 -- marsh, oil.
@@ -3029,7 +3033,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
     P.stored = {
       mode = P.mode, base = rd8(T + R.defaultHeight + tile) & 0xFF, live = rd8(T + R.height + tile) & 0xFF,
       texture = logic & K.TEXTURE_FLAGS, decoration = rd8(T + K.TMS.decoration + tile) & 0xFF,
-      direction = rd16(T + K.TMS.direction + tile * 2),
+      random = rd16(T + K.TMS.random + tile * 2),
     }
   end
 
@@ -3100,9 +3104,14 @@ function C.pipette(G, O, data, added, guarded, places, button)
     logic = unrock(tile, logic, any)
     if logic == nil then return false end
     local new = (logic & ~K.TEXTURE_FLAGS & 0xFFFFFFFF) | P.stored.texture
+    local decoration = rd8(T + K.TMS.decoration + tile) & 0xFF
     wr32(T + R.logic + tile * 4, new)
     core.writeByte(T + K.TMS.decoration + tile, P.stored.decoration)
-    wr16(T + K.TMS.direction + tile * 2, P.stored.direction)
+    -- A new random number for a tile whose ground changes, and for one that still has the
+    -- source's (pipette versions before 1.0.31 copied it, which made the ground repeat).
+    if new ~= logic or decoration ~= P.stored.decoration or rd16(T + K.TMS.random + tile * 2) == P.stored.random then
+      wr16(T + K.TMS.random + tile * 2, math.random(0, K.RANDOM_LIMIT))
+    end
     if (new ~ logic) & K.RIVER_TERRAIN ~= 0 then setLive(tile, new) end
     return true
   end

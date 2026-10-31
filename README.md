@@ -115,8 +115,9 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   preview shows as the plain brush (a patch on the preview's brush read shows one tile while
   it takes a tile). An every-frame item in front of the map click handler watches the mouse.
   Heights are written like useTerrainHeightBrush does (base height, live height 8 lower on
-  river), textures as the ground flags of the tile word plus the decoration byte and direction
-  word; then, as the game's tools do, path links per tile, the logic and macro layer flags,
+  river), textures as the ground flags of the tile word plus the decoration byte (the tile's
+  random word at +0x13DD40 is never copied - it picks the picture - but renewed when the ground
+  changes); then, as the game's tools do, path links per tile, the logic and macro layer flags,
   updateWalkAndPathLayer and a minimap redraw. Cliff rocks are the rocky flag (0x80) that
   updateGfxLayer sets on steep edges in the editor without a rock: the pipette clears it (real
   rocks, organism layer >= 2000, only go with the any-tile key, through removeRock). The objects
