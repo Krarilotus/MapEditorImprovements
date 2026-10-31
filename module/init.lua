@@ -555,6 +555,7 @@ K.OBJECT_NAMES = {
 -- 82,552): the pipette on top, then brush size (and its second item, 331), ruler and eraser.
 K.PIPETTE_COLUMN = { x = 82, tops = { 456, 490, 524, 562 }, moved = { { 1, 331 }, { 204 }, { 39 } } }
 K.PIPETTE_TEXT_ABOVE = 18
+K.PIPETTE_ENTRY_WIDTH = 64               -- wide enough for "Textures" above its picture
 K.MAP_SIZE, K.MAP_TILES = 400, 80400
 -- TileMapState layers (the same offsets in both exes): decoration byte, building. The word layer
 -- at +0x13DD40 (OpenSHC's RandomLayer, a saved map section) is each tile's own random number: the
@@ -1617,6 +1618,11 @@ local function makePanel(G, O, data, panel, entries)
     local sum = 0
     for _, entry in ipairs(list) do
       entry.width = entry.box.width + 2 * PANEL_PADDING
+      entry.inset = PANEL_PADDING
+      if entry.minWidth ~= nil and entry.width < entry.minWidth then   -- room for a long label
+        entry.inset = PANEL_PADDING + (entry.minWidth - entry.width) // 2
+        entry.width = entry.minWidth
+      end
       sum = sum + entry.width
     end
     local screen = rd32(G.screenWidth)
@@ -1662,13 +1668,13 @@ local function makePanel(G, O, data, panel, entries)
       end
     end
     for _, entry in ipairs(list) do
-      local sx = offsetX + entry.x + PANEL_PADDING - entry.box.x
+      local sx = offsetX + entry.x + entry.inset - entry.box.x
       local sy = offsetY + PANEL_BOTTOM - PANEL_PADDING - entry.box.height - entry.box.y
       if entry.gm == nil and entry.button == nil then blit(entry.picture.address, sx, sy) end
     end
     wr32(G.pencil + PENCIL_TARGET, target)
     for _, entry in ipairs(list) do
-      local sx = offsetX + entry.x + PANEL_PADDING - entry.box.x
+      local sx = offsetX + entry.x + entry.inset - entry.box.x
       local sy = offsetY + PANEL_BOTTOM - PANEL_PADDING - entry.box.height - entry.box.y
       if entry.gm ~= nil then
         drawSprite(entry, sx, sy)
@@ -3257,7 +3263,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
     local list = {}
     for i, entry in ipairs(entries) do
       list[i] = { item = entry.item, image = entry.image, picture = entry.picture, label = entry.label,
-        chosen = P.mode == i }
+        chosen = P.mode == i, minWidth = K.PIPETTE_ENTRY_WIDTH }
     end
     return list
   end)
