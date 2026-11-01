@@ -529,6 +529,16 @@ K.AOB_COMMAND_OF_TYPE = "8B 44 24 04 83 C0 FF 83 F8 6A 0F 87"
 K.STAIRS_FLAG, K.CRENEL_FLAG, K.WALL_FLAG, K.STOCKPILE_FLAG = 0x800, 0x200, 0x100, 0x2
 K.STAIRS_TOOL, K.CRENEL_TOOL, K.HIGH_WALL_TOOL, K.LOW_WALL_TOOL = 27, 26, 25, 46
 K.HIGH_WALL_ABOVE = 75
+-- Whose a building or wall is: a building's owner word follows its type (+0xD2, +0xD6); a wall
+-- tile's owner is the low 3 bits of the wall owner layer, player - 1. The editor places for the
+-- player chosen with the shields beside the minimap (InGameMenu_MainButtons, map editor only):
+-- `mov eax,-9 / sub eax,esi / pop edi / mov [eax*4+FLAGS],ebx / pop esi / mov [CURRENT],eax`,
+-- after clearing all nine shield flags.
+K.OWNER_AFTER_TYPE = 4
+K.WALL_OWNER_BITS = 7
+K.AOB_PLAYER_CHOICE = "B8 F7 FF FF FF 2B C6 5F 89 1C 85 ? ? ? ? 5E A3"
+K.PLAYER_CHOICE = { flags = 11, current = 17 }
+K.PLAYERS = 8
 -- Trees and rocks: the organism layer holds a tree's slot (tile flag 0x1000) or a rock's slot +
 -- 2000. The pipette places one the way the landscape editor's command 0x1A ends: placeRock(x,
 -- y, rock number) or placeTree(x, y, tree tool) on the tile map, called straight away (a queued
@@ -576,7 +586,7 @@ K.MAP_SIZE, K.MAP_TILES = 400, 80400
 -- at +0x13DD40 (OpenSHC's RandomLayer, a saved map section) is each tile's own random number: the
 -- renderers take its low bits (& 1, 3, 7, 15) to pick a picture, river foam and waves their
 -- direction. Never copied: a tile whose ground changes gets a new random number.
-K.TMS = { decoration = 0x1B3FE0, random = 0x13DD40, building = 0x2029B0 }
+K.TMS = { decoration = 0x1B3FE0, random = 0x13DD40, building = 0x2029B0, wallOwner = 0x2C6E50 }
 K.RANDOM_LIMIT = 0x7FFF
 K.MAP_BORDER = 0x30
 -- The tile flags that are ground: sea, plain 1/2, earth, boulders, pebbles, iron, river, ford,
@@ -2984,6 +2994,8 @@ function C.resolvePipette(G)
   local building = scan(K.AOB_BUILDING_TYPE, "the building types")
   R.buildingStride, R.buildingType = rd32(building + K.BUILDING_TYPE.stride), rd32(building + K.BUILDING_TYPE.type)
   R.commandOfType = scan(K.AOB_COMMAND_OF_TYPE, "convertBuildingTypeToCommandBuildingType")
+  local choice = scan(K.AOB_PLAYER_CHOICE, "the player shields")
+  R.playerFlags, R.currentPlayer = rd32(choice + K.PLAYER_CHOICE.flags), rd32(choice + K.PLAYER_CHOICE.current)
   local place = scan(K.AOB_PLACE_PLANT, "the rock and tree placement")
   R.placeRock = readCallTarget(place, K.PLACE_PLANT.placeRock, "placeRock")
   R.placeTree = readCallTarget(place, K.PLACE_PLANT.placeTree, "placeTree")
@@ -3119,10 +3131,12 @@ function C.pipette(G, O, data, added, guarded, places, button)
   local function readObject(x, y)
     local tile = tileOf(x, y)
     local id = rd16(T + K.TMS.building + tile * 2)
-    local command = 0
+    local command, owner = 0, nil
     if id > 0 then
       command = commandOfType(0, rd16(R.buildingType + id * R.buildingStride)) & 0xFFFF
+      owner = rd16(R.buildingType + K.OWNER_AFTER_TYPE + id * R.buildingStride)
     else
+      owner = (rd8(T + K.TMS.wallOwner + tile) & K.WALL_OWNER_BITS) + 1
       local logic = logicAt(tile)
       if logic & K.STOCKPILE_FLAG ~= 0 then
         command = 0
@@ -3138,6 +3152,10 @@ function C.pipette(G, O, data, added, guarded, places, button)
     if command ~= 0 then
       P.nothing = false
       P.stored = { kind = "building", command = command, name = K.OBJECT_NAMES[command] or ("object " .. command) }
+      if owner ~= nil and owner >= 1 and owner <= K.PLAYERS then
+        P.stored.owner = owner
+        P.stored.name = string.format("%s of player %d", P.stored.name, owner)
+      end
       return
     end
     local plant = C.readPlant(G, T, R, plantOf, tile, logicAt(tile))
@@ -3292,6 +3310,13 @@ function C.pipette(G, O, data, added, guarded, places, button)
         wr32(G.subtype, K.PIPETTE_TOOL)
       elseif not reading() and tool ~= nil and chosen() then
         wr32(G.subtype, tool)
+        -- Placed for the same player: chosen as if by that player's shield.
+        local owner = P.stored.owner
+        if owner ~= nil then
+          for i = 0, K.PLAYERS do wr32(R.playerFlags + i * 4, 0) end
+          wr32(R.playerFlags + owner * 4, 1)
+          wr32(R.currentPlayer, owner)
+        end
       end
     end
     if not held then

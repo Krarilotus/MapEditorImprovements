@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.34
+**Version**: 1.0.35
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -210,7 +210,8 @@ ruler and eraser move down a little for it). Choosing it shows a row above the m
 - **Giving:** then click or drag: the tiles under the brush get the heights, the textures or
   both. Heights leave the ground's texture alone and textures leave the heights alone.
 - **Objects:** click a building, wall, tree or rock to take it. Buildings and walls are then
-  placed the way their own menu button does (with the same preview and checks); trees (same
+  placed the way their own menu button does (with the same preview and checks), for the player
+  they belonged to - the pipette chooses that player's shield; trees (same
   kind and growth stage, or felled with the same number of logs) and rocks (same kind and turn)
   one per click, with the game's own placement checks. A tree's stage follows the "growth stage
   from the brush size" setting; with it off, trees are placed at the game's usual stage.
