@@ -579,7 +579,8 @@ K.OBJECT_NAMES = {
 -- The landscape menu's left column (UC_MAP_BRUSH 82,464 / UC_MAP_SNAP 82,507 / UC_MAP_DELETE
 -- 82,552): the pipette on top, then brush size (and its second item, 331), ruler and eraser.
 K.PIPETTE_COLUMN = { x = 82, tops = { 456, 490, 524, 562 }, moved = { { 1, 331 }, { 204 }, { 39 } } }
-K.PIPETTE_TEXT_ABOVE = 18
+K.PIPETTE_TEXT_ABOVE = 22
+K.PIPETTE_LABEL_ROOM = 15                -- a row above the panel's pictures for their labels
 K.PIPETTE_ENTRY_WIDTH = 64               -- wide enough for "Textures" above its picture
 K.MAP_SIZE, K.MAP_TILES = 400, 80400
 -- TileMapState layers (the same offsets in both exes): decoration byte, building. The word layer
@@ -1644,7 +1645,7 @@ local function makePanel(G, O, data, panel, entries)
       tallest = math.max(tallest, entry.box.height)
     end
 
-    local height = tallest + 2 * PANEL_PADDING
+    local height = tallest + 2 * PANEL_PADDING + (list.labelRoom or 0)   -- labelRoom: labels above the pictures
     local sum = 0
     for _, entry in ipairs(list) do
       entry.width = entry.box.width + 2 * PANEL_PADDING
@@ -3414,6 +3415,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
       list[i] = { item = entry.item, image = entry.image, picture = entry.picture, label = entry.label,
         chosen = P.mode == i, minWidth = K.PIPETTE_ENTRY_WIDTH }
     end
+    list.labelRoom = K.PIPETTE_LABEL_ROOM
     return list
   end)
   local function storedLine()
