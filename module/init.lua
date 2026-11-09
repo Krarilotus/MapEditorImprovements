@@ -96,7 +96,7 @@ local DEFAULTS = {
   castle = { building_counts = true, tower_ruins = true, tunnel_and_tents = true, statues_and_shrines = true,
     barrier = true, several_keeps = true, several_storage_and_recruitment = true, tower_engines_anywhere = true,
     keep_parts = true, damaged_walls = true, hover_text_left = true, moat_kinds = true, moat_on_marsh = true,
-    moat_removal_keeps_ground = true, variant_panels = true },
+    moat_removal_keeps_ground = true, variant_panels = true, ruined_cathedral = true },
   herds = { panel = true },
 }
 
@@ -519,6 +519,19 @@ K.WALL_DAMAGE_OPERAND = 4
 K.WALLS = { 27, 46, 25, 26 }             -- stairs, low wall, high wall, crenellated wall
 K.TAB_CASTLE = 10
 K.DAMAGED_LABEL = "Damaged"
+
+-- The ruined cathedral (see docs/ruined-cathedral.md): UpdateCathedral gives a cathedral its
+-- ruined picture only in historical mission 7, by setting its picture field and a flag and
+-- redrawing it - `cmp word [ecx+FLAG],bx / mov eax,RUINED / je / cmp [ecx+PICTURE],eax / je /
+-- mov word [ecx+FLAG],1 / mov [ecx+PICTURE],eax / push esi / mov ecx, TileMapState / call
+-- updateBuildingGraphicsLayer` (ecx: the building's id * its size). The module does the same to
+-- a cathedral placed while "Ruined" is chosen (C.ruinWatch).
+K.CATHEDRAL_TOOL, K.CATHEDRAL_TYPE, K.RUINED_LABEL = 97, 0x26, "Ruined"
+K.AOB_RUINED_CATHEDRAL = "66 39 99 ? ? ? ? B8 ? ? ? ? 74 08 39 81 ? ? ? ? 74 ? 66 C7 81 ? ? ? ? 01 00 89 81 ? ? ? ? "
+  .. "56 B9 ? ? ? ? E8"
+K.RUINED_CATHEDRAL = { flag = 3, picture = 8, pictureField = 0x10, tileMap = 0x27, update = 0x2B }
+K.LAST_PLACED = 0x554888
+K.TYPE_AFTER_PICTURE = 0xD2              -- a building's type word, from its picture field
 
 -- Moat. The gatehouses tab's moat buttons (106, 107) choose 0x2D (dig) and 0x2C (remove) in the
 -- map editor; the click sends ClickSetTerrain with terrain 0x40000000 and a mode: 0 planned
@@ -1661,7 +1674,8 @@ end
 -- The variant locks, shared by the castle panels and the pipette: the building variant the
 -- rotation leaves alone (its placement id), and the hovel variant + 1 (0: the game's own).
 function C.locks()
-  C.lockWords = C.lockWords or { variant = core.allocate(4, true), hovel = core.allocate(4, true) }
+  C.lockWords = C.lockWords or { variant = core.allocate(4, true), hovel = core.allocate(4, true),
+    ruined = core.allocate(4, true) }               -- and the ruined cathedral choice (1)
   return C.lockWords
 end
 
@@ -1686,6 +1700,34 @@ function C.patchVariantLocks(self, G)
     GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, HOVEL_LOCK = locks.hovel, COUNTER = counter,
     SKIP = hovel + H.skipRel + 1 + (rd8(hovel + H.skipRel) & 0xFF), BACK = advance + H.advanceSize,
   }))
+end
+
+-- A cathedral placed in the map editor while "Ruined" is chosen gets the ruined picture. Placing
+-- leaves the new building's id at TileMapState + 0x554888; a check every frame (castle menu,
+-- pipette) sees a new one there. (ClickPlaceBuilding's call to placeBuilding is not hooked:
+-- interface-visual-fixes checks that call and its return address.)
+function C.ruinWatch(G)
+  if C.watchRuins ~= nil then return C.watchRuins end
+  local ruined = scan(K.AOB_RUINED_CATHEDRAL, "the ruined cathedral")
+  local RC = K.RUINED_CATHEDRAL
+  local flagField, pictureField = rd32(ruined + RC.flag), rd32(ruined + RC.pictureField)
+  local picture, tileMap = rd32(ruined + RC.picture), rd32(ruined + RC.tileMap)
+  local update = core.exposeCode(readCallTarget(ruined, RC.update, "updateBuildingGraphicsLayer"), 2, 1)
+  local stride = rd32(scan(K.AOB_BUILDING_TYPE, "the building types") + K.BUILDING_TYPE.stride)
+  local gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
+  local choice = C.locks().ruined
+  local seen = rd32(tileMap + K.LAST_PLACED)
+  C.watchRuins = function()
+    local id = rd32(tileMap + K.LAST_PLACED)
+    if id == seen then return end
+    seen = id
+    if rd32(gameMode) ~= K.MAP_EDITOR or rd32(choice) ~= 1 or id <= 0 then return end
+    if rd16(pictureField + K.TYPE_AFTER_PICTURE + id * stride) ~= K.CATHEDRAL_TYPE then return end
+    wr16(flagField + id * stride, 1)
+    wr32(pictureField + id * stride, picture)
+    update(tileMap, id)
+  end
+  return C.watchRuins
 end
 
 -- The rects a menu's guard keeps off the map (see K.GUARD_RECTS).
@@ -3142,6 +3184,7 @@ function C.resolvePipette(G)
   R.variationField, R.variationTables = rd32(variations + K.VARIATIONS.field), {}
   for i, at in ipairs(K.VARIATIONS.tables) do R.variationTables[i] = rd32(variations + at) end
   R.hovelField = rd32(scan(K.AOB_HOVEL_VARIANT, "the hovel variants") + K.HOVEL_VARIANT.field)
+  R.ruinedFlag = rd32(scan(K.AOB_RUINED_CATHEDRAL, "the ruined cathedral") + K.RUINED_CATHEDRAL.flag)
   local choice = scan(K.AOB_PLAYER_CHOICE, "the player shields")
   R.playerFlags, R.currentPlayer = rd32(choice + K.PLAYER_CHOICE.flags), rd32(choice + K.PLAYER_CHOICE.current)
   R.editorPlayer = rd32(scan(K.AOB_EDITOR_PLAYER, "the editor's building owner") + K.EDITOR_PLAYER)
@@ -3446,6 +3489,8 @@ function C.pipette(G, O, data, added, guarded, places, button)
         hovel = rd16(R.hovelField + id * R.buildingStride) % K.HOVEL_VARIANTS
       elseif buildingType == K.CAMPFIRE_TYPE then
         command = K.BARRIER_COMMAND
+      elseif buildingType == K.CATHEDRAL_TYPE and rd16(R.ruinedFlag + id * R.buildingStride) == 1 then
+        variant = "ruined cathedral"
       end
     else
       owner = (rd8(T + K.TMS.wallOwner + tile) & K.WALL_OWNER_BITS) + 1
@@ -3464,7 +3509,8 @@ function C.pipette(G, O, data, added, guarded, places, button)
     if command ~= 0 then
       P.nothing = false
       P.stored = { kind = "building", command = command, name = variant or K.OBJECT_NAMES[command] or ("object " .. command),
-        variant = variant ~= nil, hovel = hovel }
+        variant = variant ~= nil and command ~= K.CATHEDRAL_TOOL, hovel = hovel,
+        ruined = command == K.CATHEDRAL_TOOL and variant ~= nil }
       if hovel ~= nil then P.stored.name = string.format("hovel %d", hovel + 1) end
       if command == K.BARRIER_COMMAND then P.stored.name = "barrier" end
       if owner ~= nil and owner >= 1 and owner <= K.PLAYERS then
@@ -3604,6 +3650,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
   -- Every frame, before the map click handler.
   local function tick()
     if not editor() then return end
+    if C.watchRuins ~= nil then C.watchRuins() end   -- a ruined cathedral placed from here
     if S.selectKeyOn and selectKey ~= nil and pressed(selectKey) and not typing() then
       if active() then P.mode = P.mode % #K.PIPETTE_MODES + 1 end
       choose()
@@ -3638,6 +3685,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
         local locks = C.locks()
         if P.stored.variant then wr32(locks.variant, tool) end
         if P.stored.hovel ~= nil then wr32(locks.hovel, P.stored.hovel + 1) end
+        if tool == K.CATHEDRAL_TOOL then wr32(locks.ruined, P.stored.ruined and 1 or 0) end
         -- Placed for the same player: chosen as if by that player's shield.
         local owner = P.stored.owner
         if owner ~= nil then
@@ -4177,6 +4225,7 @@ function C.build(G, B, O)
     table.insert(inserts[before], kind)
   end
   insert(0, "guard")
+  if O.ruinedCathedral then insert(0, "ruinWatch") end
   if O.undo then
     insert(0, "undo")
     insert(0, "redo")
@@ -4270,6 +4319,11 @@ function C.build(G, B, O)
       { K.KEEP_NO_STOCKPILE, K.KEEP_LABELS[K.KEEP_NO_STOCKPILE] } })
   end
   if O.damagedWalls then choices(K.TAB_CASTLE, K.WALLS, data.damagedWalls, { { 1, K.DAMAGED_LABEL } }) end
+  data.ruinedCathedral = C.locks().ruined
+  if O.ruinedCathedral then
+    choices(K.TAB_TOWN, { K.CATHEDRAL_TOOL }, data.ruinedCathedral, { { 1, K.RUINED_LABEL } })
+    data.ruinWatch = C.ruinWatch(G)
+  end
   data.moatMode = core.allocate(4, true)
   if O.moatKinds then
     -- The moat tool (chosen as 0x2D) placed dug, planned or permanent; the menu's moat button
@@ -4420,6 +4474,11 @@ function C.build(G, B, O)
   end
 
   if O.undo then C.undoButtons(G, added, guarded, O.undo) end
+  if O.ruinedCathedral then
+    local watch = added.ruinWatch
+    wr32(watch + ITEM_TYPE, TYPE_EVERY_FRAME)
+    wr32(watch + ITEM_ACTION, C.luaPad(data.ruinWatch, "the ruined cathedral"))
+  end
 
   -- The guard in front of the click handlers, which also places the barrier.
   local laidOut = core.allocate(4, true)
@@ -4658,7 +4717,7 @@ function C.enable(self, O)
   local B = C.resolve(G)
   local data = nil
   if O.buildingCounts or O.towerRuins or O.armyExtras or O.statues or O.barrier or O.keepParts or O.damagedWalls
-      or O.undo or O.moatKinds then
+      or O.undo or O.moatKinds or O.ruinedCathedral then
     local newTable
     newTable, data = C.build(G, B, O)
     core.writeCodeInteger(B.site + 1, newTable)
@@ -4756,6 +4815,7 @@ local function enable(self, config)
     armyExtras = setting(config, "castle", "tunnel_and_tents") == true,
     statues = setting(config, "castle", "statues_and_shrines") == true,
     variantPanels = setting(config, "castle", "variant_panels") == true,
+    ruinedCathedral = setting(config, "castle", "ruined_cathedral") == true,
     barrier = setting(config, "castle", "barrier") == true,
     severalKeeps = setting(config, "castle", "several_keeps") == true,
     looseBuildings = setting(config, "castle", "several_storage_and_recruitment") == true,
@@ -4777,7 +4837,7 @@ local function enable(self, config)
   if castle.buildingCounts or castle.towerRuins or castle.armyExtras or castle.statues or castle.barrier
       or castle.severalKeeps or castle.looseBuildings or castle.towerEngines or castle.keepParts
       or castle.damagedWalls or castle.hoverTextLeft or castle.undo or castle.moatKinds or castle.moatOnMarsh
-      or castle.moatRemoval then
+      or castle.moatRemoval or castle.ruinedCathedral then
     local ok, problem = pcall(C.enable, self, castle)
     if not ok then log(WARNING, tostring(problem) .. "; the build menu is left as it is") end
   end

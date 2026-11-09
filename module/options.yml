@@ -304,6 +304,14 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.castle.ruined_cathedral
+    name: map-editor-improvements-castle-ruined-cathedral
+    text: '{{castle_ruined_cathedral}}'
+    tooltip: '{{castle_ruined_cathedral_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.castle.moat_kinds
     name: map-editor-improvements-castle-moat-kinds
     text: '{{castle_moat_kinds}}'

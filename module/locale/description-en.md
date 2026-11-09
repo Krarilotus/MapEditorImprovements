@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.40
+**Version**: 1.0.41
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -167,6 +167,11 @@ In the building menu of the map editor's castle mode:
 - **Damaged walls.** While the stairs, low wall, high wall or crenellated wall is chosen, a row
   above the castle buildings menu offers it **Damaged**: the walls you place get the top of a
   damaged wall and keep their height. Choosing the wall in the menu places normal walls again.
+- **Ruined cathedral.** While the cathedral is chosen, a row above the town menu offers it
+  **Ruined**: the cathedral you place gets the ruined picture that the game otherwise shows only
+  in the mission "Kerak" when its cathedral is badly damaged. In a game it is still a whole,
+  working cathedral that just looks ruined. Choosing the cathedral in the menu places normal ones
+  again, and the pipette takes a ruined cathedral as ruined.
 - **Dug, planned and permanent moat.** While the moat is chosen in the gatehouses menu, a row
   above the menu offers it three ways: **Dug** (the editor's usual moat), **Planned** (moat
   marked out to be dug, as in a game) and **Permanent** (dug moat that nobody can fill in or

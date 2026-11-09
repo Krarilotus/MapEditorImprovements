@@ -43,6 +43,14 @@ and then set:
 
 In a match on such a map, `UpdateCathedral` leaves the picture alone (the map is not mission
 7, or, on mission 7, it only ever sets the ruined picture and never back). It stays a working
-cathedral with full health that just looks ruined. Things still to check before building it:
-whether any other code (capture, repair, fire, the building's damage pictures) rewrites the
-picture field of a cathedral, and that the field survives saving and loading a map.
+cathedral with full health that just looks ruined. Not yet checked: whether any other code
+(capture, repair, fire, the building's damage pictures) rewrites the picture field of a
+cathedral.
+
+## What the module does
+
+Since 1.0.41: while the cathedral is chosen, a "Ruined" choice above the town menu. A cathedral
+placed with it gets picture `0x11F` and the flag, then `updateBuildingGraphicsLayer`. The new
+building is found through `TileMapState + 0x554888` (the last placed building), checked every
+frame; ClickPlaceBuilding's call to `placeBuilding` is not hooked, because the
+interface-visual-fixes module checks that call and its return address.

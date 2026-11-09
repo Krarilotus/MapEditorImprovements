@@ -191,6 +191,12 @@ castle_variant_panels_tooltip: |
   The same for the hovel: a variant chosen above the town menu is placed every time instead of
   the player's next one. Choosing the building in the menu itself goes back to the game's way.
   The pipette takes the exact variant too.
+castle_ruined_cathedral: Ruined cathedral
+castle_ruined_cathedral_tooltip: |
+  While the cathedral is chosen, a row above the town menu offers it "Ruined": the cathedral you
+  place gets the ruined picture the game otherwise shows only in one historical mission. In a
+  game it is still a whole, working cathedral that just looks ruined. Choosing the cathedral in
+  the menu places normal ones again. The pipette takes a ruined cathedral as ruined.
 castle_moat_kinds: Dug, planned and permanent moat
 castle_moat_kinds_tooltip: |
   While the moat is chosen in the gatehouses menu, a row above the menu offers it three ways:
