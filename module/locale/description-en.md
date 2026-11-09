@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.36
+**Version**: 1.0.37
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -144,7 +144,8 @@ In the building menu of the map editor's castle mode:
 - **Several storage and recruitment buildings.** Barracks, mercenary posts, guilds and the
   other buildings a player normally has only one of are no longer removed when another one is
   placed, and further stockpiles, granaries and armouries can stand anywhere instead of having
-  to touch the first one.
+  to touch the first one. Any number of them may also stand empty (the game allows only 8
+  empty granaries or armouries and 32 empty stockpiles per player).
 - **Tower mangonels and ballistae anywhere.** The tower mangonel and tower ballista of the army
   buildings menu can be put on any tile where no unit stands: the ground, walls, gates, any
   tower or the keep. On the player's own square and round towers they work as before.
@@ -220,7 +221,7 @@ ruler and eraser move down a little for it). Choosing it shows a row above the m
 - Heights are not given to sea, beach, marsh, moat, rocks, walls or buildings; textures not to
   rocks, walls or buildings. The cliff rocks the editor puts on steep edges are cleared (they
   come back wherever an edge stays steep). Holding **Alt** gives heights and textures to every
-  tile anyway, removing rocks (experimental).
+  tile anyway; rocks stay where they are (experimental).
 - Choosing the pipette or one of its kinds again empties it. **P** chooses the pipette, and
   pressed again goes on to the next kind. Holding **Ctrl** takes a new tile while the pipette
   holds something; letting go gives again. All three keys can be changed or switched off.

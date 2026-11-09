@@ -172,7 +172,7 @@ mov esi,GUARDED
 next_guarded:
 mov eax,[esi]
 test eax,eax
-je guard_done
+je guard_rects
 mov ecx,[esi+4]
 test ecx,ecx
 je any_tab
@@ -195,10 +195,34 @@ call IS_MOUSE_INSIDE
 test eax,eax
 je skip_guarded
 mov dword [ON_MAP],0
-jmp guard_done
+jmp guard_rects
 skip_guarded:
 add esi,8
 jmp next_guarded
+guard_rects:
+mov esi,RECTS
+next_rect:
+cmp dword [esi],-1
+je guard_done
+cmp dword [esi],0
+je skip_rect
+mov dword [esi],0
+push dword [esi+16]
+push dword [esi+12]
+mov edx,[THE_MENU+MENU_Y]
+add edx,[esi+8]
+push edx
+mov edx,[THE_MENU+MENU_X]
+add edx,[esi+4]
+push edx
+mov ecx,MOUSE
+call IS_MOUSE_INSIDE
+test eax,eax
+je skip_rect
+mov dword [ON_MAP],0
+skip_rect:
+add esi,20
+jmp next_rect
 guard_done:
 pop esi
 ret
@@ -1086,6 +1110,17 @@ jmp BACK
 -- Pipette
 ---------------------------------------------------------------------------------------
 
+-- checkBuildingCanBePlacedHere, replacing `cmp eax,LIMIT / jge FAIL` (eax: the player's empty
+-- storage buildings of the type): no limit in the map editor.
+templates.storageLimit = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+je limit_pass
+cmp eax,LIMIT
+jge FAIL
+limit_pass:
+jmp BACK
+]]
+
 -- A button with its own pictures (like pictureButton), chosen while FLAG is set.
 templates.flagPictureButton = [[
 mov eax,NORMAL
@@ -1129,12 +1164,12 @@ ret
 ]]
 
 -- renderPreviewMapperWithBrush, replacing `mov edx,[esi+BRUSH]` (the brush size, after three
--- pushes: the tool is at [esp+0x18]): the pipette taking a tile shows one tile.
+-- pushes: the tool is at [esp+0x18]): the tool in ONE_TILE (the pipette taking a tile, or placing
+-- objects one at a time) shows one tile.
 templates.pipettePreview = [[
-cmp dword [esp+0x18],PIPETTE
+mov edx,[esp+0x18]
+cmp edx,[ONE_TILE]
 jne preview_brush
-cmp dword [READ_MODE],0
-je preview_brush
 mov edx,1
 jmp BACK
 preview_brush:

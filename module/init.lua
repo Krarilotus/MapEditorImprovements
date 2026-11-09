@@ -409,7 +409,16 @@ K.AOB_BUILDING_SPRITES = "E8 ? ? ? ? 8B 04 85 ? ? ? ? 89 86 ? ? ? ? 0F BF C3 50 
 K.BUILDING_SPRITES = { gms = 8, sprite = 0x1B }
 K.TUNNEL_SIZE = 3
 -- Panels moved left of the screen's middle.
-K.PANEL_SHIFT = { [11] = -50, [13] = -50, [15] = -50 }
+K.PANEL_SHIFT = { [11] = -50, [12] = -100, [13] = -50, [15] = -50 }
+K.MOAT_ENTRY_WIDTH = 76                  -- room for "Permanent" under its picture
+-- Panels the module draws mark where they are (menu coordinates) each frame they are drawn; the
+-- guard keeps clicks there off the map. A rect: active, x, y, width, height; -1 ends the list.
+K.GUARD_RECTS, K.RECT_SIZE = 16, 20
+-- checkBuildingCanBePlacedHere's limits on empty storage buildings (stockpile 32, granary and
+-- armoury 8): `push type / push ebx / mov ecx, BuildingsState / call getEmptyBuildingCount /
+-- cmp eax, LIMIT / jge <refused> / mov reg,[esp+0x50] / push type`; three sites.
+K.AOB_EMPTY_STORAGE = "53 B9 ? ? ? ? E8 ? ? ? ? 83 F8 ? 0F 8D ? ? ? ? 8B ? 24 50 6A"
+K.EMPTY_STORAGE = { site = 11, size = 9, limit = 13, failRel = 16, sites = 3 }
 K.TENTS_SHIFT = -200
 -- Keep parts in the placement check (checkBuildingCanBePlacedHere: after the door tiles `mov
 -- eax,[esp+0x48] / shl eax,5`, before the stockpile `mov eax,[esp+0x4C] / mov ebx,[eax+..]`)
@@ -508,6 +517,7 @@ K.MOAT_MARSH = { site = 7, size = 5 }
 -- higher does nothing) and outside getBuildingSizeForCommandBuildingType's range (0x2C-0x172),
 -- and no wall tool; renderPreviewMapperWithBrush shows it as the plain brush.
 K.PIPETTE_TOOL = 0x1F4
+K.NO_TOOL = 0xFFFFFFFF
 K.PIPETTE_HEIGHTS, K.PIPETTE_TEXTURES, K.PIPETTE_OBJECTS, K.PIPETTE_ALL = 1, 2, 3, 4
 K.PIPETTE_MODES = {
   { label = "Heights", what = "heights", image = 240 },        -- the Heights category's picture
@@ -538,6 +548,12 @@ K.OWNER_AFTER_TYPE = 4
 K.WALL_OWNER_BITS = 7
 K.AOB_PLAYER_CHOICE = "B8 F7 FF FF FF 2B C6 5F 89 1C 85 ? ? ? ? 5E A3"
 K.PLAYER_CHOICE = { flags = 11, current = 17 }
+-- ...but in the landscape editor (screen 0xC) ClickPlaceBuilding places for its own player
+-- variable instead (the castle screen for the command's sender): `cmp [screen],0xC / ... / mov
+-- edx,[editor player] / ... / je / mov edx,[sender]`.
+K.AOB_EDITOR_PLAYER = "83 3D ? ? ? ? 0C 8B 15 ? ? ? ? A1 ? ? ? ? 8B 0D ? ? ? ? 50 A1 ? ? ? ? 89 15 ? ? ? ? "
+  .. "0F B7 15 ? ? ? ? 51 8B 0D ? ? ? ? 52 8B 15"
+K.EDITOR_PLAYER = 53
 K.PLAYERS = 8
 -- Trees and rocks: the organism layer holds a tree's slot (tile flag 0x1000) or a rock's slot +
 -- 2000. The pipette places one the way the landscape editor's command 0x1A ends: placeRock(x,
@@ -1588,7 +1604,29 @@ end
 -- Draws a row of buttons above the panel, centred on the screen (squeezed together when wider
 -- than it), on the map surface like the description line, and lays out the row's items to
 -- match. Every frame while the panel is shown; the panel item hides the items otherwise.
+-- The rects a menu's guard keeps off the map (see K.GUARD_RECTS).
+function C.guardRects(data)
+  data.rects = core.allocate((K.GUARD_RECTS + 1) * K.RECT_SIZE, true)
+  wr32(data.rects + K.GUARD_RECTS * K.RECT_SIZE, -1)
+  data.nextRect = 0
+end
+function C.takeRect(data)
+  if data == nil or data.rects == nil or data.nextRect >= K.GUARD_RECTS then return nil end
+  local rect = data.rects + data.nextRect * K.RECT_SIZE
+  data.nextRect = data.nextRect + 1
+  return rect
+end
+function C.markRect(rect, x, y, width, height)
+  if rect == nil then return end
+  wr32(rect + 4, math.floor(x))
+  wr32(rect + 8, math.floor(y))
+  wr32(rect + 12, math.floor(width))
+  wr32(rect + 16, math.floor(height))
+  wr32(rect, 1)
+end
+
 local function makePanel(G, O, data, panel, entries)
+  local rect = C.takeRect(data)
   local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
   local colourBox = core.exposeCode(G.colourBox, 6, 1)
   local renderGM = core.exposeCode(G.renderGM, 5, 1)
@@ -1677,6 +1715,9 @@ local function makePanel(G, O, data, panel, entries)
       x = x + entry.width + gap
     end
     local right = math.floor(x - gap + 0.5)
+    local above = list.rectAbove or 0
+    C.markRect(rect, left - PANEL_GAP, top - PANEL_GAP - above, right - left + 2 * PANEL_GAP,
+      PANEL_BOTTOM - top + 2 * PANEL_GAP + above)
 
     local offsetX = menuX - rd32(G.menu + MENU_SCROLL) + rd32(G.cameraX)
     local offsetY = rd32(G.menu + MENU_Y) + rd32(G.cameraY)
@@ -1764,6 +1805,7 @@ end
 -- part, or 2 x brush - 1 with the check box on) and troop type, and the check box with its
 -- label. The check box item is placed under its picture.
 local function makeHerdPanel(G, O, data, herd)
+  local rect = C.takeRect(data)
   local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
   local textWidth = core.exposeCode(G.textWidth, 4, 1)
   local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
@@ -1797,6 +1839,7 @@ local function makeHerdPanel(G, O, data, herd)
     local left = (rd32(G.screenWidth) - width) // 2 - menuX
     local top = PANEL_BOTTOM - height
     local boxX, boxY = left + TOOLTIP_PADDING, top + TOOLTIP_PADDING + TOOLTIP_LINE
+    C.markRect(rect, left, top, width, PANEL_BOTTOM - top)
     wr32(herd.checkBox + ITEM_X, boxX)
     wr32(herd.checkBox + ITEM_Y, boxY)
     wr32(herd.checkBox + ITEM_WIDTH, K.CHECK_BOX_SIZE)
@@ -1904,6 +1947,7 @@ end
 -- whose index they are listed under) and fills them in.
 local function buildTable(G, O)
   local data = {}
+  C.guardRects(data)
   local pictures = {}
   if O.apple then pictures.apple = buttonPictures("apple") end
   if O.textures then pictures.gravel = buttonPictures("gravel") end
@@ -2521,6 +2565,7 @@ local function buildTable(G, O)
     ACTIVE_TAB = G.activeTab, ITEM_HIDDEN = ITEM_HIDDEN, ITEM_HEIGHT = ITEM_HEIGHT,
     ITEM_WIDTH = ITEM_WIDTH, ITEM_MENU = ITEM_MENU, MENU_X = MENU_X, MENU_Y = MENU_Y, ITEM_X = ITEM_X,
     ITEM_Y = ITEM_Y, MOUSE = G.mouse, IS_MOUSE_INSIDE = G.isMouseInside, ON_MAP = G.onMap,
+    RECTS = data.rects, THE_MENU = G.menu,
   }))
 
   data.rockTabs = #rockTabs
@@ -2997,6 +3042,7 @@ function C.resolvePipette(G)
   R.commandOfType = scan(K.AOB_COMMAND_OF_TYPE, "convertBuildingTypeToCommandBuildingType")
   local choice = scan(K.AOB_PLAYER_CHOICE, "the player shields")
   R.playerFlags, R.currentPlayer = rd32(choice + K.PLAYER_CHOICE.flags), rd32(choice + K.PLAYER_CHOICE.current)
+  R.editorPlayer = rd32(scan(K.AOB_EDITOR_PLAYER, "the editor's building owner") + K.EDITOR_PLAYER)
   local place = scan(K.AOB_PLACE_PLANT, "the rock and tree placement")
   R.placeRock = readCallTarget(place, K.PLACE_PLANT.placeRock, "placeRock")
   R.placeTree = readCallTarget(place, K.PLACE_PLANT.placeTree, "placeTree")
@@ -3207,9 +3253,10 @@ function C.pipette(G, O, data, added, guarded, places, button)
     if logic & K.ROCKY == 0 then return logic end
     local number = rd16(T + R.organism + tile * 2)
     if number >= K.FIRST_ROCK_NUMBER then
+      -- A rock stays; with the any-tile key its tile still gets the heights or textures, like
+      -- the plateau tools give them.
       if not any then return nil end
-      removeRock(R.landscape, number - K.FIRST_ROCK_NUMBER)
-      logic = logicAt(tile)
+      return logic
     end
     return logic & ~K.ROCKY & 0xFFFFFFFF
   end
@@ -3296,13 +3343,14 @@ function C.pipette(G, O, data, added, guarded, places, button)
     if not active() then
       P.held, P.waitRelease = false, false
       if P.mode == K.PIPETTE_OBJECTS then P.stored = nil end   -- another tool was chosen
-      wr32(data.pipetteRead, 0)
+      wr32(data.pipetteRead, K.NO_TOOL)
       wr32(activeFlag, 0)
       return
     end
     wr32(activeFlag, 1)
     P.reading = S.readKeyOn and down(readKey)
-    wr32(data.pipetteRead, reading() and 1 or 0)
+    -- One tile in the brush preview while taking a tile, and for objects (placed one at a time).
+    wr32(data.pipetteRead, (reading() or P.mode == K.PIPETTE_OBJECTS) and K.PIPETTE_TOOL or K.NO_TOOL)
     local held = rd32(R.clickHeld) ~= 0
     if P.mode == K.PIPETTE_OBJECTS and not held then
       -- Between clicks: the object's own tool to place it, the pipette to take one.
@@ -3317,6 +3365,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
           for i = 0, K.PLAYERS do wr32(R.playerFlags + i * 4, 0) end
           wr32(R.playerFlags + owner * 4, 1)
           wr32(R.currentPlayer, owner)
+          wr32(R.editorPlayer, owner)
         end
       end
     end
@@ -3416,6 +3465,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
         chosen = P.mode == i, minWidth = K.PIPETTE_ENTRY_WIDTH }
     end
     list.labelRoom = K.PIPETTE_LABEL_ROOM
+    list.rectAbove = K.PIPETTE_TEXT_ABOVE
     return list
   end)
   local function storedLine()
@@ -3472,8 +3522,9 @@ end
 
 -- The brush preview while the pipette takes a tile: one tile, whatever the brush size.
 function C.patchPipettePreview(self, R, readFlag)
+  wr32(readFlag, K.NO_TOOL)
   patchJump(self, R.previewSite, K.PIPETTE_PREVIEW.size, core.allocateAssembly(templates.pipettePreview, {
-    PIPETTE = K.PIPETTE_TOOL, READ_MODE = readFlag, BRUSH = R.brushField, BACK = R.previewSite + K.PIPETTE_PREVIEW.size,
+    ONE_TILE = readFlag, BRUSH = R.brushField, BACK = R.previewSite + K.PIPETTE_PREVIEW.size,
   }))
 end
 
@@ -3828,7 +3879,8 @@ function C.makeEntries(G, panel, rows)
           local chosen = command == param
           if entry.tool ~= nil then param = entry.tool end   -- the button that chooses this tool
           if entry.flag ~= nil then chosen = chosen and rd32(entry.flag) == entry.value end
-          list[i] = { item = panel.items[i], image = image, label = entry.label, param = param, chosen = chosen }
+          list[i] = { item = panel.items[i], image = image, label = entry.label, param = param, chosen = chosen,
+            minWidth = entry.minWidth }
           if entry.compose ~= nil then
             list[i].image, list[i].picture = nil, entry.compose()
             if list[i].picture == nil then return {} end     -- its pictures are not loaded yet
@@ -3845,6 +3897,7 @@ end
 -- Copies the build menu's item table with the module's items added, like buildTable.
 function C.build(G, B, O)
   local data = { shown = core.allocate(4, true) }
+  C.guardRects(data)
   local inserts = {}
   local function insert(before, kind)
     inserts[before] = inserts[before] or {}
@@ -3917,7 +3970,7 @@ function C.build(G, B, O)
     local images = { [K.MOAT_TOOL] = lookup(K.TAB_GATEHOUSES, K.MOAT_BUTTON) }
     for _, kind in ipairs({ K.MOAT_DUG, K.MOAT_PLANNED, K.MOAT_PERMANENT }) do
       row[#row + 1] = { images = images, tool = K.MOAT_BUTTON, label = K.MOAT_LABELS[kind], flag = data.moatMode,
-        value = kind }
+        value = kind, minWidth = K.MOAT_ENTRY_WIDTH }
     end
     resets[#resets + 1] = { K.TAB_GATEHOUSES, K.MOAT_BUTTON, data.moatMode }
     panels[#panels + 1] = { tab = K.TAB_GATEHOUSES, rows = { row }, shift = K.PANEL_SHIFT[K.TAB_GATEHOUSES] }
@@ -4072,6 +4125,7 @@ function C.build(G, B, O)
     ACTIVE_TAB = G.activeTab, ITEM_HIDDEN = ITEM_HIDDEN, ITEM_HEIGHT = ITEM_HEIGHT,
     ITEM_WIDTH = ITEM_WIDTH, ITEM_MENU = ITEM_MENU, MENU_X = MENU_X, MENU_Y = MENU_Y, ITEM_X = ITEM_X,
     ITEM_Y = ITEM_Y, MOUSE = G.mouse, IS_MOUSE_INSIDE = G.isMouseInside, ON_MAP = G.onMap,
+    RECTS = data.rects, THE_MENU = B.menu,
   }))
   return newTable, data
 end
@@ -4104,6 +4158,26 @@ function C.patchCall(self, site, stub)
   self.saved = self.saved or {}
   table.insert(self.saved, { address = site, bytes = core.readBytes(site, 5) })
   core.writeCode(site, { 0xE8, core.itob(core.getRelativeAddress(site, stub, -5)) })
+end
+
+-- In the map editor, any number of empty stockpiles, granaries and armouries.
+function C.patchEmptyStorage(self, G)
+  local E = K.EMPTY_STORAGE
+  local sites, from = {}, 0x400000
+  while #sites <= E.sites do
+    local ok, found = pcall(core.scanForAOB, K.AOB_EMPTY_STORAGE, from, K.HERD_SEARCH_END)
+    if not ok or found == nil or found == 0 then break end
+    sites[#sites + 1] = found
+    from = found + 1
+  end
+  if #sites ~= E.sites then error(MODULE_NAME .. ": the empty storage limits are not the ones this module knows") end
+  for _, base in ipairs(sites) do
+    local site = base + E.site
+    patchJump(self, site, E.size, core.allocateAssembly(templates.storageLimit, {
+      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, LIMIT = rd8(base + E.limit) & 0xFF,
+      FAIL = base + E.failRel + 4 + rd32(base + E.failRel), BACK = site + E.size,
+    }))
+  end
 end
 
 -- In the map editor, a player's new keep (and unique buildings: barracks, guilds, ...) no longer
@@ -4293,6 +4367,7 @@ function C.enable(self, O)
   end
   try(O.towerRuins, C.patchRuinSizes, "tower ruins", G)
   try(O.severalKeeps or O.looseBuildings, C.patchSeveralBuildings, "several keeps and storage buildings", G, O)
+  try(O.looseBuildings, C.patchEmptyStorage, "any number of empty storage buildings", G)
   try(O.towerEngines, C.patchTowerEngines, "tower engines anywhere", G)
   try(O.keepParts, C.patchKeepParts, "the keep choices", G, data)
   try(O.damagedWalls, C.patchDamagedWalls, "damaged walls", G, data)

@@ -154,7 +154,8 @@ castle_several_storage: Several storage and recruitment buildings
 castle_several_storage_tooltip: |
   Barracks, mercenary posts, guilds and the other buildings a player has only one of are no
   longer removed when another one is placed, and further stockpiles, granaries and armouries
-  need not touch the first one.
+  need not touch the first one. Any number of them may also be empty (the game allows only 8
+  empty granaries or armouries and 32 empty stockpiles).
 castle_tower_engines: Tower mangonels and ballistae anywhere
 castle_tower_engines_tooltip: |
   The tower mangonel and tower ballista of the army buildings menu can be put wherever no unit
@@ -259,7 +260,7 @@ pipette_read_key_tooltip: |
 pipette_any_tile_key_on: Hold to give to any tile
 pipette_any_tile_key_on_tooltip: |
   Experimental: while this key is held, the pipette gives heights and textures to every tile
-  under the brush, also sea, marsh, rocks (which it removes), walls and buildings (never the map's
+  under the brush, also sea, marsh, rocks (which stay), walls and buildings (never the map's
   edge). It does not change where objects may be placed.
 pipette_any_tile_key: Key to give to any tile
 pipette_any_tile_key_tooltip: |
