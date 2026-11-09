@@ -245,7 +245,7 @@ pipette_enabled_tooltip: |
   heights alone. Objects takes the building, wall, tree or rock on a tile: buildings and walls
   are then placed like their own menu button does, for the same player (that player's shield
   gets chosen), trees (same kind and stage, or felled with
-  the same logs) and rocks (same kind and turn) one per click. All also takes a tree or 1x1 rock
+  the same logs) and rocks (same kind and turn) like the tree and rock tools, dragging included. All also takes a tree or 1x1 rock
   and puts one on every tile under the brush. Choosing the pipette or one of its kinds again
   empties it.
   Heights are not given to sea, beach, marsh, moat, rocks, walls or buildings; textures not to

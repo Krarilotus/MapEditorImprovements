@@ -599,6 +599,9 @@ K.PLAYERS = 8
 -- (sizes 1 to 4 for numbers 0-3, 4-7, 8-11, 12-15); a rock slot keeps its type at +0x10 and
 -- its turn at +0x18, which placeRock takes from the tile map's rotation.
 K.TREE_FLAG = 0x1000
+-- The rock tool's variant and size (0-3) in the tile map (rock number = size * 4 + variant), and
+-- a rotation mode that leaves the rock rotation alone (5 turns it every frame, 0 every second).
+K.ROCK_VARIANT_AT, K.ROCK_SIZE_AT, K.FIXED_TURN = 0x5548F4, 0x5548F8, 1
 K.AOB_PLACE_PLANT = "0F B7 05 ? ? ? ? 8B 0D ? ? ? ? 8B 15 ? ? ? ? 50 51 52 B9 ? ? ? ? E8 ? ? ? ? C3 "
   .. "8B 0D ? ? ? ? 50 A1 ? ? ? ? 50 51 B9 ? ? ? ? E8"
 K.PLACE_PLANT = { placeRock = 0x1B, placeTree = 0x34 }
@@ -3205,15 +3208,59 @@ function C.pipette(G, O, data, added, guarded, places, button)
 
   local function chosen() return rd32(G.subtype) == K.PIPETTE_TOOL end
   -- The objects pipette's tool, while it holds an object.
+  -- The tool that places what the objects pipette holds: a building's own, the tree's, or the
+  -- rock tool.
   local function objectTool()
-    if P.mode == K.PIPETTE_OBJECTS and P.stored ~= nil and P.stored.kind == "building" then return P.stored.command end
-    return nil
+    if P.mode ~= K.PIPETTE_OBJECTS or P.stored == nil then return nil end
+    if P.stored.kind == "rock" then return K.FIRST_ROCK_COMMAND end   -- the size comes from the brush
+    return P.stored.command
+  end
+  -- What that tool needs set while the pipette holds a tree or rock (the brush for the tree's
+  -- stage, its felled logs; the rock's size, variant and turn), and the user's own settings
+  -- back afterwards.
+  local function hold(stored)
+    if P.saved ~= nil or stored.kind == "building" then return end
+    local S2 = { brush = rd32(G.brush), turn = rd32(T + K.TILE_MAP.rotation), mode = rd32(T + K.TILE_MAP.mode),
+      variant = rd32(T + K.ROCK_VARIANT_AT), size = rd32(T + K.ROCK_SIZE_AT) }
+    if data.felledLogs ~= nil then S2.logs, S2.felled = rd32(data.felledLogs), rd32(data.felledCommand) end
+    if data.rockLock ~= nil then S2.lock = rd32(data.rockLock) end
+    P.saved = S2
+    if stored.kind == "tree" then
+      wr32(G.brush, stored.stage + 1)          -- the module's growth stage follows the brush size
+      if data.felledLogs ~= nil then
+        wr32(data.felledLogs, stored.logs or 0)
+        wr32(data.felledCommand, stored.logs ~= nil and stored.command or 0)
+      end
+    else
+      wr32(G.brush, 2 * (stored.size - 1) + 1)  -- the rock tools' size is brush / 2 (brushes 1, 3, 5, 7)
+      wr32(T + K.ROCK_SIZE_AT, stored.size - 1)
+      wr32(T + K.ROCK_VARIANT_AT, stored.number % 4)
+      if data.rockLock ~= nil then wr32(data.rockLock, stored.number % 4 + 1) end
+      wr32(T + K.TILE_MAP.rotation, stored.turn)
+      wr32(T + K.TILE_MAP.mode, K.FIXED_TURN)
+    end
+  end
+  local function release()
+    local S2 = P.saved
+    if S2 == nil then return end
+    P.saved = nil
+    wr32(G.brush, S2.brush)
+    wr32(T + K.TILE_MAP.rotation, S2.turn)
+    wr32(T + K.TILE_MAP.mode, S2.mode)
+    wr32(T + K.ROCK_VARIANT_AT, S2.variant)
+    wr32(T + K.ROCK_SIZE_AT, S2.size)
+    if S2.logs ~= nil then
+      wr32(data.felledLogs, S2.logs)
+      wr32(data.felledCommand, S2.felled)
+    end
+    if S2.lock ~= nil then wr32(data.rockLock, S2.lock) end
   end
   local function active()
     local tool = objectTool()
     return chosen() or (tool ~= nil and rd32(G.subtype) == tool)
   end
   local function choose()
+    release()
     wr32(G.subtype, K.PIPETTE_TOOL)
     P.stored, P.waitRelease, P.last = nil, true, nil
   end
@@ -3435,6 +3482,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
     end
     if not active() then
       P.held, P.waitRelease = false, false
+      release()
       if P.mode == K.PIPETTE_OBJECTS then P.stored = nil end   -- another tool was chosen
       wr32(data.pipetteRead, K.NO_TOOL)
       wr32(activeFlag, 0)
@@ -3443,14 +3491,20 @@ function C.pipette(G, O, data, added, guarded, places, button)
     wr32(activeFlag, 1)
     P.reading = S.readKeyOn and down(readKey)
     -- One tile in the brush preview while taking a tile, and for objects (placed one at a time).
-    wr32(data.pipetteRead, (reading() or P.mode == K.PIPETTE_OBJECTS) and K.PIPETTE_TOOL or K.NO_TOOL)
+    -- (a tree's own tool too: placed one per tile like the game's tree tool, whatever the brush)
+    local oneTile = K.NO_TOOL
+    if reading() or P.mode == K.PIPETTE_OBJECTS then oneTile = K.PIPETTE_TOOL end
+    if not chosen() and P.stored ~= nil and P.stored.kind == "tree" then oneTile = P.stored.command end
+    wr32(data.pipetteRead, oneTile)
     local held = rd32(R.clickHeld) ~= 0
     if P.mode == K.PIPETTE_OBJECTS and not held then
       -- Between clicks: the object's own tool to place it, the pipette to take one.
       local tool = objectTool()
       if reading() and not chosen() then
+        release()
         wr32(G.subtype, K.PIPETTE_TOOL)
       elseif not reading() and tool ~= nil and chosen() then
+        hold(P.stored)
         wr32(G.subtype, tool)
         -- This very variant, not turning into the next one.
         local locks = C.locks()
@@ -3489,14 +3543,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
       P.waitRelease = true       -- the next click writes
       return
     end
-    if P.mode == K.PIPETTE_OBJECTS then
-      if P.stored ~= nil and P.stored.kind ~= "building" then
-        if O.undo ~= nil then O.undo.beginEdit() end     -- no command goes through queueCommand
-        placePlant(P.stored, x, y)
-      end
-      P.waitRelease = true                     -- one object per click
-      return
-    end
+    if P.mode == K.PIPETTE_OBJECTS then return end   -- the object's own tool places it
     local tile = tileOf(x, y)
     if tile == P.last then return end
     P.last = tile
