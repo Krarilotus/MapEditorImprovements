@@ -96,7 +96,7 @@ local DEFAULTS = {
   castle = { building_counts = true, tower_ruins = true, tunnel_and_tents = true, statues_and_shrines = true,
     barrier = true, several_keeps = true, several_storage_and_recruitment = true, tower_engines_anywhere = true,
     keep_parts = true, damaged_walls = true, hover_text_left = true, moat_kinds = true, moat_on_marsh = true,
-    moat_removal_keeps_ground = true },
+    moat_removal_keeps_ground = true, variant_panels = true },
   herds = { panel = true },
 }
 
@@ -409,7 +409,41 @@ K.AOB_BUILDING_SPRITES = "E8 ? ? ? ? 8B 04 85 ? ? ? ? 89 86 ? ? ? ? 0F BF C3 50 
 K.BUILDING_SPRITES = { gms = 8, sprite = 0x1B }
 K.TUNNEL_SIZE = 3
 -- Panels moved left of the screen's middle.
-K.PANEL_SHIFT = { [11] = -50, [12] = -100, [13] = -50, [15] = -50 }
+K.PANEL_SHIFT = { [11] = -50, [12] = -100, [13] = -50, [15] = -100, [30] = -100, [33] = -100 }
+-- Buildings with variants. Placement gives setupBuildingData the variant (placement id - the
+-- group's first), which keeps a value from its group's table at building +0x29C (BuildingsState
+-- + id * stride + 0x2B0): `mov ecx,[esp+0x30] / mov edx,[ecx*4+GARDENS] / mov [edi+esi+0x2B0],
+-- edx / ...`, then the same for ruins, cesspits, statues, shrines and ponds (by building type).
+K.TAB_BAD, K.TAB_TOWN = 33, 30
+K.VARIANT_GROUPS = {
+  [0x42] = { first = 160, count = 12, table = 1, name = "garden" },
+  [0x27] = { first = 248, count = 13, table = 2, name = "ruin" },
+  [0x5B] = { first = 301, count = 4, table = 3, name = "cesspit" },
+  [0x64] = { first = 313, count = 5, table = 4, name = "statue" },
+  [0x65] = { first = 318, count = 5, table = 5, name = "shrine" },
+  [0x68] = { first = 325, count = 4, table = 6, name = "pond" },
+}
+K.AOB_VARIATIONS = "8B 4C 24 30 8B 14 8D ? ? ? ? 89 94 37 ? ? ? ? 8D 45 CD E9 ? ? ? ? 5B 33 C0 5E C2 20 00 "
+  .. "83 FD 27 75 17 8B 44 24 30 8B 0C 85"
+K.VARIATIONS = { field = 14, tables = { 7, 0x2D, 0x49, 0x65, 0x81, 0x9D } }
+-- The variant panels above the menu: one row per building with variants (its menu button's
+-- first id and how many), the module's extra statues and shrines at the end of theirs.
+K.VARIANT_ROWS = {
+  [K.TAB_GOOD] = { { 160, 6 }, { 166, 3 }, { 169, 3 }, { 313, 5, { 320 } }, { 318, 2, { 321, 322 } } },
+  [K.TAB_BAD] = { { 301, 4 } },
+}
+K.CAMPFIRE_TYPE = 0x33                   -- the module's barrier is a campfire (placement 58)
+-- rotateFearFactorBuildingVariations, every second: `mov eax,[chosen tool] / add eax,-0xA0 /
+-- cmp eax,0xA8 / ja <end>` before the table that moves the tool to the next variant.
+K.AOB_VARIANT_TURN = "A1 ? ? ? ? 05 60 FF FF FF 3D A8 00 00 00 77"
+K.VARIANT_TURN = { size = 10, add = 6, endRel = 0x10 }
+-- Hovels: placeWorkshopOrHovel gives a new hovel its player's next variant, `mov cx,[ebx+COUNTER]
+-- / ... / mov [eax+HOVEL],cx / jne / mov eax,[ebx+COUNTER] / add eax,1 / cdq / mov ecx,7 / idiv
+-- ecx / mov [ebx+COUNTER],edx` (ebx: player * the player data size).
+K.HOVEL_TOOL, K.HOVEL_TYPE, K.HOVEL_VARIANTS = 54, 1, 7
+K.AOB_HOVEL_VARIANT = "66 8B 8B ? ? ? ? 8B E8 69 C0 2C 03 00 00 66 83 7C 24 20 01 89 44 24 28 66 89 88 ? ? ? ? "
+  .. "75 ? 8B 83 ? ? ? ? 83 C0 01 99 B9 07 00 00 00 F7 F9 89 93"
+K.HOVEL_VARIANT = { size = 7, counter = 3, field = 0x1C, skipRel = 0x21, advance = 0x22, advanceSize = 6 }
 K.MOAT_ENTRY_WIDTH = 76                  -- room for "Permanent" under its picture
 -- Panels the module draws mark where they are (menu coordinates) each frame they are drawn; the
 -- guard keeps clicks there off the map. A rect: active, x, y, width, height; -1 ends the list.
@@ -535,6 +569,7 @@ K.PIPETTE_MODES = {
 K.AOB_BUILDING_TYPE = "0F BF 84 7E ? ? ? ? 85 C0 74 ? 69 C0 ? ? ? ? 66 83 B8 ? ? ? ? 31"
 K.BUILDING_TYPE = { stride = 14, type = 21 }
 K.AOB_COMMAND_OF_TYPE = "8B 44 24 04 83 C0 FF 83 F8 6A 0F 87"
+K.BUILDINGS_STATE = 0x17                 -- in K.AOB_BUILDING_SPRITES: `mov ecx, BuildingsState`
 -- Walls by their tile flags: stairs, crenellation, wall (high wall 90 above the ground, low 60).
 K.STAIRS_FLAG, K.CRENEL_FLAG, K.WALL_FLAG, K.STOCKPILE_FLAG = 0x800, 0x200, 0x100, 0x2
 K.STAIRS_TOOL, K.CRENEL_TOOL, K.HIGH_WALL_TOOL, K.LOW_WALL_TOOL = 27, 26, 25, 46
@@ -1604,6 +1639,36 @@ end
 -- Draws a row of buttons above the panel, centred on the screen (squeezed together when wider
 -- than it), on the map surface like the description line, and lays out the row's items to
 -- match. Every frame while the panel is shown; the panel item hides the items otherwise.
+-- The variant locks, shared by the castle panels and the pipette: the building variant the
+-- rotation leaves alone (its placement id), and the hovel variant + 1 (0: the game's own).
+function C.locks()
+  C.lockWords = C.lockWords or { variant = core.allocate(4, true), hovel = core.allocate(4, true) }
+  return C.lockWords
+end
+
+-- A chosen variant stays chosen, a chosen hovel variant is placed every time (map editor).
+function C.patchVariantLocks(self, G)
+  local locks = C.locks()
+  local turn = scan(K.AOB_VARIANT_TURN, "the variant rotation")
+  local T = K.VARIANT_TURN
+  patchJump(self, turn, T.size, core.allocateAssembly(templates.variantLock, {
+    SUBTYPE = G.subtype, VARIANT_LOCK = locks.variant, TURN_ADD = rd32(turn + T.add) & 0xFFFFFFFF,
+    TURN_END = turn + T.endRel + 1 + (rd8(turn + T.endRel) & 0xFF), BACK = turn + T.size,
+  }))
+  local hovel = scan(K.AOB_HOVEL_VARIANT, "the hovel variants")
+  local H = K.HOVEL_VARIANT
+  local counter = rd32(hovel + H.counter)
+  patchJump(self, hovel, H.size, core.allocateAssembly(templates.hovelVariant, {
+    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, HOVEL_LOCK = locks.hovel, COUNTER = counter,
+    BACK = hovel + H.size,
+  }))
+  local advance = hovel + H.advance
+  patchJump(self, advance, H.advanceSize, core.allocateAssembly(templates.hovelAdvance, {
+    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, HOVEL_LOCK = locks.hovel, COUNTER = counter,
+    SKIP = hovel + H.skipRel + 1 + (rd8(hovel + H.skipRel) & 0xFF), BACK = advance + H.advanceSize,
+  }))
+end
+
 -- The rects a menu's guard keeps off the map (see K.GUARD_RECTS).
 function C.guardRects(data)
   data.rects = core.allocate((K.GUARD_RECTS + 1) * K.RECT_SIZE, true)
@@ -3040,6 +3105,13 @@ function C.resolvePipette(G)
   local building = scan(K.AOB_BUILDING_TYPE, "the building types")
   R.buildingStride, R.buildingType = rd32(building + K.BUILDING_TYPE.stride), rd32(building + K.BUILDING_TYPE.type)
   R.commandOfType = scan(K.AOB_COMMAND_OF_TYPE, "convertBuildingTypeToCommandBuildingType")
+  local sprites = scan(K.AOB_BUILDING_SPRITES, "the building pictures")
+  expectBytes(sprites + K.BUILDINGS_STATE - 1, { 0xB9 }, "the buildings")
+  R.buildingsState = rd32(sprites + K.BUILDINGS_STATE)
+  local variations = scan(K.AOB_VARIATIONS, "the building variations")
+  R.variationField, R.variationTables = rd32(variations + K.VARIATIONS.field), {}
+  for i, at in ipairs(K.VARIATIONS.tables) do R.variationTables[i] = rd32(variations + at) end
+  R.hovelField = rd32(scan(K.AOB_HOVEL_VARIANT, "the hovel variants") + K.HOVEL_VARIANT.field)
   local choice = scan(K.AOB_PLAYER_CHOICE, "the player shields")
   R.playerFlags, R.currentPlayer = rd32(choice + K.PLAYER_CHOICE.flags), rd32(choice + K.PLAYER_CHOICE.current)
   R.editorPlayer = rd32(scan(K.AOB_EDITOR_PLAYER, "the editor's building owner") + K.EDITOR_PLAYER)
@@ -3179,9 +3251,27 @@ function C.pipette(G, O, data, added, guarded, places, button)
     local tile = tileOf(x, y)
     local id = rd16(T + K.TMS.building + tile * 2)
     local command, owner = 0, nil
+    local variant, hovel = nil, nil
     if id > 0 then
-      command = commandOfType(0, rd16(R.buildingType + id * R.buildingStride)) & 0xFFFF
+      local buildingType = rd16(R.buildingType + id * R.buildingStride)
+      command = commandOfType(0, buildingType) & 0xFFFF
       owner = rd16(R.buildingType + K.OWNER_AFTER_TYPE + id * R.buildingStride)
+      -- The exact variant: its value found in its group's table.
+      local group = K.VARIANT_GROUPS[buildingType]
+      if group ~= nil then
+        local value = rd32(R.buildingsState + id * R.buildingStride + R.variationField)
+        local list = R.variationTables[group.table]
+        for i = 0, group.count - 1 do
+          if rd32(list + i * 4) == value then
+            command, variant = group.first + i, string.format("%s %d", group.name, i + 1)
+            break
+          end
+        end
+      elseif buildingType == K.HOVEL_TYPE then
+        hovel = rd16(R.hovelField + id * R.buildingStride) % K.HOVEL_VARIANTS
+      elseif buildingType == K.CAMPFIRE_TYPE then
+        command = K.BARRIER_COMMAND
+      end
     else
       owner = (rd8(T + K.TMS.wallOwner + tile) & K.WALL_OWNER_BITS) + 1
       local logic = logicAt(tile)
@@ -3198,7 +3288,10 @@ function C.pipette(G, O, data, added, guarded, places, button)
     end
     if command ~= 0 then
       P.nothing = false
-      P.stored = { kind = "building", command = command, name = K.OBJECT_NAMES[command] or ("object " .. command) }
+      P.stored = { kind = "building", command = command, name = variant or K.OBJECT_NAMES[command] or ("object " .. command),
+        variant = variant ~= nil, hovel = hovel }
+      if hovel ~= nil then P.stored.name = string.format("hovel %d", hovel + 1) end
+      if command == K.BARRIER_COMMAND then P.stored.name = "barrier" end
       if owner ~= nil and owner >= 1 and owner <= K.PLAYERS then
         P.stored.owner = owner
         P.stored.name = string.format("%s of player %d", P.stored.name, owner)
@@ -3359,6 +3452,10 @@ function C.pipette(G, O, data, added, guarded, places, button)
         wr32(G.subtype, K.PIPETTE_TOOL)
       elseif not reading() and tool ~= nil and chosen() then
         wr32(G.subtype, tool)
+        -- This very variant, not turning into the next one.
+        local locks = C.locks()
+        if P.stored.variant then wr32(locks.variant, tool) end
+        if P.stored.hovel ~= nil then wr32(locks.hovel, P.stored.hovel + 1) end
         -- Placed for the same player: chosen as if by that player's shield.
         local owner = P.stored.owner
         if owner ~= nil then
@@ -3879,6 +3976,7 @@ function C.makeEntries(G, panel, rows)
           local chosen = command == param
           if entry.tool ~= nil then param = entry.tool end   -- the button that chooses this tool
           if entry.flag ~= nil then chosen = chosen and rd32(entry.flag) == entry.value end
+          if entry.lock ~= nil then chosen = chosen and rd32(entry.lock) == param end
           list[i] = { item = panel.items[i], image = image, label = entry.label, param = param, chosen = chosen,
             minWidth = entry.minWidth }
           if entry.compose ~= nil then
@@ -3935,7 +4033,43 @@ function C.build(G, B, O)
     end
     panels[#panels + 1] = { tab = K.TAB_ARMY, rows = { tunnel, tents } }
   end
-  if O.statues then
+  local resets = {}                        -- menu buttons that end a panel choice: { tab, command, flag }
+  if O.variantPanels then
+    -- One panel per tab, a row per building: its variants by placement id (chosen ones do not
+    -- turn into the next), and on the statue and shrine rows the module's own.
+    local lock = C.locks().variant
+    local extraLabel = {}
+    for _, statue in ipairs(K.STATUES) do extraLabel[statue[1]] = statue[3] end
+    for tab, groups in pairs(K.VARIANT_ROWS) do
+      local rows = {}
+      for _, group in ipairs(groups) do
+        local first, count = group[1], group[2]
+        local row = { when = {} }
+        local ids = {}
+        for i = 0, count - 1 do ids[#ids + 1] = first + i end
+        if O.statues then
+          for _, extra in ipairs(group[3] or {}) do ids[#ids + 1] = extra end
+        end
+        for i, id in ipairs(ids) do
+          row.when[id] = true
+          row[i] = { command = id, image = lookup(tab, first), label = extraLabel[id] or tostring(i), lock = lock }
+        end
+        rows[#rows + 1] = row
+        resets[#resets + 1] = { tab, first, lock }
+      end
+      panels[#panels + 1] = { tab = tab, rows = rows, shift = K.PANEL_SHIFT[tab], lock = lock }
+    end
+    -- The hovel: one of its seven variants every time, instead of the player's next one.
+    local hovelLock = C.locks().hovel
+    local row = {}
+    for i = 1, K.HOVEL_VARIANTS do
+      row[i] = { images = { [K.HOVEL_TOOL] = lookup(K.TAB_TOWN, K.HOVEL_TOOL) }, tool = K.HOVEL_TOOL,
+        label = tostring(i), flag = hovelLock, value = i }
+    end
+    row.when = { [K.HOVEL_TOOL] = true }
+    resets[#resets + 1] = { K.TAB_TOWN, K.HOVEL_TOOL, hovelLock }
+    panels[#panels + 1] = { tab = K.TAB_TOWN, rows = { row }, shift = K.PANEL_SHIFT[K.TAB_TOWN] }
+  elseif O.statues then
     local row = {}
     for i, statue in ipairs(K.STATUES) do
       row[i] = { command = statue[1], image = lookup(K.TAB_GOOD, statue[2]), label = statue[3] }
@@ -3944,7 +4078,6 @@ function C.build(G, B, O)
   end
   data.keepMode = core.allocate(4, true)
   data.damagedWalls = core.allocate(4, true)
-  local resets = {}                        -- menu buttons that end a panel choice: { tab, command, flag }
   local function choices(tab, commands, flag, labels)
     local images, when, row = {}, {}, {}
     for _, command in ipairs(commands) do
@@ -4017,7 +4150,9 @@ function C.build(G, B, O)
       local into = added["panel" .. p .. "/" .. i]
       local entry = panel.rows[1][i]
       local action = direct
-      if #panel.rows == 1 and entry ~= nil and entry.flag ~= nil then
+      if panel.lock ~= nil then             -- a variant: locked, then chosen like its menu button
+        action = core.allocateAssembly(templates.variantChoice, { VARIANT_LOCK = panel.lock, ACTION = B.toolbar })
+      elseif #panel.rows == 1 and entry ~= nil and entry.flag ~= nil then
         action = core.allocateAssembly(templates.setChoice, { FLAG = entry.flag, VALUE = entry.value, ACTION = B.toolbar })
       end
       wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
@@ -4375,6 +4510,7 @@ function C.enable(self, O)
   try(O.moatKinds and data ~= nil, C.patchMoatClick, "the moat kinds", data)
   try(O.moatKinds or O.moatRemoval, C.patchMoatModes, "the moat modes", O.moatKinds, O.moatRemoval)
   try(O.moatOnMarsh, C.patchMoatMarsh, "moat on marsh")
+  try(O.variantPanels, C.patchVariantLocks, "the variant panels", G)
   log(INFO, string.format("%s: build menu changed (menu 0x%X, items 0x%X)", MODULE_NAME, B.menu, B.table))
 end
 
@@ -4443,6 +4579,7 @@ local function enable(self, config)
     towerRuins = setting(config, "castle", "tower_ruins") == true,
     armyExtras = setting(config, "castle", "tunnel_and_tents") == true,
     statues = setting(config, "castle", "statues_and_shrines") == true,
+    variantPanels = setting(config, "castle", "variant_panels") == true,
     barrier = setting(config, "castle", "barrier") == true,
     severalKeeps = setting(config, "castle", "several_keeps") == true,
     looseBuildings = setting(config, "castle", "several_storage_and_recruitment") == true,

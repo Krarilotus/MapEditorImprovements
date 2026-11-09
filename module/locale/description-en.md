@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.37
+**Version**: 1.0.38
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -136,8 +136,14 @@ In the building menu of the map editor's castle mode:
 - **Tunnel entrance and siege tents.** In the army buildings menu, with the tunnelers' guild
   chosen, a row above the menu offers a tunnel entrance; with the engineers' guild chosen,
   the six siege tents.
-- **Statue and shrines.** While the menu of good things is open, a row above it offers the
-  unused 2x2 statue, 2x2 shrine and 1x1 shrine.
+- **Statue and shrines.** The unused 2x2 statue, 2x2 shrine and 1x1 shrine: at the end of the
+  statue's and the shrine's variants, or (with building variants off) in a row above the menu of
+  good things.
+- **Building variants.** While a garden (2x2, 3x3 or 4x4), statue, shrine or cesspit is chosen,
+  a row above the menu offers each of its variants. One chosen there stays chosen, instead of the
+  game turning it into the next variant every second. The hovel gets the same row: a variant
+  chosen there is placed every time instead of each player's next one. Choosing the building in
+  the menu itself goes back to the game's cycling.
 - **Several keeps.** Placing a keep no longer removes the player's earlier keep (or its
   campfire). The newest keep is the player's active one; the others stay on the map as
   buildings.

@@ -1121,6 +1121,49 @@ limit_pass:
 jmp BACK
 ]]
 
+-- rotateFearFactorBuildingVariations, replacing `mov eax,[SUBTYPE] / add eax,TURN_ADD`: a variant
+-- chosen in its panel (or by the pipette) stays chosen.
+templates.variantLock = [[
+mov eax,[SUBTYPE]
+cmp eax,[VARIANT_LOCK]
+je TURN_END
+add eax,TURN_ADD
+jmp BACK
+]]
+
+-- Action of a variant panel button (param: its placement id): that variant, locked.
+templates.variantChoice = [[
+mov eax,[esp+4]
+mov [VARIANT_LOCK],eax
+jmp ACTION
+]]
+
+-- placeWorkshopOrHovel, replacing `mov cx,[ebx+COUNTER]` (the player's next hovel variant): in
+-- the map editor the variant chosen in the panel (HOVEL_LOCK = variant + 1) instead.
+templates.hovelVariant = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne hovel_own
+mov ecx,[HOVEL_LOCK]
+test ecx,ecx
+je hovel_own
+dec ecx
+jmp BACK
+hovel_own:
+mov cx,[ebx+COUNTER]
+jmp BACK
+]]
+
+-- ...and `mov eax,[ebx+COUNTER]` before it moves on to the next: not with a chosen variant.
+templates.hovelAdvance = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne hovel_next
+cmp dword [HOVEL_LOCK],0
+jne SKIP
+hovel_next:
+mov eax,[ebx+COUNTER]
+jmp BACK
+]]
+
 -- A button with its own pictures (like pictureButton), chosen while FLAG is set.
 templates.flagPictureButton = [[
 mov eax,NORMAL

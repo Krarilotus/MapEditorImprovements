@@ -288,6 +288,14 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.castle.variant_panels
+    name: map-editor-improvements-castle-variant-panels
+    text: '{{castle_variant_panels}}'
+    tooltip: '{{castle_variant_panels_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.castle.moat_kinds
     name: map-editor-improvements-castle-moat-kinds
     text: '{{castle_moat_kinds}}'
