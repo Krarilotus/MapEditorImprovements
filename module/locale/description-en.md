@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.41
+**Version**: 1.0.42
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -71,9 +71,7 @@ right to make room for it.
 
 - **Tree preview.** While a tree or shrub is chosen, the tree it would plant is shown on the tile
   under the mouse, at the stage the brush gives it or felled with the chosen logs - also for the
-  pipette, which shows the very tree it took. The picture comes from a tree of the same kind and
-  stage on the map; a stage nowhere on the map yet shows nothing (shrubs then show their menu
-  picture). Not while zoomed out.
+  pipette, which shows the very tree it took. Not while zoomed out.
 - **No shrub stacks.** A tree or shrub can no longer be placed on a tile that already has
   one. Some shrubs used to pile up on one tile, invisible but each taking a place of the tree
   limit for good; the eraser now also clears every shrub piled up on a tile, so old stacks can
@@ -171,7 +169,9 @@ In the building menu of the map editor's castle mode:
   **Ruined**: the cathedral you place gets the ruined picture that the game otherwise shows only
   in the mission "Kerak" when its cathedral is badly damaged. In a game it is still a whole,
   working cathedral that just looks ruined. Choosing the cathedral in the menu places normal ones
-  again, and the pipette takes a ruined cathedral as ruined.
+  again, and the pipette takes a ruined cathedral as ruined. This needs the game's own
+  `gm/tile_churches.gm1`: older or replaced copies have no ruined cathedral in them, and then
+  cathedrals are placed whole (the game's log says so).
 - **Dug, planned and permanent moat.** While the moat is chosen in the gatehouses menu, a row
   above the menu offers it three ways: **Dug** (the editor's usual moat), **Planned** (moat
   marked out to be dug, as in a game) and **Permanent** (dug moat that nobody can fill in or

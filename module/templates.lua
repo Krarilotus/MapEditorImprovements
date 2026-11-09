@@ -1153,6 +1153,20 @@ mov cx,[ebx+COUNTER]
 jmp BACK
 ]]
 
+-- The placement preview, replacing `mov edx,[ecx+COUNTER]`: the chosen variant too.
+templates.hovelPreview = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne hovel_seen
+mov edx,[HOVEL_LOCK]
+test edx,edx
+je hovel_seen
+dec edx
+jmp BACK
+hovel_seen:
+mov edx,[ecx+COUNTER]
+jmp BACK
+]]
+
 -- ...and `mov eax,[ebx+COUNTER]` before it moves on to the next: not with a chosen variant.
 templates.hovelAdvance = [[
 cmp dword [GAME_MODE],MAP_EDITOR

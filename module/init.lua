@@ -444,6 +444,10 @@ K.HOVEL_TOOL, K.HOVEL_TYPE, K.HOVEL_VARIANTS = 54, 1, 7
 K.AOB_HOVEL_VARIANT = "66 8B 8B ? ? ? ? 8B E8 69 C0 2C 03 00 00 66 83 7C 24 20 01 89 44 24 28 66 89 88 ? ? ? ? "
   .. "75 ? 8B 83 ? ? ? ? 83 C0 01 99 B9 07 00 00 00 F7 F9 89 93"
 K.HOVEL_VARIANT = { size = 7, counter = 3, field = 0x1C, skipRel = 0x21, advance = 0x22, advanceSize = 6 }
+-- ...and the placement preview's `imul ecx,ecx,player size / mov edx,[ecx+COUNTER] / mov eax,
+-- [edx*4+HOVEL PICTURES] / mov [esp+0x2C],eax`.
+K.AOB_HOVEL_PREVIEW = "69 C9 F4 39 00 00 8B 91 ? ? ? ? 8B 04 95 ? ? ? ? 89 44 24 2C"
+K.HOVEL_PREVIEW = { site = 6, size = 6 }
 K.MOAT_ENTRY_WIDTH = 76                  -- room for "Permanent" under its picture
 -- Panels the module draws mark where they are (menu coordinates) each frame they are drawn; the
 -- guard keeps clicks there off the map. A rect: active, x, y, width, height; -1 ends the list.
@@ -532,6 +536,8 @@ K.AOB_RUINED_CATHEDRAL = "66 39 99 ? ? ? ? B8 ? ? ? ? 74 08 39 81 ? ? ? ? 74 ? 6
 K.RUINED_CATHEDRAL = { flag = 3, picture = 8, pictureField = 0x10, tileMap = 0x27, update = 0x2B }
 K.LAST_PLACED = 0x554888
 K.TYPE_AFTER_PICTURE = 0xD2              -- a building's type word, from its picture field
+K.GM_AFTER_PICTURE = 0x04                -- and its gm (spriteSheetID)
+K.RUIN_PARTS = 169                       -- the ruin's pictures, one per tile of the 13 x 13 cathedral
 
 -- Moat. The gatehouses tab's moat buttons (106, 107) choose 0x2D (dig) and 0x2C (remove) in the
 -- map editor; the click sends ClickSetTerrain with terrain 0x40000000 and a mode: 0 planned
@@ -628,6 +634,13 @@ K.HEIGHT_OFFSETS = 0x3840
 K.FLAT_HEIGHT_OFFSET = 8                 -- renderMap's flattened view: every tile at this offset
 K.TILE_WIDTH, K.TILE_HEIGHT = 32, 16
 K.TREE_PICTURE = 0x00                    -- a tree slot's current picture (UpdateTree keeps it)
+K.TREE_GM = 0x04                         -- and its gm
+-- renderMap draws a tree at its tile + (14, 6) - its gm's origin; createTree reads the origin
+-- from the gm's header: `movsx edx, word [ecx+0x20] / imul edx,edx,STRIDE / mov bx,[edx+X] / mov
+-- [ecx+0x28],bx / movzx edx, word [edx+Y] / mov [ecx+0x2A],dx`.
+K.AOB_TREE_ORIGIN = "0F BF 51 20 69 D2 ? ? ? ? 66 8B 9A ? ? ? ? 66 89 59 28 0F B7 92 ? ? ? ? 66 89 51 2A"
+K.TREE_ORIGIN = { stride = 6, x = 0x0D, y = 0x18 }
+K.TREE_DRAW_X, K.TREE_DRAW_Y = 14, 6
 -- The rock tool's variant and size (0-3) in the tile map (rock number = size * 4 + variant), and
 -- a rotation mode that leaves the rock rotation alone (5 turns it every frame, 0 every second).
 K.ROCK_VARIANT_AT, K.ROCK_SIZE_AT, K.FIXED_TURN = 0x5548F4, 0x5548F8, 1
@@ -1684,19 +1697,24 @@ function C.patchVariantLocks(self, G)
   local locks = C.locks()
   local turn = scan(K.AOB_VARIANT_TURN, "the variant rotation")
   local T = K.VARIANT_TURN
-  patchJump(self, turn, T.size, core.allocateAssembly(templates.variantLock, {
+  C.patchJump(self, turn, T.size, core.allocateAssembly(templates.variantLock, {
     SUBTYPE = G.subtype, VARIANT_LOCK = locks.variant, TURN_ADD = rd32(turn + T.add) & 0xFFFFFFFF,
     TURN_END = turn + T.endRel + 1 + (rd8(turn + T.endRel) & 0xFF), BACK = turn + T.size,
   }))
   local hovel = scan(K.AOB_HOVEL_VARIANT, "the hovel variants")
   local H = K.HOVEL_VARIANT
   local counter = rd32(hovel + H.counter)
-  patchJump(self, hovel, H.size, core.allocateAssembly(templates.hovelVariant, {
+  C.patchJump(self, hovel, H.size, core.allocateAssembly(templates.hovelVariant, {
     GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, HOVEL_LOCK = locks.hovel, COUNTER = counter,
     BACK = hovel + H.size,
   }))
+  local preview = scan(K.AOB_HOVEL_PREVIEW, "the hovel preview") + K.HOVEL_PREVIEW.site
+  C.patchJump(self, preview, K.HOVEL_PREVIEW.size, core.allocateAssembly(templates.hovelPreview, {
+    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, HOVEL_LOCK = locks.hovel, COUNTER = counter,
+    BACK = preview + K.HOVEL_PREVIEW.size,
+  }))
   local advance = hovel + H.advance
-  patchJump(self, advance, H.advanceSize, core.allocateAssembly(templates.hovelAdvance, {
+  C.patchJump(self, advance, H.advanceSize, core.allocateAssembly(templates.hovelAdvance, {
     GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, HOVEL_LOCK = locks.hovel, COUNTER = counter,
     SKIP = hovel + H.skipRel + 1 + (rd8(hovel + H.skipRel) & 0xFF), BACK = advance + H.advanceSize,
   }))
@@ -1716,6 +1734,19 @@ function C.ruinWatch(G)
   local stride = rd32(scan(K.AOB_BUILDING_TYPE, "the building types") + K.BUILDING_TYPE.stride)
   local gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
   local choice = C.locks().ruined
+  local warned = false
+  -- The ruin is 169 pictures from RUINED on in tile_churches.gm1; older copies end before it.
+  local function ruinThere(id)
+    local gm = rd16(pictureField + K.GM_AFTER_PICTURE + id * stride)
+    local first, after = rd32(G.firstPictures + gm * 4), rd32(G.firstPictures + (gm + 1) * 4)
+    if after > first and picture + K.RUIN_PARTS - 1 <= after - first then return true end
+    if not warned then
+      warned = true
+      log(WARNING, MODULE_NAME .. ": this game's tile_churches.gm1 has no ruined cathedral (it ends at picture "
+        .. (after - first) .. "); cathedrals are placed whole")
+    end
+    return false
+  end
   local seen = rd32(tileMap + K.LAST_PLACED)
   C.watchRuins = function()
     local id = rd32(tileMap + K.LAST_PLACED)
@@ -1723,6 +1754,7 @@ function C.ruinWatch(G)
     seen = id
     if rd32(gameMode) ~= K.MAP_EDITOR or rd32(choice) ~= 1 or id <= 0 then return end
     if rd16(pictureField + K.TYPE_AFTER_PICTURE + id * stride) ~= K.CATHEDRAL_TYPE then return end
+    if not ruinThere(id) then return end
     wr16(flagField + id * stride, 1)
     wr32(pictureField + id * stride, picture)
     update(tileMap, id)
@@ -2733,6 +2765,7 @@ local function patchJump(self, site, size, stub)
   table.insert(self.saved, { address = site, bytes = core.readBytes(site, size) })
   core.writeCode(site, jumpTo(site, stub, size))
 end
+C.patchJump = patchJump                  -- for C functions written above this one
 
 local function patchTrees(self, G, O, data)
   local randomShrubs = O.shrubs and O.randomMix
@@ -3212,32 +3245,49 @@ function C.textureNames(logic, decoration)
   return table.concat(names, ", ")
 end
 
--- The tree a tree or shrub tool would plant, drawn at the tile under the mouse: its picture is
--- taken from a tree of the same kind and stage on the map (UpdateTree keeps each tree's current
--- picture; standing pictures differ per tree type), a felled one from the felled tree pictures;
--- a shrub without one on the map gets its menu picture. data.treePreview, when the pipette sets
--- it, is the exact tree to show.
+-- The tree a tree or shrub tool would plant, drawn at the tile under the mouse the way renderMap
+-- draws trees; a felled one from the felled tree pictures. data.treePreview, when the pipette
+-- sets it, is the exact tree to show.
 function C.makeTreePreview(G, O, data)
   local R = C.resolvePipette(G)
   local T = R.tileMap
   local renderGM = core.exposeCode(G.renderGM, 5, 1)
   local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
+  local origin = scan(K.AOB_TREE_ORIGIN, "the tree origins")
+  local originStride = rd32(origin + K.TREE_ORIGIN.stride)
+  local originX, originY = rd32(origin + K.TREE_ORIGIN.x), rd32(origin + K.TREE_ORIGIN.y)
   local inUse = G.firstTree - (G.landscape + TREES_IN_LANDSCAPE + G.treeSize)
-  local cache, cacheTime = {}, 0
+  local blank = {}
+  for i = 1, G.treeSize do blank[i] = 0 end
+  local cache = {}
 
-  -- A picture of a standing tree of this type and stage, from the map's own trees.
-  local function standing(treeType, stage)
+  -- The picture a new tree of this type and stage starts with, as createTree gets it: the type's
+  -- own update function, run once on a free tree slot (put back as it was afterwards).
+  local function picture(treeType, stage)
     local key = treeType * 16 + stage
     if cache[key] ~= nil then return cache[key] end
-    for slot = 1, G.treeSlots do
+    cache[key] = false
+    local update = rd32(G.updateTree + treeType * 4)
+    if update == 0 or (rd8(update) & 0xFF) ~= 0xA1 then return false end   -- `mov eax,[current tree]`
+    local current = rd32(update + 1)
+    for slot = G.treeSlots, 1, -1 do
       local tree = G.landscape + TREES_IN_LANDSCAPE + slot * G.treeSize
-      if rd16(tree + inUse) ~= 0 and rd16(tree + TREE.TYPE) == treeType
-          and (rd8(tree + TREE.STAGE) & 0xFF) == stage and (rd8(tree + TREE.LYING) & 0xFF) ~= LYING_FELLED then
-        cache[key] = rd32(tree + K.TREE_PICTURE)
+      if rd16(tree + inUse) == 0 then
+        local saved = core.readBytes(tree, G.treeSize)
+        core.writeBytes(tree, blank)
+        wr16(tree + TREE.TYPE, treeType)
+        wr16(tree + K.TREE_GM, rd16(G.typeGm + treeType * 4))
+        wr32(tree + TREE.STAGE, stage)
+        local before = rd32(current)
+        wr32(current, slot)
+        local ok = pcall(core.exposeCode(update, 0, 0))
+        wr32(current, before)
+        local result = rd32(tree + K.TREE_PICTURE)
+        core.writeBytes(tree, saved)
+        if ok and result > 0 then cache[key] = result end
         return cache[key]
       end
     end
-    cache[key] = false
     return false
   end
 
@@ -3261,40 +3311,31 @@ function C.makeTreePreview(G, O, data)
     local command = rd32(G.subtype)
     local treeType = G.plantTypes[command]
     if treeType == nil then return end
-    -- The picture.
-    local gm, picture, palette = rd16(G.typeGm + treeType * 4), nil, SHRUB_PALETTES[treeType] or 0
+    local gm, shown, palette = rd16(G.typeGm + treeType * 4), nil, SHRUB_PALETTES[treeType] or 0
     local exact = data.treePreview
     if exact ~= nil and exact.command == command then
-      picture = exact.picture
+      shown = exact.picture
     else
       local stage = PLACED_STAGE
       if O.growth then stage = math.max(0, math.min(MAX_STAGE, rd32(G.brush) - 1)) end
       local logs = data.felledLogs ~= nil and rd32(data.felledLogs) or 0
       if logs > 0 and logs < K.RANDOM_STANDING and data.felledCommand ~= nil and rd32(data.felledCommand) == command then
-        local shown = math.max(stage, K.SMALLEST_FELLED_STAGE)
-        picture, palette = FELLED_PICTURE_BASE[math.min(shown, 4)] - logs, FELLED_PALETTE
+        local felledStage = math.max(stage, K.SMALLEST_FELLED_STAGE)
+        shown, palette = FELLED_PICTURE_BASE[math.min(felledStage, 4)] - logs, FELLED_PALETTE
       else
-        if os.clock() - cacheTime > 2 then cache, cacheTime = {}, os.clock() end   -- trees grow and go
-        picture = standing(treeType, stage)
-        if picture == false and SHRUB_PALETTES[treeType] ~= nil then picture = SHRUB_PICTURE end
+        shown = picture(treeType, stage)
       end
     end
-    if not picture then return end
-    -- The place: the tile under the mouse, as the click handlers work it out.
+    if not shown then return end
+    -- The tile under the mouse, as the click handlers work it out.
     if rd32(R.flatView) ~= 0 then flatSetup(R.viewport) else mouseSetup(R.viewport) end
     local x, y = rd32(R.mouseX), rd32(R.mouseY)
     if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return end
-    local tile = rd32(R.rows + y * 12) + x
-    local drawX, drawY = surface(x, y, tile)
+    local drawX, drawY = surface(x, y, rd32(R.rows + y * 12) + x)
     if drawX == nil then return end
-    local first = rd32(G.firstPictures + gm * 4)
-    if first <= 0 then return end
-    local frame = first + picture - 1
-    local width, height = rd16(G.pictureHeights - 2 + frame * PICTURE_SIZE), rd16(G.pictureHeights + frame * PICTURE_SIZE)
-    if width <= 0 or height <= 0 then return end
-    -- Standing on the tile's middle.
-    local sx = drawX + K.TILE_WIDTH // 2 - width // 2
-    local sy = drawY + K.TILE_HEIGHT // 2 + K.TILE_HEIGHT // 4 - height
+    -- Where renderMap puts a tree: tile + (14, 6) - the origin of the tree's gm.
+    local sx = drawX + K.TREE_DRAW_X - rd16(originX + gm * originStride)
+    local sy = drawY + K.TREE_DRAW_Y - rd16(originY + gm * originStride)
     local t = G.textures
     local mode, direct = rd32(t + TEXTURES_MODE), rd32(t + TEXTURES_DIRECT_PALETTE)
     local sprite, spritePalette = rd32(G.sprite), rd32(G.spritePalette)
@@ -3302,7 +3343,7 @@ function C.makeTreePreview(G, O, data)
     wr32(t + TEXTURES_DIRECT_PALETTE, 1)
     wr32(G.sprite, gm)
     wr32(G.spritePalette, palette)
-    renderGM(t, gm, picture, sx, sy)
+    renderGM(t, gm, shown, sx, sy)
     wr32(G.sprite, sprite)
     wr32(G.spritePalette, spritePalette)
     wr32(t + TEXTURES_DIRECT_PALETTE, direct)
