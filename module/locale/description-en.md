@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.39
+**Version**: 1.0.40
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -69,6 +69,11 @@ right to make room for it.
 - **Tidier rows.** The top row holds the trees (and the apple tree and the check box); the
   shrub that sat there moves to the bottom row, whose shrubs are sorted.
 
+- **Tree preview.** While a tree or shrub is chosen, the tree it would plant is shown on the tile
+  under the mouse, at the stage the brush gives it or felled with the chosen logs - also for the
+  pipette, which shows the very tree it took. The picture comes from a tree of the same kind and
+  stage on the map; a stage nowhere on the map yet shows nothing (shrubs then show their menu
+  picture). Not while zoomed out.
 - **No shrub stacks.** A tree or shrub can no longer be placed on a tile that already has
   one. Some shrubs used to pile up on one tile, invisible but each taking a place of the tree
   limit for good; the eraser now also clears every shrub piled up on a tile, so old stacks can

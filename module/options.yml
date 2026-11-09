@@ -68,6 +68,14 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.trees.preview
+    name: map-editor-improvements-trees-preview
+    text: '{{trees_preview}}'
+    tooltip: '{{trees_preview_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.trees.random_mix
     name: map-editor-improvements-trees-random-mix
     text: '{{trees_random_mix}}'

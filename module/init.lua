@@ -83,7 +83,7 @@ local MODULE_FOLDERS = { "ucp/modules/map-editor-improvements/" }   -- UCP maps 
 local DEFAULTS = {
   counts = { enabled = true, shown = true },
   menu = { always_update = true },
-  trees = { growth_from_brush = true, apple = true, shrubs = true, felled = true, random_mix = true,
+  trees = { growth_from_brush = true, apple = true, shrubs = true, felled = true, random_mix = true, preview = true,
     obstacles = true, sorted_rows = true, no_shrub_stacking = true },
   textures = { gravel_and_iron = true, no_heights_iron = true },
   water = { decorations = true, foam_on_sea = true },
@@ -599,6 +599,22 @@ K.PLAYERS = 8
 -- (sizes 1 to 4 for numbers 0-3, 4-7, 8-11, 12-15); a rock slot keeps its type at +0x10 and
 -- its turn at +0x18, which placeRock takes from the tile map's rotation.
 K.TREE_FLAG = 0x1000
+-- Where renderMap draws a tile on the map surface (see the skill's notes on the screen transform):
+-- per map turn the constants of drawX = cx + xd*(x-y) + xs*(x+y) - 32*C and drawY = bias + cy +
+-- yd*(x-y) + ys*(x+y) - 16*R, C and R from the viewport position; the tile's height lifts it by
+-- heightBasedScreenYOffset[height] (TileMapState + 0x3840). Viewport fields: x, y, zoomed out,
+-- row bias.
+K.SCREEN_TURN = {
+  [0] = { cx = 3334, xd = 16, xs = 0, cy = 8 - 1592, yd = 0, ys = 8 },
+  [6] = { cx = 9718, xd = 0, xs = -16, cy = 8 + 1600, yd = 8, ys = 0 },
+  [4] = { cx = 3334, xd = -16, xs = 0, cy = 8 + 4792, yd = 0, ys = -8 },
+  [2] = { cx = -3050, xd = 0, xs = 16, cy = 8 + 1600, yd = -8, ys = 0 },
+}
+K.VIEWPORT = { x = 0x78, y = 0x7C, zoomedOut = 0x90, bias = 0x94 }
+K.HEIGHT_OFFSETS = 0x3840
+K.FLAT_HEIGHT_OFFSET = 8                 -- renderMap's flattened view: every tile at this offset
+K.TILE_WIDTH, K.TILE_HEIGHT = 32, 16
+K.TREE_PICTURE = 0x00                    -- a tree slot's current picture (UpdateTree keeps it)
 -- The rock tool's variant and size (0-3) in the tile map (rock number = size * 4 + variant), and
 -- a rotation mode that leaves the rock rotation alone (5 turns it every frame, 0 every second).
 K.ROCK_VARIANT_AT, K.ROCK_SIZE_AT, K.FIXED_TURN = 0x5548F4, 0x5548F8, 1
@@ -2038,6 +2054,7 @@ local function buildTable(G, O)
     insert(MAP_CLICK_ITEM, "redo")
   end
   if O.counts then insert(INFO_BEFORE_ITEM, "info") end
+  if O.treePreview then insert(INFO_BEFORE_ITEM, "treePreview") end
   local pipetteItems = { "pipetteTick", "pipette", "pipettePanel" }
   if O.pipette then
     insert(MAP_CLICK_ITEM, "pipetteTick")
@@ -2589,6 +2606,16 @@ local function buildTable(G, O)
   end
 
   if O.undo then C.undoButtons(G, added, guarded, O.undo) end
+  if O.treePreview then
+    local into = added.treePreview
+    wr32(into + ITEM_TYPE, TYPE_CLICKABLE)    -- no size, so never under the mouse
+    wr32(into + ITEM_RENDER_TYPE, RENDER_NONE)
+    local ok, problem = pcall(function()
+      wr32(into + ITEM_RENDER, C.luaPad(C.makeTreePreview(G, O, data), "the tree preview"))
+      wr32(into + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+    end)
+    if not ok then log(WARNING, tostring(problem) .. "; no tree preview") end
+  end
   if O.pipette then
     if G.blit == nil then
       G.blit = core.allocateAssembly(templates.blit, {
@@ -3142,6 +3169,104 @@ function C.textureNames(logic, decoration)
   return table.concat(names, ", ")
 end
 
+-- The tree a tree or shrub tool would plant, drawn at the tile under the mouse: its picture is
+-- taken from a tree of the same kind and stage on the map (UpdateTree keeps each tree's current
+-- picture; standing pictures differ per tree type), a felled one from the felled tree pictures;
+-- a shrub without one on the map gets its menu picture. data.treePreview, when the pipette sets
+-- it, is the exact tree to show.
+function C.makeTreePreview(G, O, data)
+  local R = C.resolvePipette(G)
+  local T = R.tileMap
+  local renderGM = core.exposeCode(G.renderGM, 5, 1)
+  local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
+  local inUse = G.firstTree - (G.landscape + TREES_IN_LANDSCAPE + G.treeSize)
+  local cache, cacheTime = {}, 0
+
+  -- A picture of a standing tree of this type and stage, from the map's own trees.
+  local function standing(treeType, stage)
+    local key = treeType * 16 + stage
+    if cache[key] ~= nil then return cache[key] end
+    for slot = 1, G.treeSlots do
+      local tree = G.landscape + TREES_IN_LANDSCAPE + slot * G.treeSize
+      if rd16(tree + inUse) ~= 0 and rd16(tree + TREE.TYPE) == treeType
+          and (rd8(tree + TREE.STAGE) & 0xFF) == stage and (rd8(tree + TREE.LYING) & 0xFF) ~= LYING_FELLED then
+        cache[key] = rd32(tree + K.TREE_PICTURE)
+        return cache[key]
+      end
+    end
+    cache[key] = false
+    return false
+  end
+
+  local function surface(x, y, tile)
+    local vp = R.viewport
+    local turn = K.SCREEN_TURN[rd32(T + K.TILE_MAP.orientation)]
+    if turn == nil or rd32(vp + K.VIEWPORT.zoomedOut) ~= 0 then return nil end
+    local bias = rd32(vp + K.VIEWPORT.bias) == 0 and 0 or 0x40
+    local C2 = rd32(vp + K.VIEWPORT.x) // K.TILE_WIDTH
+    local R2 = (rd32(vp + K.VIEWPORT.y) + bias) // K.TILE_HEIGHT
+    local d, s = x - y, x + y
+    local drawX = turn.cx + turn.xd * d + turn.xs * s - K.TILE_WIDTH * C2
+    local drawY = bias + turn.cy + turn.yd * d + turn.ys * s - K.TILE_HEIGHT * R2
+    local lift = K.FLAT_HEIGHT_OFFSET
+    if rd32(R.flatView) == 0 then lift = rd32(T + K.HEIGHT_OFFSETS + (rd8(T + R.height + tile) & 0xFF) * 4) end
+    return drawX, drawY - lift
+  end
+
+  return function()
+    if rd32(R.gameMode) ~= K.MAP_EDITOR or rd32(G.onMap) == 0 then return end
+    local command = rd32(G.subtype)
+    local treeType = G.plantTypes[command]
+    if treeType == nil then return end
+    -- The picture.
+    local gm, picture, palette = rd16(G.typeGm + treeType * 4), nil, SHRUB_PALETTES[treeType] or 0
+    local exact = data.treePreview
+    if exact ~= nil and exact.command == command then
+      picture = exact.picture
+    else
+      local stage = PLACED_STAGE
+      if O.growth then stage = math.max(0, math.min(MAX_STAGE, rd32(G.brush) - 1)) end
+      local logs = data.felledLogs ~= nil and rd32(data.felledLogs) or 0
+      if logs > 0 and logs < K.RANDOM_STANDING and data.felledCommand ~= nil and rd32(data.felledCommand) == command then
+        local shown = math.max(stage, K.SMALLEST_FELLED_STAGE)
+        picture, palette = FELLED_PICTURE_BASE[math.min(shown, 4)] - logs, FELLED_PALETTE
+      else
+        if os.clock() - cacheTime > 2 then cache, cacheTime = {}, os.clock() end   -- trees grow and go
+        picture = standing(treeType, stage)
+        if picture == false and SHRUB_PALETTES[treeType] ~= nil then picture = SHRUB_PICTURE end
+      end
+    end
+    if not picture then return end
+    -- The place: the tile under the mouse, as the click handlers work it out.
+    if rd32(R.flatView) ~= 0 then flatSetup(R.viewport) else mouseSetup(R.viewport) end
+    local x, y = rd32(R.mouseX), rd32(R.mouseY)
+    if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return end
+    local tile = rd32(R.rows + y * 12) + x
+    local drawX, drawY = surface(x, y, tile)
+    if drawX == nil then return end
+    local first = rd32(G.firstPictures + gm * 4)
+    if first <= 0 then return end
+    local frame = first + picture - 1
+    local width, height = rd16(G.pictureHeights - 2 + frame * PICTURE_SIZE), rd16(G.pictureHeights + frame * PICTURE_SIZE)
+    if width <= 0 or height <= 0 then return end
+    -- Standing on the tile's middle.
+    local sx = drawX + K.TILE_WIDTH // 2 - width // 2
+    local sy = drawY + K.TILE_HEIGHT // 2 + K.TILE_HEIGHT // 4 - height
+    local t = G.textures
+    local mode, direct = rd32(t + TEXTURES_MODE), rd32(t + TEXTURES_DIRECT_PALETTE)
+    local sprite, spritePalette = rd32(G.sprite), rd32(G.spritePalette)
+    wr32(t + TEXTURES_MODE, MAP_LAYER)
+    wr32(t + TEXTURES_DIRECT_PALETTE, 1)
+    wr32(G.sprite, gm)
+    wr32(G.spritePalette, palette)
+    renderGM(t, gm, picture, sx, sy)
+    wr32(G.sprite, sprite)
+    wr32(G.spritePalette, spritePalette)
+    wr32(t + TEXTURES_DIRECT_PALETTE, direct)
+    wr32(t + TEXTURES_MODE, mode)
+  end
+end
+
 -- The tree or rock on a tile, for the pipette: what placing the same again takes. Rocks the
 -- game has no slot for (the invisible ones, number 2000) are left out.
 function C.readPlant(G, T, R, plantOf, tile, logic)
@@ -3163,7 +3288,8 @@ function C.readPlant(G, T, R, plantOf, tile, logic)
     local command = plantOf[treeType]
     if command == nil then return nil end
     local stage = rd8(tree + TREE.STAGE) & 0xFF
-    local plant = { kind = "tree", command = command, stage = math.min(stage, MAX_STAGE) }
+    local plant = { kind = "tree", command = command, stage = math.min(stage, MAX_STAGE),
+      picture = rd32(tree + K.TREE_PICTURE) }
     local name = treeType == APPLE_TYPE and "apple tree" or K.PLANT_NAMES[command] or "shrub"
     if rd8(tree + TREE.LYING) & 0xFF == LYING_FELLED then
       plant.logs = math.max(1, rd8(tree + TREE.LOGS) & 0xFF)
@@ -3226,6 +3352,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
     if data.rockLock ~= nil then S2.lock = rd32(data.rockLock) end
     P.saved = S2
     if stored.kind == "tree" then
+      data.treePreview = { command = stored.command, picture = stored.picture }
       wr32(G.brush, stored.stage + 1)          -- the module's growth stage follows the brush size
       if data.felledLogs ~= nil then
         wr32(data.felledLogs, stored.logs or 0)
@@ -3244,6 +3371,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
     local S2 = P.saved
     if S2 == nil then return end
     P.saved = nil
+    data.treePreview = nil
     wr32(G.brush, S2.brush)
     wr32(T + K.TILE_MAP.rotation, S2.turn)
     wr32(T + K.TILE_MAP.mode, S2.mode)
@@ -4609,6 +4737,7 @@ local function enable(self, config)
     herds = setting(config, "herds", "panel") == true,
     invisibleRocks = setting(config, "rocks", "invisible") == true,
     noStacking = setting(config, "trees", "no_shrub_stacking") == true,
+    treePreview = setting(config, "trees", "preview") == true,
     noHeightsIron = setting(config, "textures", "no_heights_iron") == true,
     waterDecorations = setting(config, "water", "decorations") == true,
     foamOnSea = setting(config, "water", "foam_on_sea") == true,
@@ -4641,7 +4770,7 @@ local function enable(self, config)
   }
   if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.sortedRows or O.textures
       or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
-      or O.undo or O.pipette then
+      or O.undo or O.pipette or O.treePreview then
     local ok, problem = pcall(enableMenu, self, O)
     if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
   end

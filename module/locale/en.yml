@@ -58,6 +58,12 @@ trees_sorted_rows_tooltip: |
   Moves the shrub from the top row to the bottom row and sorts the bottom row's shrubs, so
   the top row holds the trees (and the apple tree and the check box) and the bottom row all
   the shrubs.
+trees_preview: Tree preview
+trees_preview_tooltip: |
+  While a tree or shrub is chosen, the tree it would plant is shown on the tile under the mouse,
+  at the stage the brush gives it (or felled, with the felled tree's logs). Its picture is taken
+  from a tree of the same kind and stage on the map, so a stage nowhere on the map yet shows
+  nothing (shrubs show their menu picture). Not while zoomed out.
 trees_no_stacking: No shrub stacks
 trees_no_stacking_tooltip: |
   A tree or shrub can no longer be placed on a tile that already has one. Some shrubs (the
