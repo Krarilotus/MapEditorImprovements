@@ -2222,20 +2222,11 @@ local function buildTable(G, O)
       or O.maxHeight or O.lostRocks or O.textureMask then
     insert(G.firstBlock, "tooltip")
   end
-  if O.textureMask then
-    insert(G.blockEnd[TEXTURES], "textureMask")
-    insert(MAP_CLICK_ITEM, "maskTick")
-  end
   if G.blockEnd[K.HEIGHTS_TAB] == nil or G.buttons[K.MIN_HEIGHT_TOOL] == nil then
     O.maxHeight, O.heightTools = false, false
   end
   for _, kind in ipairs(C.heightItems(O)) do insert(G.blockEnd[K.HEIGHTS_TAB], kind) end
   if O.heightTools then insert(MAP_CLICK_ITEM, "heightTick") end
-  if O.lostRocks then
-    for _, tab in ipairs({ ROCKS, K.ROCKS_SKIRMISH }) do
-      if G.blockEnd[tab] ~= nil then insert(G.blockEnd[tab], "lostRocks" .. tab) end
-    end
-  end
   local animalsEnd = G.blockEnd[ANIMALS]
   if O.herds then
     insert(animalsEnd, "herdCheck")
@@ -2259,6 +2250,12 @@ local function buildTable(G, O)
     insert(G.blockEnd[TEXTURES], "gravel")
     insert(G.blockEnd[TEXTURES], "iron")
   end
+  -- After the button copies: the menu only gives a copy its group's renderer while the copies
+  -- follow the group's buttons without another item in between.
+  if O.textureMask then
+    insert(G.blockEnd[TEXTURES], "textureMask")
+    insert(MAP_CLICK_ITEM, "maskTick")
+  end
   if O.waterDecorations and G.blockEnd[K.WATER] ~= nil then
     for _, decoration in ipairs(K.WATER_DECORATIONS) do insert(G.blockEnd[K.WATER], "water" .. decoration.command) end
   end
@@ -2267,6 +2264,11 @@ local function buildTable(G, O)
     insert(G.blockEnd[tab], "rockPanel" .. tab)
   end
   for _, tab in ipairs(boxTabs) do insert(G.blockEnd[tab], "invisible" .. tab) end
+  if O.lostRocks then
+    for _, tab in ipairs({ ROCKS, K.ROCKS_SKIRMISH }) do
+      if G.blockEnd[tab] ~= nil then insert(G.blockEnd[tab], "lostRocks" .. tab) end
+    end
+  end
 
   local count = ITEM_COUNT + 1
   for _, list in pairs(inserts) do count = count + #list end
@@ -4554,11 +4556,27 @@ end
 
 -- The height tools' patches (with the options on): rocks kept whole or erased, the ground's look
 -- only reset when asked, raise and lower without wrapping, the strength.
+-- allocateAssembly with every value as an unsigned 32-bit number (core.assemble writes them with
+-- %X, so a negative one would not assemble); a failure names the template and its values.
+function C.assemble(name, values)
+  local clean, listed = {}, {}
+  for key, value in pairs(values) do
+    clean[key] = value & 0xFFFFFFFF
+    listed[#listed + 1] = string.format("%s=0x%X", key, clean[key])
+  end
+  local ok, result = pcall(core.allocateAssembly, templates[name], clean)
+  if not ok then
+    table.sort(listed)
+    error(string.format("%s: %s (%s)", name, tostring(result), table.concat(listed, " ")))
+  end
+  return result
+end
+
 function C.patchHeightTools(self, G, data)
   local H = data.heights
   local R = C.resolvePipette(G)
   local T = R.tileMap
-  local check = core.allocateAssembly(templates.rockCheck, {
+  local check = C.assemble("rockCheck", {
     ORGANISM = T + R.organism, FIRST_ROCK_NUMBER = K.FIRST_ROCK_NUMBER, ROCK_MODE = H.mode,
     MODE_ERASE = K.ROCK_ERASE, MODE_WHOLE = K.ROCK_WHOLE, RECORD_COUNT = H.count, RECORD_MOST = K.ROCK_RECORDS,
     RECORDS = H.records, BASE_HEIGHT = T + R.defaultHeight, BREAK_ROCKS = H.breakRocks,
@@ -4578,44 +4596,48 @@ function C.patchHeightTools(self, G, data)
   local raiseAmount = scan(K.AOB_RAISE_AMOUNT, "the raise land command") + K.AMOUNT_VALUE
   local lowerAmount = scan(K.AOB_LOWER_AMOUNT, "the lower land command") + K.AMOUNT_VALUE
 
-  C.patchJump(self, raiseAnd, K.RAISE_AND.size, core.allocateAssembly(templates.raiseRock, {
+  -- Every stub first, so that a failure leaves the game's code as it is.
+  local stubs = {}
+  stubs[#stubs + 1] = { raiseAnd, K.RAISE_AND.size, C.assemble("raiseRock", {
     ROCK_CHECK = check, LOGIC = rd32(raiseAnd + K.RAISE_AND.logic), BACK = raiseAnd + K.RAISE_AND.size,
-  }))
-  C.patchJump(self, raiseAdd, K.RAISE_ADD.size, core.allocateAssembly(templates.raiseAmount, {
+  }) }
+  stubs[#stubs + 1] = { raiseAdd, K.RAISE_ADD.size, C.assemble("raiseAmount", {
     HEIGHT = rd32(raiseAdd + K.RAISE_ADD.height), DECORATION = rd32(raiseAdd + K.RAISE_ADD.decoration),
     RESET = H.reset, BACK = raiseAdd + K.RAISE_ADD.size,
-  }))
-  C.patchJump(self, levelAnd, K.LEVEL_AND.size, core.allocateAssembly(templates.brushRock, {
+  }) }
+  stubs[#stubs + 1] = { levelAnd, K.LEVEL_AND.size, C.assemble("brushRock", {
     ROCK_CHECK = check, MAY_BREAK = 1, LOGIC = rd32(levelAnd + K.LEVEL_AND.logic), BACK = levelAnd + K.LEVEL_AND.size,
-  }))
-  C.patchJump(self, levelRise, K.LEVEL_RISE.size, core.allocateAssembly(templates.levelRise, {
+  }) }
+  stubs[#stubs + 1] = { levelRise, K.LEVEL_RISE.size, C.assemble("levelRise", {
     DIVISOR = H.divisor, HEIGHT_STORE = levelRise + K.LEVEL_RISE.store,
-  }))
-  C.patchJump(self, levelFall, K.LEVEL_FALL.size, core.allocateAssembly(templates.levelFall, {
+  }) }
+  stubs[#stubs + 1] = { levelFall, K.LEVEL_FALL.size, C.assemble("levelFall", {
     DIVISOR = H.divisor, HEIGHT_STORE = levelFall + K.LEVEL_FALL.size,
-  }))
-  C.patchJump(self, levelGround, K.LEVEL_DECORATION.size, core.allocateAssembly(templates.levelGround, {
+  }) }
+  stubs[#stubs + 1] = { levelGround, K.LEVEL_DECORATION.size, C.assemble("levelGround", {
     RESET = H.reset, DECORATION = rd32(levelGround + K.LEVEL_DECORATION.decoration),
     BACK = levelGround + K.LEVEL_DECORATION.size,
-  }))
-  C.patchJump(self, plateauAnd, K.PLATEAU_AND.size, core.allocateAssembly(templates.brushRock, {
+  }) }
+  stubs[#stubs + 1] = { plateauAnd, K.PLATEAU_AND.size, C.assemble("brushRock", {
     ROCK_CHECK = check, MAY_BREAK = 0, LOGIC = rd32(plateauAnd + K.PLATEAU_AND.logic),
     BACK = plateauAnd + K.PLATEAU_AND.size,
-  }))
-  C.patchJump(self, plateauGround, K.PLATEAU_DECORATION.size, core.allocateAssembly(templates.plateauGround, {
+  }) }
+  stubs[#stubs + 1] = { plateauGround, K.PLATEAU_DECORATION.size, C.assemble("plateauGround", {
     RESET = H.reset, DECORATION = rd32(plateauGround + K.PLATEAU_DECORATION.decoration),
     BACK = plateauGround + K.PLATEAU_DECORATION.size,
-  }))
+  }) }
+  local minStub = C.assemble("minMaxRock", {
+    RESET = H.reset, DECORATION = rd32(minGround + K.MIN_DECORATION.decoration), ROCK_CHECK = check,
+    AFTER_AND = minRock + K.MIN_ROCK.afterAnd, AND_SITE = minRock + K.MIN_ROCK.andSite,
+  })
+  for _, stub in ipairs(stubs) do C.patchJump(self, stub[1], stub[2], stub[3]) end
   -- Min height's `and byte [DECORATION],0xF3` goes: the rock patch resets the look when asked.
   self.saved = self.saved or {}
   table.insert(self.saved, { address = minGround, bytes = core.readBytes(minGround, K.MIN_DECORATION.size) })
   local nops = {}
   for i = 1, K.MIN_DECORATION.size do nops[i] = 0x90 end
   core.writeCode(minGround, nops)
-  C.patchJump(self, minRock, K.MIN_ROCK.size, core.allocateAssembly(templates.minMaxRock, {
-    RESET = H.reset, DECORATION = rd32(minGround + K.MIN_DECORATION.decoration), ROCK_CHECK = check,
-    AFTER_AND = minRock + K.MIN_ROCK.afterAnd, AND_SITE = minRock + K.MIN_ROCK.andSite,
-  }))
+  C.patchJump(self, minRock, K.MIN_ROCK.size, minStub)
   for _, at in ipairs({ raiseAmount, lowerAmount }) do
     table.insert(self.saved, { address = at, bytes = core.readBytes(at, 4) })
   end
