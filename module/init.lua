@@ -2262,6 +2262,7 @@ local function buildTable(G, O)
   if O.waterDecorations and G.blockEnd[K.WATER] ~= nil then
     for _, decoration in ipairs(K.WATER_DECORATIONS) do insert(G.blockEnd[K.WATER], "water" .. decoration.command) end
   end
+  if O.textureMask and G.blockEnd[K.WATER] ~= nil then insert(G.blockEnd[K.WATER], "waterMask") end
   for _, tab in ipairs(rockTabs) do
     for v = 1, K.ROCK_VARIANTS + 1 do insert(G.blockEnd[tab], "rock" .. tab .. "/" .. v) end
     insert(G.blockEnd[tab], "rockPanel" .. tab)
@@ -2683,13 +2684,15 @@ local function buildTable(G, O)
       for i = #places, counts.places + 1, -1 do places[i] = nil end
       for i = #tooltips, counts.tooltips + 1, -1 do tooltips[i] = nil end
       data.mask = nil
-      for _, kind in ipairs({ "textureMask", "maskTick" }) do   -- harmless: never hit, never drawn
+      for _, kind in ipairs({ "textureMask", "waterMask", "maskTick" }) do   -- harmless: never hit, never drawn
         local into = added[kind]
+        if into == nil then goto skip end
         wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
         wr32(into + ITEM_WIDTH, 0)
         wr32(into + ITEM_HEIGHT, 0)
         wr32(into + ITEM_RENDER_TYPE, RENDER_NONE)
         wr16(into + ITEM_HIDDEN, 1)
+        ::skip::
       end
     end
   end
@@ -4666,13 +4669,13 @@ function C.maskWords()
   return C.maskState
 end
 
--- The Mask button, at the top left of the Textures menu's panel, and the item that ends a
--- stroke when the mouse button is let go (called while the landscape menu's new table is built).
+-- The Mask button, at the top left of the Textures and Water menus' panel (one switch for both),
+-- and the item that ends a stroke when the mouse button is let go (called while the landscape
+-- menu's new table is built).
 function C.textureMask(M)
   local G, O, data, added = M.G, M.O, M.data, M.added
   local W = C.maskWords()
   local R = C.resolvePipette(G)
-  local box = added.textureMask
   local pictures = buttonPictures("mask")
   if G.blit == nil then
     G.blit = core.allocateAssembly(templates.blit, {
@@ -4680,31 +4683,35 @@ function C.textureMask(M)
       SCRATCH = core.allocate(32, true), PIXEL_FORMAT = G.pixelFormat,
     })
   end
-  wr32(box + ITEM_TYPE, TYPE_CLICKABLE)
-  wr32(box + ITEM_X, K.MASK_BUTTON.x)
-  wr32(box + ITEM_Y, K.MASK_BUTTON.y)
-  wr32(box + ITEM_WIDTH, pictures.width)
-  wr32(box + ITEM_HEIGHT, pictures.height)
-  wr32(box + ITEM_ACTION, core.allocateAssembly(templates.flip, { FLAG = W.on }))
-  wr32(box + ITEM_RENDER_TYPE, RENDER_SIMPLE)
-  wr32(box + ITEM_RENDER, core.allocateAssembly(templates.flagPictureButton, {
-    NORMAL = pictures.normal, HOVERED = pictures.hover, CHOSEN = pictures.chosen, FLAG = W.on,
-    HOVER = G.hover, PENCIL = G.pencil, PENCIL_TARGET = PENCIL_TARGET, ITEM_X = G.itemX, ITEM_Y = G.itemY,
-    BLIT = G.blit,
-  }))
-  wr32(box + ITEM_TEXT, 0)
-  wr16(box + ITEM_CONTROL, -1)
-  wr16(box + ITEM_HIDDEN, 0)
-  M.tooltips[#M.tooltips + 1] = { item = box, lines = function()
-    return { "Mask: " .. (rd8(W.on) ~= 0 and "on" or "off"),
-      "Paints only tiles with the texture of the tile you start on" }
-  end, raise = K.CHECK_BOX_TOOLTIP_RAISE }
+  for _, box in ipairs({ added.textureMask, added.waterMask }) do
+    wr32(box + ITEM_TYPE, TYPE_CLICKABLE)
+    wr32(box + ITEM_X, K.MASK_BUTTON.x)
+    wr32(box + ITEM_Y, K.MASK_BUTTON.y)
+    wr32(box + ITEM_WIDTH, pictures.width)
+    wr32(box + ITEM_HEIGHT, pictures.height)
+    wr32(box + ITEM_ACTION, core.allocateAssembly(templates.flip, { FLAG = W.on }))
+    wr32(box + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+    wr32(box + ITEM_RENDER, core.allocateAssembly(templates.flagPictureButton, {
+      NORMAL = pictures.normal, HOVERED = pictures.hover, CHOSEN = pictures.chosen, FLAG = W.on,
+      HOVER = G.hover, PENCIL = G.pencil, PENCIL_TARGET = PENCIL_TARGET, ITEM_X = G.itemX, ITEM_Y = G.itemY,
+      BLIT = G.blit,
+    }))
+    wr32(box + ITEM_TEXT, 0)
+    wr16(box + ITEM_CONTROL, -1)
+    wr16(box + ITEM_HIDDEN, 0)
+    M.tooltips[#M.tooltips + 1] = { item = box, lines = function()
+      return { "Mask: " .. (rd8(W.on) ~= 0 and "on" or "off"),
+        "Paints only tiles with the texture of the tile you start on" }
+    end, raise = K.CHECK_BOX_TOOLTIP_RAISE }
+  end
 
-  -- The tools it works for: the Textures menu's, gravel and iron included.
+  -- The tools it works for: the Textures menu's (gravel and iron included) and the Water menu's
+  -- (foam and small waves included).
   local tools = {}
   for param, entry in pairs(G.buttons) do
-    if entry.block == TEXTURES then tools[#tools + 1] = param end
+    if entry.block == TEXTURES or entry.block == K.WATER then tools[#tools + 1] = param end
   end
+  for _, decoration in ipairs(K.WATER_DECORATIONS) do tools[#tools + 1] = decoration.command end
   tools[#tools + 1] = GRAVEL_COMMAND
   tools[#tools + 1] = IRON_COMMAND
   tools[#tools + 1] = -1
