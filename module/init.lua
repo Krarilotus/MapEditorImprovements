@@ -821,6 +821,9 @@ K.AOB_MASK_LAND = "8B 74 24 18 8B 84 B7 ? ? ? ? A8 30 0F 85"
 K.MASK_LAND = { size = 11, logic = 7, next = 0x0F }
 K.AOB_MASK_CALL = "52 8B 45 0C 50 8B 4D E0 E8 ? ? ? ? 81 7D 18 00 00 00 40"
 K.MASK_CALL = 8
+-- The mask button: at the top left of the menu's panel, right of the category buttons (menu
+-- coordinates; the category buttons sit at user controls 137..182, 460).
+K.MASK_BUTTON = { x = 240, y = 455 }
 K.HEIGHT_PANEL = { gap = 14, slider = 112, sliderHeight = 10, dropdown = 6, optionHeight = 20 }
 K.LOST_ROCKS_LABEL = "Remove lost rocks"
 K.LOST_ROCKS_BUTTON = { padding = 5, height = 22, below = 6 }
@@ -4663,67 +4666,49 @@ function C.maskWords()
   return C.maskState
 end
 
--- The Mask check box, right of the Textures menu's buttons, and the item that ends a stroke
--- when the mouse button is let go (called while the landscape menu's new table is built).
+-- The Mask button, at the top left of the Textures menu's panel, and the item that ends a
+-- stroke when the mouse button is let go (called while the landscape menu's new table is built).
 function C.textureMask(M)
   local G, O, data, added = M.G, M.O, M.data, M.added
   local W = C.maskWords()
   local R = C.resolvePipette(G)
   local box = added.textureMask
+  local pictures = buttonPictures("mask")
+  if G.blit == nil then
+    G.blit = core.allocateAssembly(templates.blit, {
+      PENCIL = G.pencil, SETUP_SURFACE = G.setupSurface, SETUP_PENCIL = G.setupPencil,
+      SCRATCH = core.allocate(32, true), PIXEL_FORMAT = G.pixelFormat,
+    })
+  end
   wr32(box + ITEM_TYPE, TYPE_CLICKABLE)
-  wr32(box + ITEM_WIDTH, K.CHECK_BOX_SIZE)
-  wr32(box + ITEM_HEIGHT, K.CHECK_BOX_SIZE)
+  wr32(box + ITEM_X, K.MASK_BUTTON.x)
+  wr32(box + ITEM_Y, K.MASK_BUTTON.y)
+  wr32(box + ITEM_WIDTH, pictures.width)
+  wr32(box + ITEM_HEIGHT, pictures.height)
   wr32(box + ITEM_ACTION, core.allocateAssembly(templates.flip, { FLAG = W.on }))
   wr32(box + ITEM_RENDER_TYPE, RENDER_SIMPLE)
-  wr32(box + ITEM_RENDER, core.allocateAssembly(templates.checkBox, {
-    FLAG = W.on, ON_IMAGE = G.buttonImages + K.CHECKED_IMAGE * IMAGE_SIZE,
-    OFF_IMAGE = G.buttonImages + K.UNCHECKED_IMAGE * IMAGE_SIZE,
-    HOVER = G.hover, DRAW_MODE = G.drawMode, ITEM_X = G.itemX, ITEM_Y = G.itemY,
-    TEXTURES = G.textures, RENDER_GM = G.renderGM,
+  wr32(box + ITEM_RENDER, core.allocateAssembly(templates.flagPictureButton, {
+    NORMAL = pictures.normal, HOVERED = pictures.hover, CHOSEN = pictures.chosen, FLAG = W.on,
+    HOVER = G.hover, PENCIL = G.pencil, PENCIL_TARGET = PENCIL_TARGET, ITEM_X = G.itemX, ITEM_Y = G.itemY,
+    BLIT = G.blit,
   }))
   wr32(box + ITEM_TEXT, 0)
   wr16(box + ITEM_CONTROL, -1)
-  wr16(box + ITEM_HIDDEN, 1)
+  wr16(box + ITEM_HIDDEN, 0)
   M.tooltips[#M.tooltips + 1] = { item = box, lines = function()
     return { "Mask: " .. (rd8(W.on) ~= 0 and "on" or "off"),
       "Paints only tiles with the texture of the tile you start on" }
   end, raise = K.CHECK_BOX_TOOLTIP_RAISE }
 
   -- The tools it works for: the Textures menu's, gravel and iron included.
-  local tools, buttons = {}, {}
+  local tools = {}
   for param, entry in pairs(G.buttons) do
-    if entry.block == TEXTURES then
-      tools[#tools + 1] = param
-      buttons[#buttons + 1] = item(M.newTable, M.moved(entry.index))
-    end
+    if entry.block == TEXTURES then tools[#tools + 1] = param end
   end
   tools[#tools + 1] = GRAVEL_COMMAND
   tools[#tools + 1] = IRON_COMMAND
   tools[#tools + 1] = -1
   data.mask = { words = W, tools = dwordList(tools) }
-
-  -- Right of the buttons, in the middle of the two rows (the rows reach ROW_RIGHT once spread).
-  M.places[#M.places + 1] = function(measure)
-    local right, top, bottom = nil, nil, nil
-    for _, address in ipairs(buttons) do
-      if rd16(address + ITEM_HIDDEN) == 0 and rd32(address + ITEM_WIDTH) ~= 0 then
-        local x = rd32(address + ITEM_X)
-        if (x & 0xFFFFFFFF) == PLACED_BY_CONTROL then return false end
-        local w, h = measure(address)
-        if w == nil then return false end
-        local y = rd32(address + ITEM_Y)
-        right = math.max(right or 0, x + w)
-        top = math.min(top or y, y)
-        bottom = math.max(bottom or 0, y + h)
-      end
-    end
-    if right == nil then return true end
-    if O.textures then right = math.max(right, ROW_RIGHT) end
-    wr32(box + ITEM_X, right + K.CHECK_BOX_GAP)
-    wr32(box + ITEM_Y, (top + bottom - K.CHECK_BOX_SIZE) // 2)
-    wr16(box + ITEM_HIDDEN, 0)
-    return true
-  end
 
   local tick = added.maskTick
   wr32(tick + ITEM_TYPE, TYPE_EVERY_FRAME)

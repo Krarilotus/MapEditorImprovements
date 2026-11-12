@@ -156,7 +156,7 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   immediates of the click handler's `mov [command param],1/-1`, rewritten from the slider, and
   equalize's step `difference / 10 + 1` divides by 17 - strength instead.
 * **Texture mask.** setTerrain's and setLand's tile loops ask maskCheck before each tile: with
-  the box ticked and a Textures menu tool chosen, the stroke's first command takes the clicked
+  the button on (images/mask*.png from tools/make_mask_icons.py, at K.MASK_BUTTON) and a Textures menu tool chosen, the stroke's first command takes the clicked
   tile's ground flags (K.TEXTURE_FLAGS) and decoration byte, and only tiles with both the same
   are painted. setTerrain calls setLand first for the ground looks (a wrapper around that call
   sets a flag), and the tiles setLand lets through are marked in a byte per tile, since

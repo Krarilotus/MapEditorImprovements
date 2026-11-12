@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.45
+**Version**: 1.0.46
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -88,7 +88,7 @@ spread evenly over the panel to make room.
 
 With the Textures menu's iron in place, the Heights menu's iron button goes (a setting).
 
-**Mask.** A check box to the right of the Textures menu's buttons. While it is ticked, a texture
+**Mask.** A button (a square, half filled) at the top left of the Textures menu. While it is on, a texture
 tool only paints tiles with the same texture as the tile you first click on, so you can paint
 over one kind of ground without touching its neighbours. Let go of the mouse and the next click
 picks a new texture to paint over.
