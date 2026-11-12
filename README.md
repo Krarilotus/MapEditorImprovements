@@ -155,6 +155,13 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   raiseLand's `add [height],amount` no longer wraps; the raise and lower amounts are the
   immediates of the click handler's `mov [command param],1/-1`, rewritten from the slider, and
   equalize's step `difference / 10 + 1` divides by 17 - strength instead.
+* **Texture mask.** setTerrain's and setLand's tile loops ask maskCheck before each tile: with
+  the box ticked and a Textures menu tool chosen, the stroke's first command takes the clicked
+  tile's ground flags (K.TEXTURE_FLAGS) and decoration byte, and only tiles with both the same
+  are painted. setTerrain calls setLand first for the ground looks (a wrapper around that call
+  sets a flag), and the tiles setLand lets through are marked in a byte per tile, since
+  setTerrain then finds them changed. An every-frame item clears the reference while the map
+  click is not held.
 * **Lost rocks.** A rock slot is in use when its word at +0x0C is not 0; the button collects the
   rock numbers (slot + 2000) of all 80400 tiles' organism words and zeroes every slot in use that
   no tile names (removeRock would also clear its footprint, which other plants now hold).

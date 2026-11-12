@@ -115,6 +115,14 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.textures.mask
+    name: map-editor-improvements-textures-mask
+    text: '{{textures_mask}}'
+    tooltip: '{{textures_mask_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.textures.no_heights_iron
     name: map-editor-improvements-textures-no-heights-iron
     text: '{{textures_no_heights_iron}}'

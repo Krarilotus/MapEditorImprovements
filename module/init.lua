@@ -85,7 +85,7 @@ local DEFAULTS = {
   menu = { always_update = true },
   trees = { growth_from_brush = true, apple = true, shrubs = true, felled = true, random_mix = true, preview = true,
     obstacles = true, sorted_rows = true, no_shrub_stacking = true },
-  textures = { gravel_and_iron = true, no_heights_iron = true },
+  textures = { gravel_and_iron = true, no_heights_iron = true, mask = true },
   water = { decorations = true, foam_on_sea = true },
   brushes = { full_shape = true },
   undo = { enabled = true },
@@ -810,6 +810,17 @@ K.AOB_RAISE_AMOUNT = "C7 05 ? ? ? ? 01 00 00 00 E8 ? ? ? ? 5F 5E 5B C3 C7 05 ? ?
 K.AOB_LOWER_AMOUNT = "C7 05 ? ? ? ? FF FF FF FF 6A 14 E9"
 K.AMOUNT_VALUE = 6
 -- The heights panel above the menu, and the button that removes lost rocks.
+-- The texture mask. setTerrain's tile loop starts `mov ecx,[ebp+0xC] / mov edx,[ebp-0x20] / mov
+-- eax,[edx+ecx*4+LOGIC] / and eax,0x10 / je / jmp <next tile>` (the clicked tile is [ebp-0x1C]);
+-- setLand's `mov esi,[esp+0x18] / mov eax,[edi+esi*4+LOGIC] / test al,0x30 / jne <next tile>`
+-- (the clicked tile is ebx); setTerrain calls setLand first for the ground looks: `push edx /
+-- mov eax,[ebp+0xC] / push eax / mov ecx,[ebp-0x20] / call setLand / cmp [ebp+0x18],0x40000000`.
+K.AOB_MASK_TERRAIN = "8B 4D 0C 8B 55 E0 8B 84 8A ? ? ? ? 83 E0 10 74 02 EB 90"
+K.MASK_TERRAIN = { size = 13, logic = 9, next = 0x13 }
+K.AOB_MASK_LAND = "8B 74 24 18 8B 84 B7 ? ? ? ? A8 30 0F 85"
+K.MASK_LAND = { size = 11, logic = 7, next = 0x0F }
+K.AOB_MASK_CALL = "52 8B 45 0C 50 8B 4D E0 E8 ? ? ? ? 81 7D 18 00 00 00 40"
+K.MASK_CALL = 8
 K.HEIGHT_PANEL = { gap = 14, slider = 112, sliderHeight = 10, dropdown = 6, optionHeight = 20 }
 K.LOST_ROCKS_LABEL = "Remove lost rocks"
 K.LOST_ROCKS_BUTTON = { padding = 5, height = 22, below = 6 }
@@ -2208,8 +2219,12 @@ local function buildTable(G, O)
     insert(INFO_BEFORE_ITEM, "pipettePanel")
   end
   if O.counts or O.obstacles or O.invisibleRocks or O.apple or O.textures or O.waterDecorations
-      or O.maxHeight or O.lostRocks then
+      or O.maxHeight or O.lostRocks or O.textureMask then
     insert(G.firstBlock, "tooltip")
+  end
+  if O.textureMask then
+    insert(G.blockEnd[TEXTURES], "textureMask")
+    insert(MAP_CLICK_ITEM, "maskTick")
   end
   if G.blockEnd[K.HEIGHTS_TAB] == nil or G.buttons[K.MIN_HEIGHT_TOOL] == nil then
     O.maxHeight, O.heightTools = false, false
@@ -2651,6 +2666,25 @@ local function buildTable(G, O)
           wr16(into + ITEM_CONTROL, -1)
           wr16(into + ITEM_HIDDEN, 1)
         end
+      end
+    end
+  end
+  if O.textureMask then
+    local counts = { places = #places, tooltips = #tooltips }
+    local ok, problem = pcall(C.textureMask, { G = G, O = O, data = data, added = added, moved = moved,
+      newTable = newTable, places = places, tooltips = tooltips })
+    if not ok then
+      log(WARNING, tostring(problem) .. "; no texture mask")
+      for i = #places, counts.places + 1, -1 do places[i] = nil end
+      for i = #tooltips, counts.tooltips + 1, -1 do tooltips[i] = nil end
+      data.mask = nil
+      for _, kind in ipairs({ "textureMask", "maskTick" }) do   -- harmless: never hit, never drawn
+        local into = added[kind]
+        wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
+        wr32(into + ITEM_WIDTH, 0)
+        wr32(into + ITEM_HEIGHT, 0)
+        wr32(into + ITEM_RENDER_TYPE, RENDER_NONE)
+        wr16(into + ITEM_HIDDEN, 1)
       end
     end
   end
@@ -4589,6 +4623,123 @@ function C.patchHeightTools(self, G, data)
   C.applyStrength(H)
 end
 
+---------------------------------------------------------------------------------------
+-- The texture mask (Textures menu)
+---------------------------------------------------------------------------------------
+
+-- The mask's words: on (the check box), the stroke's reference texture (valid, ground flags,
+-- look), setLand running inside setTerrain, a saved return address, and a byte per tile for
+-- the tiles setLand let through.
+function C.maskWords()
+  if C.maskState == nil then
+    C.maskState = {
+      on = core.allocate(4, true), valid = core.allocate(4, true), flags = core.allocate(4, true),
+      decoration = core.allocate(4, true), nested = core.allocate(4, true), ret = core.allocate(4, true),
+      stamps = core.allocate(K.MAP_TILES, true),
+    }
+  end
+  return C.maskState
+end
+
+-- The Mask check box, right of the Textures menu's buttons, and the item that ends a stroke
+-- when the mouse button is let go (called while the landscape menu's new table is built).
+function C.textureMask(M)
+  local G, O, data, added = M.G, M.O, M.data, M.added
+  local W = C.maskWords()
+  local R = C.resolvePipette(G)
+  local box = added.textureMask
+  wr32(box + ITEM_TYPE, TYPE_CLICKABLE)
+  wr32(box + ITEM_WIDTH, K.CHECK_BOX_SIZE)
+  wr32(box + ITEM_HEIGHT, K.CHECK_BOX_SIZE)
+  wr32(box + ITEM_ACTION, core.allocateAssembly(templates.flip, { FLAG = W.on }))
+  wr32(box + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+  wr32(box + ITEM_RENDER, core.allocateAssembly(templates.checkBox, {
+    FLAG = W.on, ON_IMAGE = G.buttonImages + K.CHECKED_IMAGE * IMAGE_SIZE,
+    OFF_IMAGE = G.buttonImages + K.UNCHECKED_IMAGE * IMAGE_SIZE,
+    HOVER = G.hover, DRAW_MODE = G.drawMode, ITEM_X = G.itemX, ITEM_Y = G.itemY,
+    TEXTURES = G.textures, RENDER_GM = G.renderGM,
+  }))
+  wr32(box + ITEM_TEXT, 0)
+  wr16(box + ITEM_CONTROL, -1)
+  wr16(box + ITEM_HIDDEN, 1)
+  M.tooltips[#M.tooltips + 1] = { item = box, lines = function()
+    return { "Mask: " .. (rd8(W.on) ~= 0 and "on" or "off"),
+      "Paints only tiles with the texture of the tile you start on" }
+  end, raise = K.CHECK_BOX_TOOLTIP_RAISE }
+
+  -- The tools it works for: the Textures menu's, gravel and iron included.
+  local tools, buttons = {}, {}
+  for param, entry in pairs(G.buttons) do
+    if entry.block == TEXTURES then
+      tools[#tools + 1] = param
+      buttons[#buttons + 1] = item(M.newTable, M.moved(entry.index))
+    end
+  end
+  tools[#tools + 1] = GRAVEL_COMMAND
+  tools[#tools + 1] = IRON_COMMAND
+  tools[#tools + 1] = -1
+  data.mask = { words = W, tools = dwordList(tools) }
+
+  -- Right of the buttons, in the middle of the two rows (the rows reach ROW_RIGHT once spread).
+  M.places[#M.places + 1] = function(measure)
+    local right, top, bottom = nil, nil, nil
+    for _, address in ipairs(buttons) do
+      if rd16(address + ITEM_HIDDEN) == 0 and rd32(address + ITEM_WIDTH) ~= 0 then
+        local x = rd32(address + ITEM_X)
+        if (x & 0xFFFFFFFF) == PLACED_BY_CONTROL then return false end
+        local w, h = measure(address)
+        if w == nil then return false end
+        local y = rd32(address + ITEM_Y)
+        right = math.max(right or 0, x + w)
+        top = math.min(top or y, y)
+        bottom = math.max(bottom or 0, y + h)
+      end
+    end
+    if right == nil then return true end
+    if O.textures then right = math.max(right, ROW_RIGHT) end
+    wr32(box + ITEM_X, right + K.CHECK_BOX_GAP)
+    wr32(box + ITEM_Y, (top + bottom - K.CHECK_BOX_SIZE) // 2)
+    wr16(box + ITEM_HIDDEN, 0)
+    return true
+  end
+
+  local tick = added.maskTick
+  wr32(tick + ITEM_TYPE, TYPE_EVERY_FRAME)
+  wr32(tick + ITEM_ACTION, core.allocateAssembly(templates.maskRelease, {
+    CLICK_HELD = R.clickHeld, REF_VALID = W.valid,
+  }))
+end
+
+-- The mask in the texture tools' tile loops (setTerrain and setLand) and around setTerrain's
+-- call of setLand.
+function C.patchTextureMask(self, G, data)
+  local W = data.mask.words
+  local R = C.resolvePipette(G)
+  local T = R.tileMap
+  local terrain = scan(K.AOB_MASK_TERRAIN, "setTerrain's tile loop")
+  local land = scan(K.AOB_MASK_LAND, "setLand's tile loop")
+  local call = scan(K.AOB_MASK_CALL, "setTerrain's call of setLand") + K.MASK_CALL
+  local MT, ML = K.MASK_TERRAIN, K.MASK_LAND
+  local check = core.allocateAssembly(templates.maskCheck, {
+    MASK_ON = W.on, SUBTYPE = G.subtype, TOOLS = data.mask.tools, REF_VALID = W.valid,
+    LOGIC = T + rd32(terrain + MT.logic), TEXTURE_FLAGS = K.TEXTURE_FLAGS, REF_FLAGS = W.flags,
+    DECORATION = T + K.TMS.decoration, REF_DECORATION = W.decoration, STAMPS = W.stamps, NESTED = W.nested,
+  })
+  local skip = rd8(terrain + MT.next) & 0xFF
+  if skip >= 0x80 then skip = skip - 0x100 end
+  C.patchJump(self, terrain, MT.size, core.allocateAssembly(templates.maskTerrain, {
+    MASK_CHECK = check, NEXT_TILE = terrain + MT.next + 1 + skip, LOGIC = rd32(terrain + MT.logic),
+    BACK = terrain + MT.size,
+  }))
+  C.patchJump(self, land, ML.size, core.allocateAssembly(templates.maskLand, {
+    MASK_CHECK = check, NEXT_TILE = land + ML.next + 4 + rd32(land + ML.next), LOGIC = rd32(land + ML.logic),
+    BACK = land + ML.size,
+  }))
+  C.patchCall(self, call, core.allocateAssembly(templates.maskNested, {
+    NESTED = W.nested, RETURN = W.ret, SET_LAND = readCallTarget(call, 0, "setLand"),
+  }))
+end
+
 local function enableMenu(self, O)
   local G = {}
   resolveMenu(G)
@@ -4614,6 +4765,10 @@ local function enableMenu(self, O)
   if data.rockTabs > 0 then patchRocks(self, G, data) end
   if O.herds then patchHerds(self, G, data) end
   if O.invisibleRocks then C.patchInvisibleRocks(self, data) end
+  if data.mask ~= nil then
+    local ok, problem = pcall(C.patchTextureMask, self, G, data)
+    if not ok then log(WARNING, tostring(problem) .. "; the texture mask does nothing") end
+  end
   if data.heights ~= nil then
     local ok, problem = pcall(C.patchHeightTools, self, G, data)
     if not ok then log(WARNING, tostring(problem) .. "; the height tools keep breaking rocks") end
@@ -5480,6 +5635,7 @@ local function enable(self, config)
     maxHeight = setting(config, "heights", "max_height") == true,
     heightTools = setting(config, "heights", "tool_options") == true,
     lostRocks = setting(config, "rocks", "remove_lost") == true,
+    textureMask = setting(config, "textures", "mask") == true,
     undo = self.undo,
   }
   if setting(config, "pipette", "enabled") == true then
@@ -5510,7 +5666,8 @@ local function enable(self, config)
   }
   if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.sortedRows or O.textures
       or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
-      or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks then
+      or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks
+      or O.textureMask then
     local ok, problem = pcall(enableMenu, self, O)
     if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
   end

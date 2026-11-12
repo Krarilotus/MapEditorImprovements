@@ -80,6 +80,11 @@ textures_gravel_and_iron_tooltip: |
 textures_no_heights_iron: Iron only in the Textures menu
 textures_no_heights_iron_tooltip: |
   Takes the iron button out of the Heights menu, now that the Textures menu has one.
+textures_mask: Texture mask check box
+textures_mask_tooltip: |
+  Adds a Mask check box to the right of the Textures menu's buttons. While it is ticked, a
+  texture tool only paints tiles that have the same texture as the tile you first clicked on;
+  when you let go of the mouse, the next click picks the texture to paint over anew.
 
 water_group: Water
 water_group_descr: |

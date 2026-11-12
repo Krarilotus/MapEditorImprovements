@@ -1595,4 +1595,122 @@ counted_none:
 ret
 ]]
 
+---------------------------------------------------------------------------------------
+-- The texture mask
+---------------------------------------------------------------------------------------
+
+-- Called with eax = a tile a texture tool is about to paint, ecx = the tile the command was
+-- clicked on, edx = 1 from setTerrain's tile loop, 0 from setLand's. With the mask on and a
+-- Textures menu tool chosen (TOOLS, ending in -1), the first command of a stroke takes the
+-- clicked tile's texture (ground flags and look) as the reference; after that only tiles with
+-- that texture are painted. setLand runs first for the ground looks when called from setTerrain
+-- (NESTED): the tiles it lets through are marked in STAMPS, as setTerrain then finds them changed.
+-- Answers eax = 1 to paint the tile, 0 to leave it. Keeps every register but eax and edx.
+templates.maskCheck = [[
+push ebx
+push esi
+mov ebx,edx
+cmp byte [MASK_ON],0
+je mask_paint
+mov edx,[SUBTYPE]
+mov esi,TOOLS
+mask_tool:
+cmp dword [esi],-1
+je mask_paint
+cmp [esi],edx
+je mask_tool_found
+add esi,4
+jmp mask_tool
+mask_tool_found:
+cmp dword [REF_VALID],0
+jne mask_compare
+mov edx,[LOGIC+ecx*4]
+and edx,TEXTURE_FLAGS
+mov [REF_FLAGS],edx
+movzx edx,byte [DECORATION+ecx]
+mov [REF_DECORATION],edx
+mov dword [REF_VALID],1
+mask_compare:
+test ebx,ebx
+je mask_look
+cmp byte [STAMPS+eax],0
+je mask_look
+mov byte [STAMPS+eax],0
+jmp mask_paint
+mask_look:
+mov edx,[LOGIC+eax*4]
+and edx,TEXTURE_FLAGS
+cmp edx,[REF_FLAGS]
+jne mask_skip
+movzx edx,byte [DECORATION+eax]
+cmp edx,[REF_DECORATION]
+jne mask_skip
+test ebx,ebx
+jne mask_paint
+cmp dword [NESTED],0
+je mask_paint
+mov byte [STAMPS+eax],1
+mask_paint:
+mov eax,1
+jmp mask_done
+mask_skip:
+xor eax,eax
+mask_done:
+pop esi
+pop ebx
+ret
+]]
+
+-- setTerrain's tile loop, replacing `mov ecx,[ebp+0xC] / mov edx,[ebp-0x20] / mov eax,[edx+ecx*4+
+-- LOGIC]` (the tile, TileMapState, its flags): the next tile when the mask says no.
+templates.maskTerrain = [[
+mov eax,[ebp+0xC]
+mov ecx,[ebp-0x1C]
+mov edx,1
+call MASK_CHECK
+test eax,eax
+je NEXT_TILE
+mov ecx,[ebp+0xC]
+mov edx,[ebp-0x20]
+mov eax,[edx+ecx*4+LOGIC]
+jmp BACK
+]]
+
+-- setLand's tile loop, replacing `mov esi,[esp+0x18] / mov eax,[edi+esi*4+LOGIC]` (the tile and
+-- its flags; ebx is the clicked tile).
+templates.maskLand = [[
+mov esi,[esp+0x18]
+push ecx
+push edx
+mov eax,esi
+mov ecx,ebx
+xor edx,edx
+call MASK_CHECK
+pop edx
+pop ecx
+test eax,eax
+je NEXT_TILE
+mov eax,[edi+esi*4+LOGIC]
+jmp BACK
+]]
+
+-- In place of setTerrain's `call setLand`: the same call, with NESTED set meanwhile.
+templates.maskNested = [[
+mov dword [NESTED],1
+pop dword [RETURN]
+call SET_LAND
+mov dword [NESTED],0
+push dword [RETURN]
+ret
+]]
+
+-- Every frame: a stroke ends when the mouse button is up; the next click takes a new reference.
+templates.maskRelease = [[
+cmp dword [CLICK_HELD],0
+jne mask_held
+mov dword [REF_VALID],0
+mask_held:
+ret
+]]
+
 return templates
