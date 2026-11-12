@@ -1370,4 +1370,229 @@ mov ecx,PATHFINDING
 jmp BACK
 ]]
 
+---------------------------------------------------------------------------------------
+-- The height tools (features 28, 29)
+---------------------------------------------------------------------------------------
+
+-- Called with eax = a tile a height tool changes, edx = 1 when the tool is one that breaks rock
+-- tiles unless Break rock tiles is off (raise, lower, hill, mountain, equalize), 0 for one that
+-- never does (min and max height, the plateaus). Erase rock: takes the tile's rock away (the
+-- game's removeRock). Whole rock: remembers the tile, its rock and its height before (the base
+-- height, which the tools write last) for the lua that moves the rest of the rock. Answers eax =
+-- 1 to keep the tile's rocky flag (the caller skips its `and`), 0 to clear it.
+templates.rockCheck = [[
+push ebx
+push ecx
+push edx
+movsx ecx,word [ORGANISM+eax*2]
+sub ecx,FIRST_ROCK_NUMBER
+jl rock_none
+mov ebx,[ROCK_MODE]
+cmp ebx,MODE_ERASE
+je rock_erase
+cmp ebx,MODE_WHOLE
+jne rock_kept
+test ecx,ecx
+je rock_kept
+mov ebx,[RECORD_COUNT]
+cmp ebx,RECORD_MOST
+jae rock_kept
+lea ebx,[RECORDS+ebx*8]
+mov [ebx],eax
+mov [ebx+4],cx
+movzx ecx,byte [BASE_HEIGHT+eax]
+mov [ebx+6],cl
+inc dword [RECORD_COUNT]
+rock_kept:
+mov edx,[esp]
+test edx,edx
+je rock_keep
+cmp dword [BREAK_ROCKS],0
+jne rock_none
+rock_keep:
+mov eax,1
+jmp rock_done
+rock_erase:
+test ecx,ecx
+jne rock_remove
+mov word [ORGANISM+eax*2],0
+jmp rock_none
+rock_remove:
+pushad
+push ecx
+mov ecx,LANDSCAPE
+call REMOVE_ROCK
+popad
+rock_none:
+xor eax,eax
+rock_done:
+pop edx
+pop ecx
+pop ebx
+ret
+]]
+
+-- raiseLand's `and dword [esi+eax*4+LOGIC],~0x80` (tile eax, TileMapState esi): only when
+-- rockCheck says so.
+templates.raiseRock = [[
+push eax
+push edx
+mov edx,1
+call ROCK_CHECK
+pop edx
+test eax,eax
+pop eax
+jne raise_rock_kept
+and dword [esi+eax*4+LOGIC],0xFFFFFF7F
+raise_rock_kept:
+jmp BACK
+]]
+
+-- The same `and` in useLevelBrush and createPlateau (tile ebp, TileMapState edi).
+templates.brushRock = [[
+push eax
+push edx
+mov eax,ebp
+mov edx,MAY_BREAK
+call ROCK_CHECK
+pop edx
+test eax,eax
+pop eax
+jne brush_rock_kept
+and dword [edi+ebp*4+LOGIC],0xFFFFFF7F
+brush_rock_kept:
+jmp BACK
+]]
+
+-- raiseLand's `mov bl,[esp+0x24] / add [eax+esi+HEIGHT],bl / mov byte [eax+esi+DECORATION],0`:
+-- the amount added without wrapping past 0 or 255 (the game's limits follow), and the ground's
+-- look reset only with Reset ground textures on.
+templates.raiseAmount = [[
+movzx ebx,byte [eax+esi+HEIGHT]
+add ebx,[esp+0x24]
+jns raise_above_zero
+xor ebx,ebx
+raise_above_zero:
+cmp ebx,0xFF
+jbe raise_in_byte
+mov ebx,0xFF
+raise_in_byte:
+mov [eax+esi+HEIGHT],bl
+cmp dword [RESET],0
+je raise_ground_kept
+mov byte [eax+esi+DECORATION],0
+raise_ground_kept:
+jmp BACK
+]]
+
+-- useLevelBrush's step up (eax = the height, bl the same byte, esi the middle height): the
+-- difference / DIVISOR + 1, at most the difference; the result in cl, as the game has it.
+templates.levelRise = [[
+mov ecx,esi
+sub ecx,eax
+mov eax,ecx
+cdq
+idiv dword [DIVISOR]
+inc eax
+cmp eax,ecx
+jbe level_rise_short
+mov eax,ecx
+level_rise_short:
+mov cl,bl
+add cl,al
+jmp HEIGHT_STORE
+]]
+
+-- ...and down (cl = the height, esi the middle height).
+templates.levelFall = [[
+movzx edx,cl
+sub edx,esi
+mov eax,edx
+push edx
+cdq
+idiv dword [DIVISOR]
+pop edx
+inc eax
+cmp eax,edx
+jbe level_fall_short
+mov eax,edx
+level_fall_short:
+sub cl,al
+jmp HEIGHT_STORE
+]]
+
+-- useLevelBrush's `mov byte [edi+ebp+DECORATION],0`: only with Reset ground textures on.
+templates.levelGround = [[
+cmp dword [RESET],0
+je level_ground_kept
+mov byte [edi+ebp+DECORATION],0
+level_ground_kept:
+jmp BACK
+]]
+
+-- createPlateau's `mov [edi+ebp+DECORATION],al` (the plateau look): only with Reset ground
+-- textures on.
+templates.plateauGround = [[
+cmp dword [RESET],0
+je plateau_ground_kept
+mov [edi+ebp+DECORATION],al
+plateau_ground_kept:
+jmp BACK
+]]
+
+-- useTerrainHeightBrush's `test byte [edi+ebp*4+LOGIC],0x80 / je` before the rock's removal:
+-- the ground's look reset with Reset ground textures on, then rockCheck (which also erases the
+-- rock in Erase rock), and the `and` only when it says so.
+templates.minMaxRock = [[
+cmp dword [RESET],0
+je min_ground_kept
+mov byte [edi+ebp+DECORATION],0
+min_ground_kept:
+push edx
+mov eax,ebp
+xor edx,edx
+call ROCK_CHECK
+pop edx
+test eax,eax
+jne AFTER_AND
+jmp AND_SITE
+]]
+
+-- Render function of a panel shown while the chosen tool is one of COMMANDS (a list ending in
+-- -1): calls PAD, or hides the panel's items.
+templates.toolPanel = [[
+mov eax,[SUBTYPE]
+mov ecx,COMMANDS
+tool_panel_next:
+mov edx,[ecx]
+cmp edx,-1
+je tool_panel_hide
+cmp eax,edx
+je tool_panel_show
+add ecx,4
+jmp tool_panel_next
+tool_panel_show:
+jmp PAD
+tool_panel_hide:
+mov ecx,PANEL_ITEMS
+tool_panel_hide_next:
+mov eax,[ecx]
+test eax,eax
+je tool_panel_hidden
+mov word [eax+ITEM_HIDDEN],1
+add ecx,4
+jmp tool_panel_hide_next
+tool_panel_hidden:
+ret
+]]
+
+-- Every-frame item: calls PAD while COUNT is not 0.
+templates.whenCounted = [[
+cmp dword [COUNT],0
+je counted_none
+jmp PAD
+counted_none:
+ret
+]]
+
 return templates

@@ -138,5 +138,25 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   minimap). The two buttons are items of the landscape and the build menu that move themselves
   to the screen's top left every frame (an item's place is relative to its menu) and are drawn
   on the map surface; prepareMap's refresh after loading clears the history.
+* **Max height.** The game still handles placement id 22 (the menu action sets the min/max word
+  to 1, useTerrainHeightBrush sets 156); only the button is missing. A copy of the min height
+  button gets command 22, the next image table entry (gm 108 picture 172, right after min
+  height's) and user control 153 (UC_MAP_MAX), which the iron button took over.
+* **Height tools.** Raise/lower (and hill/mountain, which call raiseLand once per tile of a
+  spreading search, amount 1), equalize, min/max and the plateaus each clear the rocky flag
+  (`and [logic],~0x80`) of every tile they change; updateGfxLayer only draws a tile as rock with
+  that flag, so a rock's touched tiles vanish and become walkable while the rock stays. Each of
+  those `and`s now asks one routine (rockCheck) first: keep the flag on a rock tile (unless
+  Break rock tiles is on, for the tools that broke rocks), erase the rock (Erase rock, removeRock),
+  or remember the tile and its height before (Whole rock: the base height, which the tools write
+  last). An every-frame item then moves the rest of each remembered rock by the average change
+  and runs the tools' own updates (path links, walk layer, minimap). The ground's look (the
+  decoration byte) is only reset with Reset ground textures on; min height's `and 0xF3` goes.
+  raiseLand's `add [height],amount` no longer wraps; the raise and lower amounts are the
+  immediates of the click handler's `mov [command param],1/-1`, rewritten from the slider, and
+  equalize's step `difference / 10 + 1` divides by 17 - strength instead.
+* **Lost rocks.** A rock slot is in use when its word at +0x0C is not 0; the button collects the
+  rock numbers (slot + 2000) of all 80400 tiles' organism words and zeroes every slot in use that
+  no tile names (removeRock would also clear its footprint, which other plants now hold).
 * Every address is found by pattern scan or read out of the instruction that uses it, and
   checked against the bytes the module expects. Verified offline against both exes.

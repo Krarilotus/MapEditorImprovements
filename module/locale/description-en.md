@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.42
+**Version**: 1.0.43
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -122,6 +122,28 @@ module's repository).
   and erase a shrub on every tile any more.
 - **Extra small rock.** For the smallest rocks the row offers a fifth variant: a small rock
   the game has but the editor never places. It is saved in the map like any other rock.
+- **Remove lost rocks.** A button at the bottom right of the Rocks menu. Rocks the raise or
+  lower tool broke and whose tiles were then all covered by shrubs stay in the map's list of
+  rocks without any tile: nothing can see, erase or reach them, and each uses up one of the
+  4000 rock slots. The button takes every such rock off the list; its tooltip says how many.
+
+## Heights
+
+- **Max Height.** The first Stronghold's Max Height tool is back, right of Min Height: it sets
+  the ground under the brush to height 156.
+- **Height tool options.** While a height tool is chosen, a panel above the Heights menu has:
+  - **Reset ground textures** (off at first): whether the height tools also turn the ground
+    back to its plain look (and the plateaus to dirt). Off, they only change the height.
+  - **Break rock tiles** (off at first): whether raise, lower, equalize, hill and mountain break
+    rocks the way the game does: the touched tiles turn invisible and walkable while the rock
+    stays. Off, rocks stay whole.
+  - **Rocks** (a list; Whole rock at first): what the height tools do to a rock they touch.
+    *Tile only* moves just the tiles under the brush, *Whole rock* moves all of the rock's tiles
+    by the same amount, *Erase rock* removes the rock (what min height always did).
+  - **Strength** (for raise, lower and equalize): click the slider. Raise and lower change the
+    height by that much per step (1 to 16; the game's is 1); equalize flattens faster the higher
+    it is (7 is the game's rate).
+  Raise and lower no longer wrap round at the lowest and highest heights.
 
 ## Castle mode
 

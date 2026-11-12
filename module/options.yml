@@ -201,6 +201,37 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.rocks.remove_lost
+    name: map-editor-improvements-rocks-remove-lost
+    text: '{{rocks_remove_lost}}'
+    tooltip: '{{rocks_remove_lost_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+
+- display: GroupBox
+  category: [Map Editor Improvements]
+  header: '{{heights_group}}'
+  text: '{{heights_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.heights.max_height
+    name: map-editor-improvements-heights-max-height
+    text: '{{heights_max_height}}'
+    tooltip: '{{heights_max_height_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.heights.tool_options
+    name: map-editor-improvements-heights-tool-options
+    text: '{{heights_tool_options}}'
+    tooltip: '{{heights_tool_options_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
 
 - display: GroupBox
   category: [Map Editor Improvements]

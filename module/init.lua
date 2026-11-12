@@ -92,12 +92,13 @@ local DEFAULTS = {
   pipette = { enabled = true, select_key_on = true, select_key = "letter_p", read_key_on = true, read_key = "ctrl",
     any_tile_key_on = true, any_tile_key = "alt" },
   rocks = { signpost = true, random_preview = true, variants = true, extra_rock = true, invisible = true,
-    erase_invisible = true },
+    erase_invisible = true, remove_lost = true },
   castle = { building_counts = true, tower_ruins = true, tunnel_and_tents = true, statues_and_shrines = true,
     barrier = true, several_keeps = true, several_storage_and_recruitment = true, tower_engines_anywhere = true,
     keep_parts = true, damaged_walls = true, hover_text_left = true, moat_kinds = true, moat_on_marsh = true,
     moat_removal_keeps_ground = true, variant_panels = true, ruined_cathedral = true },
   herds = { panel = true },
+  heights = { max_height = true, tool_options = true },
 }
 
 ---------------------------------------------------------------------------------------
@@ -745,6 +746,73 @@ K.HEIGHTS = { height = 3, default = 10, logic = 17 }
 -- triggerMinimapRedraw` (five commands share it).
 K.AOB_HEIGHT_TOOL = "6A 09 B9 ? ? ? ? E8 ? ? ? ? 6A 02 B9 ? ? ? ? C7 05 ? ? ? ? 01 00 00 00 E8"
 K.HEIGHT_TOOL = { walk = 7, minimap = 0x0F, macro = 0x15, redraw = 0x1D }
+-- The tiles that are on the map, a byte per x, y (400 a row): the height commands' test `mov esi,
+-- eax / imul esi,esi,400 / cmp byte [esi+ecx+VALID],0 / pop esi / je`.
+K.AOB_TILE_VALID = "8B F0 69 F6 90 01 00 00 80 BC 0E ? ? ? ? 00 5E 74"
+K.TILE_VALID = 11
+
+-- The heights menu (features 28 and 29). Its tools: raise 2 and lower 3 (raiseLand, which hill
+-- 37 and mountain 36 also call, with amount 1, once per tile of a spreading search), min 21 and
+-- max 22 height (useTerrainHeightBrush: 8 or 156), equalize 23 (useLevelBrush), mid 47 and high
+-- 48 plateau (createPlateau). The game still handles 22; only its button was taken out (the
+-- iron button took its user control, 153, and its pictures follow min height's).
+K.HEIGHTS_TAB = 231
+K.RAISE_TOOL, K.LOWER_TOOL, K.EQUALIZE_TOOL = 2, 3, 23
+K.MIN_HEIGHT_TOOL, K.MAX_HEIGHT_TOOL, K.MAX_HEIGHT_CONTROL = 21, 22, 153
+K.HEIGHT_TOOLS = { 2, 3, 21, 22, 23, 36, 37, 47, 48 }
+K.HEIGHTS_TOP_ROW = { 37, 36, 21 }       -- hill, mountain, min height (then max, then iron)
+K.MAX_HEIGHT_NAME = "Max Height"
+-- What a height tool does to a rock it touches: "Tile only" moves just the tiles under the brush,
+-- "Whole rock" moves every tile of the rock by the same amount, "Erase rock" takes it away.
+K.ROCK_TILE_ONLY, K.ROCK_WHOLE, K.ROCK_ERASE = 0, 1, 2
+K.ROCK_MODES = { { K.ROCK_TILE_ONLY, "Tile only" }, { K.ROCK_WHOLE, "Whole rock" }, { K.ROCK_ERASE, "Erase rock" } }
+K.ROCK_RECORDS = 1024                    -- rock tiles a whole-rock move remembers between frames
+K.ROCK_REACH = 4                         -- a rock's tiles lie this far around its position at most
+K.ROCK_POSITION = { x = 0x12, y = 0x14 } -- in a rock slot
+-- Strength 1-16: raise and lower land by that much; equalize moves a tile by (difference to
+-- the middle) / (17 - strength) + 1, so 7 is the game's own rate (/ 10).
+K.STRENGTH_MOST, K.STRENGTH_SUM = 16, 17
+K.STRENGTH_DEFAULTS = { [2] = 1, [3] = 1, [23] = 7 }
+-- raiseLand, per tile: `and dword [esi+eax*4+LOGIC], ~0x80 / test [...],river / je / add [height],8`
+-- (the rocky flag goes: a rock's tile turns invisible and walkable) and, further on, `mov bl,
+-- [esp+0x24] / add [eax+esi+HEIGHT],bl / mov byte [eax+esi+DECORATION],0` (the amount, which wraps
+-- below 0, and the ground's look going back to plain).
+K.AOB_RAISE_AND = "81 A4 86 ? ? ? ? 7F FF FF FF F7 84 86 ? ? ? ? 00 00 10 00 74 08 80 84 30"
+K.RAISE_AND = { size = 11, logic = 3 }
+K.AOB_RAISE_ADD = "8A 5C 24 24 00 9C 30 ? ? ? ? C6 84 30 ? ? ? ? 00 0F B6 9C 30"
+K.RAISE_ADD = { size = 19, height = 7, decoration = 14 }
+-- useLevelBrush: the same `and`, and the step towards the middle height `mov ecx,esi / sub ecx,eax
+-- / ... (/ 10) ... / add cl,bl / add cl,1 / jmp store` up and `movzx edx,cl / sub edx,esi / ...
+-- / sub cl,al / sub cl,1` down, then `mov [height],cl / mov byte [DECORATION],0`.
+K.AOB_LEVEL_AND = "81 A4 AF ? ? ? ? 7F FF FF FF 0F B6 84 2F ? ? ? ? 3B C6 7D 26"
+K.LEVEL_AND = { size = 11, logic = 3 }
+K.AOB_LEVEL_RISE = "8B CE 2B C8 B8 67 66 66 66 F7 E9 C1 FA 02 8B CA C1 E9 1F 03 CA 02 CB 80 C1 01 EB 24"
+K.LEVEL_RISE = { size = 28, store = 0x40 }
+K.AOB_LEVEL_FALL = "0F B6 D1 2B D6 B8 67 66 66 66 F7 EA C1 FA 02 8B C2 C1 E8 1F 03 C2 2A C8 80 E9 01 88 8C 2F"
+K.LEVEL_FALL = { size = 27 }
+K.AOB_LEVEL_DECORATION = "C6 84 2F ? ? ? ? 00 80 BC 2F ? ? ? ? 08 73 08 C6 84 2F ? ? ? ? 08 80 BC 2F ? ? ? ? 9C"
+K.LEVEL_DECORATION = { size = 8, decoration = 3 }
+-- createPlateau: the same `and` (`... / cmp eax,4 / jne`), and `mov [edi+ebp+DECORATION],al`
+-- (the plateau look, 4 or 8).
+K.AOB_PLATEAU_AND = "81 A4 AF ? ? ? ? 7F FF FF FF 83 F8 04 75 0A"
+K.PLATEAU_AND = { size = 11, logic = 3 }
+K.AOB_PLATEAU_DECORATION = "88 84 2F ? ? ? ? 89 AF ? ? ? ? 89 9F"
+K.PLATEAU_DECORATION = { size = 7, decoration = 3 }
+-- useTerrainHeightBrush (min and max height): `and byte [DECORATION],0xF3` (min only: the
+-- plateau looks go), then for both `test byte [LOGIC],0x80 / je and` and the rock's removal
+-- (K.AOB_HEIGHT_ROCK), the `and` at +0x29, the code after it at +0x34.
+K.AOB_MIN_DECORATION = "80 A4 2F ? ? ? ? F3 F6 84 AF ? ? ? ? 80 74 1F"
+K.MIN_DECORATION = { size = 8, decoration = 3 }
+K.MIN_ROCK = { size = 10, logic = 3, andSite = 0x29, afterAnd = 0x34 }
+-- The landscape editor's click: raise `mov dword [command param],1 / call queueCommand / ...`
+-- and lower `mov dword [command param],-1 / push 0x14 / jmp`: the amounts the commands carry.
+K.AOB_RAISE_AMOUNT = "C7 05 ? ? ? ? 01 00 00 00 E8 ? ? ? ? 5F 5E 5B C3 C7 05 ? ? ? ? 05 00 00 00 6A 1B"
+K.AOB_LOWER_AMOUNT = "C7 05 ? ? ? ? FF FF FF FF 6A 14 E9"
+K.AMOUNT_VALUE = 6
+-- The heights panel above the menu, and the button that removes lost rocks.
+K.HEIGHT_PANEL = { gap = 14, slider = 112, sliderHeight = 10, dropdown = 6, optionHeight = 20 }
+K.LOST_ROCKS_LABEL = "Remove lost rocks"
+K.LOST_ROCKS_BUTTON = { padding = 5, height = 22, below = 6 }
 -- The in-game key handlers' guard (five share it): `... cmp [menu guard],-1`, -1 while nothing
 -- takes the keyboard (no text box).
 K.AOB_KEY_GUARD = "F7 C1 00 00 00 40 0F 85 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 85 C0 0F 84 ? ? ? ? 83 3D ? ? ? ? FF"
@@ -2139,8 +2207,19 @@ local function buildTable(G, O)
     end
     insert(INFO_BEFORE_ITEM, "pipettePanel")
   end
-  if O.counts or O.obstacles or O.invisibleRocks or O.apple or O.textures or O.waterDecorations then
+  if O.counts or O.obstacles or O.invisibleRocks or O.apple or O.textures or O.waterDecorations
+      or O.maxHeight or O.lostRocks then
     insert(G.firstBlock, "tooltip")
+  end
+  if G.blockEnd[K.HEIGHTS_TAB] == nil or G.buttons[K.MIN_HEIGHT_TOOL] == nil then
+    O.maxHeight, O.heightTools = false, false
+  end
+  for _, kind in ipairs(C.heightItems(O)) do insert(G.blockEnd[K.HEIGHTS_TAB], kind) end
+  if O.heightTools then insert(MAP_CLICK_ITEM, "heightTick") end
+  if O.lostRocks then
+    for _, tab in ipairs({ ROCKS, K.ROCKS_SKIRMISH }) do
+      if G.blockEnd[tab] ~= nil then insert(G.blockEnd[tab], "lostRocks" .. tab) end
+    end
   end
   local animalsEnd = G.blockEnd[ANIMALS]
   if O.herds then
@@ -2542,6 +2621,38 @@ local function buildTable(G, O)
     wr32(iron + ITEM_RENDER_TYPE, RENDER_NONE)
     wr16(iron + ITEM_CONTROL, -1)
     wr16(iron + ITEM_HIDDEN, 1)
+  end
+  if O.maxHeight or O.heightTools or O.lostRocks then
+    local counts = { rows = #rows, places = #places, tooltips = #tooltips, guarded = #guarded }
+    local ok, problem = pcall(C.heightsMenu, { G = G, O = O, data = data, added = added, copyOf = copyOf,
+      button = button, moved = moved, newTable = newTable, rows = rows, newButtons = newButtons, places = places,
+      tooltips = tooltips, guarded = guarded })
+    if not ok then
+      log(WARNING, tostring(problem) .. "; the heights menu and the lost rocks button are left out")
+      for i = #rows, counts.rows + 1, -1 do rows[i] = nil end
+      for i = #places, counts.places + 1, -1 do places[i] = nil end
+      for i = #tooltips, counts.tooltips + 1, -1 do tooltips[i] = nil end
+      for i = #guarded, counts.guarded + 1, -1 do guarded[i] = nil end
+      data.heights = nil
+      local kinds = C.heightItems(O)
+      if O.heightTools then kinds[#kinds + 1] = "heightTick" end
+      for _, tab in ipairs({ ROCKS, K.ROCKS_SKIRMISH }) do kinds[#kinds + 1] = "lostRocks" .. tab end
+      for _, kind in ipairs(kinds) do              -- harmless: never hit, never drawn, no action
+        local into = added[kind]
+        if into ~= nil then
+          wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
+          wr32(into + ITEM_X, 0)
+          wr32(into + ITEM_Y, 0)
+          wr32(into + ITEM_WIDTH, 0)
+          wr32(into + ITEM_HEIGHT, 0)
+          wr32(into + ITEM_ACTION, 0)
+          wr32(into + ITEM_RENDER, 0)
+          wr32(into + ITEM_RENDER_TYPE, RENDER_NONE)
+          wr16(into + ITEM_CONTROL, -1)
+          wr16(into + ITEM_HIDDEN, 1)
+        end
+      end
+    end
   end
   local layout = makeLayout(G, rows, newButtons, sizeOf, places)
 
@@ -3176,7 +3287,9 @@ C.keyCode = keyCode
 
 -- What the game needs for the pipette, from the code that uses it.
 function C.resolvePipette(G)
+  if C.resolved ~= nil then return C.resolved end
   local R = {}
+  R.validTiles = rd32(scan(K.AOB_TILE_VALID, "the map's tiles") + K.TILE_VALID)
   local mouse = scan(K.AOB_MOUSE_CLICK, "the map click")
   local M = K.MOUSE_CLICK
   R.clickStart, R.mouseX, R.mouseY = rd32(mouse + M.start), rd32(mouse + M.x), rd32(mouse + M.y)
@@ -3228,6 +3341,7 @@ function C.resolvePipette(G)
   R.keyState = rd32(scan(K.AOB_ASYNC_KEY, "the key state") + K.ASYNC_KEY_IMPORT)
   R.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
   R.tileMap = rd32(scan(K.AOB_ROCK_PREVIEW, "the tile map") + K.ROCK_PREVIEW.tileMap)
+  C.resolved = R
   return R
 end
 
@@ -3957,6 +4071,524 @@ local function patchHerds(self, G, data)
   end
 end
 
+---------------------------------------------------------------------------------------
+-- The heights menu: max height, the height tools' options, lost rocks (features 28, 29)
+---------------------------------------------------------------------------------------
+
+-- The words the height tool patches read (shared with the panel), the strength of raise, lower
+-- and equalize, and where the raise and lower amounts are written (once patched).
+function C.heightWords()
+  if C.heightState == nil then
+    local H = {
+      reset = core.allocate(4, true), breakRocks = core.allocate(4, true), mode = core.allocate(4, true),
+      divisor = core.allocate(4, true), count = core.allocate(4, true),
+      records = core.allocate(K.ROCK_RECORDS * 8, true), strength = {}, open = false,
+    }
+    wr32(H.mode, K.ROCK_WHOLE)
+    for tool, value in pairs(K.STRENGTH_DEFAULTS) do H.strength[tool] = value end
+    wr32(H.divisor, K.STRENGTH_SUM - H.strength[K.EQUALIZE_TOOL])
+    C.heightState = H
+  end
+  return C.heightState
+end
+
+-- The chosen strength into the game: the raise and lower commands' amounts (code immediates)
+-- and equalize's divisor.
+function C.applyStrength(H)
+  if H.raiseAmount ~= nil then core.writeCodeInteger(H.raiseAmount, H.strength[K.RAISE_TOOL]) end
+  if H.lowerAmount ~= nil then core.writeCodeInteger(H.lowerAmount, -H.strength[K.LOWER_TOOL]) end
+  wr32(H.divisor, K.STRENGTH_SUM - H.strength[K.EQUALIZE_TOOL])
+end
+
+-- The items the heights menu gets, in the order they are inserted at the end of its tab.
+function C.heightItems(O)
+  local list = {}
+  if O.maxHeight then list[#list + 1] = "maxHeight" end
+  if O.heightTools then
+    for _, kind in ipairs({ "heightReset", "heightBreak", "heightMode" }) do list[#list + 1] = kind end
+    for i = 1, #K.ROCK_MODES do list[#list + 1] = "heightOption" .. i end
+    list[#list + 1] = "heightStrength"
+    list[#list + 1] = "heightPanel"
+  end
+  return list
+end
+
+-- Moves the rest of each rock a height tool touched in Whole rock (the tiles rockCheck
+-- remembered): every tile of the rock by the average change of its touched tiles, then what the
+-- height tools do afterwards (path links per tile, walk layer, minimap).
+function C.rockSettler(G, R, H)
+  local T = R.tileMap
+  local links = core.exposeCode(R.links, 3, 1)
+  local walk = core.exposeCode(R.walk, 4, 1)
+  local redraw = core.exposeCode(R.redraw, 2, 1)
+  local function baseAt(tile) return rd8(T + R.defaultHeight + tile) & 0xFF end
+  return function()
+    local count = math.min(rd32(H.count), K.ROCK_RECORDS)
+    wr32(H.count, 0)
+    local rocks, order = {}, {}
+    for i = 0, count - 1 do
+      local at = H.records + i * 8
+      local tile, id, old = rd32(at), rd16(at + 4) & 0xFFFF, rd8(at + 6) & 0xFF
+      local rock = rocks[id]
+      if rock == nil then
+        rock = { old = {} }
+        rocks[id] = rock
+        order[#order + 1] = id
+      end
+      if rock.old[tile] == nil then rock.old[tile] = old end
+    end
+    local changed = false
+    for _, id in ipairs(order) do
+      local rock = rocks[id]
+      local sum, n = 0, 0
+      for tile, old in pairs(rock.old) do
+        sum = sum + baseAt(tile) - old
+        n = n + 1
+      end
+      local delta = sum >= 0 and math.floor(sum / n + 0.5) or -math.floor(-sum / n + 0.5)
+      local slot = G.firstRock - K.ROCK_SLOT.inUse + (id - 1) * G.rockSize
+      local rx, ry = rd16(slot + K.ROCK_POSITION.x) & 0xFFFF, rd16(slot + K.ROCK_POSITION.y) & 0xFFFF
+      local number, moved = K.FIRST_ROCK_NUMBER + id, false
+      for y = math.max(0, ry - K.ROCK_REACH), math.min(K.MAP_SIZE - 1, ry + K.ROCK_REACH) do
+        local row = rd32(R.rows + y * 12)
+        for x = math.max(0, rx - K.ROCK_REACH), math.min(K.MAP_SIZE - 1, rx + K.ROCK_REACH) do
+          local tile = row + x
+          if rd8(R.validTiles + y * K.MAP_SIZE + x) ~= 0 and tile >= 0 and tile < K.MAP_TILES
+              and (rd16(T + R.organism + tile * 2) & 0xFFFF) == number then
+            local height = math.max(0, math.min(0xFF, (rock.old[tile] or baseAt(tile)) + delta))
+            if height ~= baseAt(tile) then
+              core.writeByte(T + R.defaultHeight + tile, height)
+              local live = height
+              if rd32(T + R.logic + tile * 4) & K.RIVER_TERRAIN ~= 0 then live = math.max(0, height - K.RIVER_DEPTH) end
+              core.writeByte(T + R.height + tile, live)
+              links(R.pathFinding, y, tile)
+              moved = true
+            end
+          end
+        end
+      end
+      if moved then
+        walk(R.pathFinding, K.WALK_RADIUS, rx, ry)
+        changed = true
+      end
+    end
+    if changed then
+      wr32(T + R.logicFlag, 1)
+      wr32(R.macroFlag, 1)
+      redraw(R.minimap, 2)
+    end
+  end
+end
+
+-- Rock slots in use that no tile of the map names any more (all their tiles were taken over,
+-- by shrubs placed on a rock the raise and lower tools broke): freed the way removeRock frees a
+-- slot (zeroed), without touching any tile. Answers how many.
+function C.removeLostRocks(G, R)
+  local T = R.tileMap
+  local named = {}
+  for tile = 0, K.MAP_TILES - 1 do
+    local number = rd16(T + R.organism + tile * 2) & 0xFFFF
+    if number >= K.FIRST_ROCK_NUMBER then named[number - K.FIRST_ROCK_NUMBER] = true end
+  end
+  local zeros = {}
+  for i = 1, G.rockSize do zeros[i] = 0 end
+  local removed = 0
+  for id = 1, G.rockSlots do
+    local inUse = G.firstRock + (id - 1) * G.rockSize
+    if rd16(inUse) ~= 0 and not named[id] then
+      core.writeBytes(inUse - K.ROCK_SLOT.inUse, zeros)
+      removed = removed + 1
+    end
+  end
+  return removed
+end
+
+-- The heights panel, above the menu while a height tool is chosen: Reset ground textures,
+-- Break rock tiles, the rock mode list (opens upwards) and, for raise, lower and equalize, the
+-- strength slider. Items: the check boxes, the list's head and options, the slider.
+function C.makeHeightPanel(G, data, H, items)
+  local rect, listRect = C.takeRect(data), C.takeRect(data)
+  local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
+  local colourBox = core.exposeCode(G.colourBox, 6, 1)
+  local textWidth = core.exposeCode(G.textWidth, 4, 1)
+  local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
+  local renderGM = core.exposeCode(G.renderGM, 5, 1)
+  local buffer = core.allocate(128, true)
+  local P = K.HEIGHT_PANEL
+  local function width(text)
+    writeCString(buffer, text)
+    return textWidth(G.textManager, buffer, #text, TOOLTIP_FONT)
+  end
+  local function write(text, x, y)
+    writeCString(buffer, text)
+    shadowedText(G.textManager, buffer, x, y, ALIGN_LEFT, TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
+  end
+  local function place(address, x, y, w, h)
+    wr32(address + ITEM_X, x)
+    wr32(address + ITEM_Y, y)
+    wr32(address + ITEM_WIDTH, w)
+    wr32(address + ITEM_HEIGHT, h)
+    wr16(address + ITEM_HIDDEN, 0)
+  end
+  local function modeName(mode)
+    for _, entry in ipairs(K.ROCK_MODES) do
+      if entry[1] == mode then return entry[2] end
+    end
+    return "?"
+  end
+
+  return function()
+    for _, address in ipairs(items.all) do wr16(address + ITEM_HIDDEN, 1) end
+    local tool = rd32(G.subtype)
+    local strength = H.strength[tool]
+    local box = K.CHECK_BOX_SIZE
+    local labels = { "Reset ground textures", "Break rock tiles" }
+    local parts = {}
+    for i, label in ipairs(labels) do parts[i] = box + TOOLTIP_PADDING + width(label) end
+    local modeWidth = 0
+    for _, entry in ipairs(K.ROCK_MODES) do modeWidth = math.max(modeWidth, width(entry[2])) end
+    local headLabel = "Rocks:"
+    parts[3] = width(headLabel) + TOOLTIP_PADDING + modeWidth + 3 * TOOLTIP_PADDING + width("v")
+    if strength ~= nil then parts[4] = width("Strength 16") + TOOLTIP_PADDING + P.slider end
+    local total = 0
+    for _, w in ipairs(parts) do total = total + w end
+    total = total + P.gap * (#parts - 1) + 2 * TOOLTIP_PADDING
+    local height = box + 2 * TOOLTIP_PADDING
+    local menuX = rd32(G.menu + MENU_X)
+    local left = (rd32(G.screenWidth) - total) // 2 - menuX
+    local top = PANEL_BOTTOM - height
+    local inner = top + TOOLTIP_PADDING
+    C.markRect(rect, left, top, total, height)
+
+    local x = left + TOOLTIP_PADDING
+    local spots = {}
+    for i = 1, #parts do
+      spots[i] = x
+      x = x + parts[i] + P.gap
+    end
+    place(items.reset, spots[1], inner, parts[1], box)
+    place(items.breakRocks, spots[2], inner, parts[2], box)
+    place(items.mode, spots[3], inner, parts[3], box)
+    if strength ~= nil then place(items.strength, spots[4] + parts[4] - P.slider, inner, P.slider, box) end
+    local options = #K.ROCK_MODES
+    local listTop = top - P.dropdown - options * P.optionHeight
+    if H.open then
+      for i = 1, options do
+        place(items.options[i], spots[3], listTop + (i - 1) * P.optionHeight, parts[3], P.optionHeight)
+      end
+      C.markRect(listRect, spots[3], listTop, parts[3], options * P.optionHeight)
+    else
+      C.markRect(listRect, 0, 0, 0, 0)
+    end
+
+    local offsetX = menuX - rd32(G.menu + MENU_SCROLL) + rd32(G.cameraX)
+    local offsetY = rd32(G.menu + MENU_Y) + rd32(G.cameraY)
+    local white = rd32(G.pixelFormat) == 0x565 and 0xFFFF or 0x7FFF
+    local function frame(l, t, r, b)
+      colourBox(G.pencil, l, t, r, t + 1, white)
+      colourBox(G.pencil, l, b - 1, r, b, white)
+      colourBox(G.pencil, l, t, l + 1, b, white)
+      colourBox(G.pencil, r - 1, t, r, b, white)
+    end
+    local target = rd32(G.pencil + PENCIL_TARGET)
+    wr32(G.pencil + PENCIL_TARGET, MAP_LAYER)
+    roundedBox(G.pencil, offsetX + left, offsetY + top, offsetX + left + total, offsetY + PANEL_BOTTOM, BOX_BLEND)
+    for _, address in ipairs({ items.reset, items.breakRocks, items.mode }) do
+      if rd16(address + ITEM_HOVERED) ~= 0 then
+        local l, t = offsetX + rd32(address + ITEM_X), offsetY + rd32(address + ITEM_Y)
+        roundedBox(G.pencil, l, t, l + rd32(address + ITEM_WIDTH), t + rd32(address + ITEM_HEIGHT), BOX_BLEND)
+      end
+    end
+    -- The list's head: a frame around the chosen mode.
+    local headX = offsetX + spots[3] + width(headLabel) + TOOLTIP_PADDING
+    frame(headX, offsetY + inner + 3, offsetX + spots[3] + parts[3], offsetY + inner + box - 3)
+    if H.open then
+      local l = offsetX + spots[3]
+      roundedBox(G.pencil, l, offsetY + listTop, l + parts[3], offsetY + top - P.dropdown, BOX_BLEND)
+      for i = 1, options do
+        local address = items.options[i]
+        local ot = offsetY + rd32(address + ITEM_Y)
+        if rd16(address + ITEM_HOVERED) ~= 0 then roundedBox(G.pencil, l, ot, l + parts[3], ot + P.optionHeight, BOX_BLEND) end
+        if K.ROCK_MODES[i][1] == rd32(H.mode) then frame(l, ot, l + parts[3], ot + P.optionHeight) end
+      end
+    end
+    -- The slider: a track, the part up to the strength filled, a knob.
+    if strength ~= nil then
+      local l = offsetX + spots[4] + parts[4] - P.slider
+      local middle = offsetY + inner + box // 2
+      local t, b = middle - P.sliderHeight // 2, middle + P.sliderHeight // 2
+      roundedBox(G.pencil, l, t, l + P.slider, b, BOX_BLEND)
+      local filled = l + (P.slider * strength) // K.STRENGTH_MOST
+      colourBox(G.pencil, l, middle - 1, filled, middle + 1, white)
+      colourBox(G.pencil, filled - 2, t - 3, filled + 2, b + 3, white)
+      frame(l, t, l + P.slider, b)
+    end
+    wr32(G.pencil + PENCIL_TARGET, target)
+
+    local mode = rd32(G.textures + TEXTURES_MODE)
+    wr32(G.textures + TEXTURES_MODE, MAP_LAYER)
+    for i, flag in ipairs({ H.reset, H.breakRocks }) do
+      local address = i == 1 and items.reset or items.breakRocks
+      local image = G.buttonImages + (rd32(flag) ~= 0 and K.CHECKED_IMAGE or K.UNCHECKED_IMAGE) * IMAGE_SIZE
+      local picture = rd32(image + 4)
+      if rd16(address + ITEM_HOVERED) ~= 0 then picture = picture + 1 end
+      renderGM(G.textures, rd32(image), picture, offsetX + spots[i], offsetY + inner)
+    end
+    wr32(G.textures + TEXTURES_MODE, mode)
+
+    local layer = rd32(G.textLayer)
+    wr32(G.textLayer, MAP_LAYER)
+    local textY = offsetY + inner + (box - TOOLTIP_LINE) // 2 + 2
+    for i, label in ipairs(labels) do write(label, offsetX + spots[i] + box + TOOLTIP_PADDING, textY) end
+    write(headLabel, offsetX + spots[3], textY)
+    write(modeName(rd32(H.mode)), headX + TOOLTIP_PADDING, textY)
+    write("v", offsetX + spots[3] + parts[3] - TOOLTIP_PADDING - width("v"), textY)
+    if H.open then
+      for i = 1, options do
+        local ot = offsetY + rd32(items.options[i] + ITEM_Y)
+        write(K.ROCK_MODES[i][2], offsetX + spots[3] + TOOLTIP_PADDING, ot + (P.optionHeight - TOOLTIP_LINE) // 2 + 2)
+      end
+    end
+    if strength ~= nil then write(string.format("Strength %d", strength), offsetX + spots[4], textY) end
+    wr32(G.textLayer, layer)
+    drawTooltipOnTop(data)
+  end
+end
+
+-- The heights menu's new items and the lost rocks button (called while the landscape menu's
+-- new table is built; M holds what buildTable has at hand).
+function C.heightsMenu(M)
+  local G, O, data, added = M.G, M.O, M.data, M.added
+  -- Max height: a copy of the min height button with command 22, the next picture and the user
+  -- control the iron button took (the iron goes, or, kept, moves to the end of the row).
+  if O.maxHeight then
+    local into = added.maxHeight
+    M.copyOf(K.MIN_HEIGHT_TOOL, into)
+    local image = rd32(into + ITEM_IMAGE)
+    wr32(into + ITEM_IMAGE, (image & ~IMAGE_INDEX_MASK & 0xFFFFFFFF) | ((image & IMAGE_INDEX_MASK) + 1))
+    wr32(into + ITEM_PARAM, K.MAX_HEIGHT_TOOL)
+    wr32(into + ITEM_Y, K.MAX_HEIGHT_CONTROL)
+    wr32(into + ITEM_TEXT, 0)
+    M.tooltips[#M.tooltips + 1] = { item = into, name = K.MAX_HEIGHT_NAME }
+    if not (O.noHeightsIron and O.textures) and G.buttons[IRON_COMMAND] ~= nil then
+      local row = {}
+      for _, param in ipairs(K.HEIGHTS_TOP_ROW) do row[#row + 1] = M.button(param) end
+      row[#row + 1] = into
+      row[#row + 1] = M.button(IRON_COMMAND)
+      M.rows[#M.rows + 1] = row
+      M.newButtons[into] = true
+    end
+  end
+
+  if O.heightTools then
+    local H = C.heightWords()
+    local items = {
+      reset = added.heightReset, breakRocks = added.heightBreak, mode = added.heightMode,
+      strength = added.heightStrength, options = {},
+    }
+    for i = 1, #K.ROCK_MODES do items.options[i] = added["heightOption" .. i] end
+    items.all = { items.reset, items.breakRocks, items.mode, items.strength }
+    for _, address in ipairs(items.options) do items.all[#items.all + 1] = address end
+    local function button(address, fn, what)
+      wr32(address + ITEM_TYPE, TYPE_CLICKABLE)
+      wr32(address + ITEM_ACTION, C.luaPad(fn, what))
+      wr32(address + ITEM_RENDER_TYPE, RENDER_NONE)
+      wr32(address + ITEM_TEXT, 0)
+      wr16(address + ITEM_CONTROL, -1)
+      wr16(address + ITEM_HIDDEN, 1)
+      M.guarded[#M.guarded + 1] = address
+      M.guarded[#M.guarded + 1] = K.HEIGHTS_TAB
+    end
+    local function flip(word) wr32(word, rd32(word) ~= 0 and 0 or 1) end
+    button(items.reset, function() flip(H.reset) end, "the Reset ground textures box")
+    button(items.breakRocks, function() flip(H.breakRocks) end, "the Break rock tiles box")
+    button(items.mode, function() H.open = not H.open end, "the rock mode list")
+    for i, entry in ipairs(K.ROCK_MODES) do
+      button(items.options[i], function()
+        wr32(H.mode, entry[1])
+        H.open = false
+      end, "the rock mode list")
+    end
+    local isMouseInside = core.exposeCode(G.isMouseInside, 5, 1)
+    button(items.strength, function()
+      local tool = rd32(G.subtype)
+      if H.strength[tool] == nil then return end
+      local x = rd32(G.menu + MENU_X) + rd32(items.strength + ITEM_X)
+      local y = rd32(G.menu + MENU_Y) + rd32(items.strength + ITEM_Y)
+      local w, h = rd32(items.strength + ITEM_WIDTH), rd32(items.strength + ITEM_HEIGHT)
+      for value = 1, K.STRENGTH_MOST do
+        local from = ((value - 1) * w) // K.STRENGTH_MOST
+        local to = (value * w) // K.STRENGTH_MOST
+        if isMouseInside(G.mouse, x + from, y, to - from, h) ~= 0 then
+          H.strength[tool] = value
+          C.applyStrength(H)
+          return
+        end
+      end
+    end, "the strength slider")
+    local panel = added.heightPanel
+    local commands = {}
+    for _, tool in ipairs(K.HEIGHT_TOOLS) do commands[#commands + 1] = tool end
+    commands[#commands + 1] = -1
+    wr32(panel + ITEM_TYPE, TYPE_CLICKABLE)    -- no size, so never under the mouse
+    wr32(panel + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+    wr32(panel + ITEM_RENDER, core.allocateAssembly(templates.toolPanel, {
+      SUBTYPE = G.subtype, COMMANDS = dwordList(commands), PANEL_ITEMS = dwordList(items.all),
+      ITEM_HIDDEN = ITEM_HIDDEN, PAD = C.luaPad(C.makeHeightPanel(G, data, H, items), "the heights panel"),
+    }))
+    -- The rest of a rock moved in Whole rock, every frame something was remembered.
+    local R = C.resolvePipette(G)
+    local tick = added.heightTick
+    wr32(tick + ITEM_TYPE, TYPE_EVERY_FRAME)
+    wr32(tick + ITEM_ACTION, core.allocateAssembly(templates.whenCounted, {
+      COUNT = H.count, PAD = C.luaPad(C.rockSettler(G, R, H), "the whole rock move"),
+    }))
+    data.heights = H
+  end
+
+  -- The lost rocks button, bottom right of the Rocks menu (both Rocks tabs).
+  if O.lostRocks then
+    local R = C.resolvePipette(G)
+    local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
+    local textWidth = core.exposeCode(G.textWidth, 4, 1)
+    local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
+    local buffer = core.allocate(64, true)
+    local B = K.LOST_ROCKS_BUTTON
+    local report = "Takes rocks off the map's list that no tile has any more"
+    for _, tab in ipairs({ ROCKS, K.ROCKS_SKIRMISH }) do
+      local into = added["lostRocks" .. tab]
+      if into ~= nil then
+        wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
+        wr32(into + ITEM_ACTION, C.luaPad(function()
+          if O.undo ~= nil then O.undo.beginEdit() end
+          local removed = C.removeLostRocks(G, R)
+          report = removed == 0 and "No lost rocks on this map"
+            or string.format("Removed %d lost rock%s", removed, removed == 1 and "" or "s")
+          log(INFO, MODULE_NAME .. ": " .. report)
+        end, "the lost rocks button"))
+        wr32(into + ITEM_TEXT, 0)
+        wr16(into + ITEM_CONTROL, -1)
+        wr16(into + ITEM_HIDDEN, 1)
+        local buttons = {}
+        for _, rock in ipairs(G.rockButtons) do
+          if rock.block == tab then buttons[#buttons + 1] = item(M.newTable, M.moved(rock.index)) end
+        end
+        local box = added["invisible" .. tab]
+        M.places[#M.places + 1] = function(measure)
+          local right, bottom = nil, nil
+          for _, address in ipairs(buttons) do
+            local x = rd32(address + ITEM_X)
+            if (x & 0xFFFFFFFF) == PLACED_BY_CONTROL then return false end
+            local w, h = measure(address)
+            if w == nil then return false end
+            right = math.max(right or 0, x + w)
+            bottom = math.max(bottom or 0, rd32(address + ITEM_Y) + h)
+          end
+          if right == nil then return true end
+          writeCString(buffer, K.LOST_ROCKS_LABEL)
+          local w = textWidth(G.textManager, buffer, #K.LOST_ROCKS_LABEL, TOOLTIP_FONT) + 2 * B.padding
+          local y = bottom - B.height
+          if box ~= nil and rd16(box + ITEM_HIDDEN) == 0 then
+            y = math.max(y, rd32(box + ITEM_Y) + K.CHECK_BOX_SIZE + B.below)
+          end
+          wr32(into + ITEM_X, right + K.CHECK_BOX_GAP)
+          wr32(into + ITEM_Y, y)
+          wr32(into + ITEM_WIDTH, w)
+          wr32(into + ITEM_HEIGHT, B.height)
+          wr16(into + ITEM_HIDDEN, 0)
+          return true
+        end
+        -- Drawn in the menu, like the tab numbers.
+        wr32(into + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+        wr32(into + ITEM_RENDER, C.luaPad(function()
+          if rd16(into + ITEM_HIDDEN) ~= 0 then return end
+          local l = rd32(G.menu + MENU_X) - rd32(G.menu + MENU_SCROLL) + rd32(into + ITEM_X)
+          local t = rd32(G.menu + MENU_Y) + rd32(into + ITEM_Y)
+          local w = rd32(into + ITEM_WIDTH)
+          roundedBox(G.pencil, l, t, l + w, t + B.height, BOX_BLEND)
+          if rd16(into + ITEM_HOVERED) ~= 0 then roundedBox(G.pencil, l, t, l + w, t + B.height, BOX_BLEND) end
+          writeCString(buffer, K.LOST_ROCKS_LABEL)
+          shadowedText(G.textManager, buffer, l + B.padding, t + (B.height - TOOLTIP_LINE) // 2 + 2, ALIGN_LEFT,
+            TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
+        end, "the lost rocks button"))
+        M.tooltips[#M.tooltips + 1] = { item = into, lines = function() return { report } end,
+          raise = K.CHECK_BOX_TOOLTIP_RAISE }
+      end
+    end
+  end
+end
+
+-- The height tools' patches (with the options on): rocks kept whole or erased, the ground's look
+-- only reset when asked, raise and lower without wrapping, the strength.
+function C.patchHeightTools(self, G, data)
+  local H = data.heights
+  local R = C.resolvePipette(G)
+  local T = R.tileMap
+  local check = core.allocateAssembly(templates.rockCheck, {
+    ORGANISM = T + R.organism, FIRST_ROCK_NUMBER = K.FIRST_ROCK_NUMBER, ROCK_MODE = H.mode,
+    MODE_ERASE = K.ROCK_ERASE, MODE_WHOLE = K.ROCK_WHOLE, RECORD_COUNT = H.count, RECORD_MOST = K.ROCK_RECORDS,
+    RECORDS = H.records, BASE_HEIGHT = T + R.defaultHeight, BREAK_ROCKS = H.breakRocks,
+    LANDSCAPE = R.landscape, REMOVE_ROCK = R.removeRock,
+  })
+  local raiseAnd = scan(K.AOB_RAISE_AND, "raiseLand's rock flag")
+  local raiseAdd = scan(K.AOB_RAISE_ADD, "raiseLand's amount")
+  local levelAnd = scan(K.AOB_LEVEL_AND, "the equalize tool's rock flag")
+  local levelRise = scan(K.AOB_LEVEL_RISE, "the equalize tool's step up")
+  local levelFall = scan(K.AOB_LEVEL_FALL, "the equalize tool's step down")
+  local levelGround = scan(K.AOB_LEVEL_DECORATION, "the equalize tool's ground")
+  local plateauAnd = scan(K.AOB_PLATEAU_AND, "the plateau tools' rock flag")
+  local plateauGround = scan(K.AOB_PLATEAU_DECORATION, "the plateau tools' ground")
+  local minGround = scan(K.AOB_MIN_DECORATION, "the min height tool's ground")
+  local minRock = minGround + K.MIN_DECORATION.size
+  expectBytes(minRock, { 0xF6, 0x84, 0xAF }, "the min and max height tools' rock")
+  local raiseAmount = scan(K.AOB_RAISE_AMOUNT, "the raise land command") + K.AMOUNT_VALUE
+  local lowerAmount = scan(K.AOB_LOWER_AMOUNT, "the lower land command") + K.AMOUNT_VALUE
+
+  C.patchJump(self, raiseAnd, K.RAISE_AND.size, core.allocateAssembly(templates.raiseRock, {
+    ROCK_CHECK = check, LOGIC = rd32(raiseAnd + K.RAISE_AND.logic), BACK = raiseAnd + K.RAISE_AND.size,
+  }))
+  C.patchJump(self, raiseAdd, K.RAISE_ADD.size, core.allocateAssembly(templates.raiseAmount, {
+    HEIGHT = rd32(raiseAdd + K.RAISE_ADD.height), DECORATION = rd32(raiseAdd + K.RAISE_ADD.decoration),
+    RESET = H.reset, BACK = raiseAdd + K.RAISE_ADD.size,
+  }))
+  C.patchJump(self, levelAnd, K.LEVEL_AND.size, core.allocateAssembly(templates.brushRock, {
+    ROCK_CHECK = check, MAY_BREAK = 1, LOGIC = rd32(levelAnd + K.LEVEL_AND.logic), BACK = levelAnd + K.LEVEL_AND.size,
+  }))
+  C.patchJump(self, levelRise, K.LEVEL_RISE.size, core.allocateAssembly(templates.levelRise, {
+    DIVISOR = H.divisor, HEIGHT_STORE = levelRise + K.LEVEL_RISE.store,
+  }))
+  C.patchJump(self, levelFall, K.LEVEL_FALL.size, core.allocateAssembly(templates.levelFall, {
+    DIVISOR = H.divisor, HEIGHT_STORE = levelFall + K.LEVEL_FALL.size,
+  }))
+  C.patchJump(self, levelGround, K.LEVEL_DECORATION.size, core.allocateAssembly(templates.levelGround, {
+    RESET = H.reset, DECORATION = rd32(levelGround + K.LEVEL_DECORATION.decoration),
+    BACK = levelGround + K.LEVEL_DECORATION.size,
+  }))
+  C.patchJump(self, plateauAnd, K.PLATEAU_AND.size, core.allocateAssembly(templates.brushRock, {
+    ROCK_CHECK = check, MAY_BREAK = 0, LOGIC = rd32(plateauAnd + K.PLATEAU_AND.logic),
+    BACK = plateauAnd + K.PLATEAU_AND.size,
+  }))
+  C.patchJump(self, plateauGround, K.PLATEAU_DECORATION.size, core.allocateAssembly(templates.plateauGround, {
+    RESET = H.reset, DECORATION = rd32(plateauGround + K.PLATEAU_DECORATION.decoration),
+    BACK = plateauGround + K.PLATEAU_DECORATION.size,
+  }))
+  -- Min height's `and byte [DECORATION],0xF3` goes: the rock patch resets the look when asked.
+  self.saved = self.saved or {}
+  table.insert(self.saved, { address = minGround, bytes = core.readBytes(minGround, K.MIN_DECORATION.size) })
+  local nops = {}
+  for i = 1, K.MIN_DECORATION.size do nops[i] = 0x90 end
+  core.writeCode(minGround, nops)
+  C.patchJump(self, minRock, K.MIN_ROCK.size, core.allocateAssembly(templates.minMaxRock, {
+    RESET = H.reset, DECORATION = rd32(minGround + K.MIN_DECORATION.decoration), ROCK_CHECK = check,
+    AFTER_AND = minRock + K.MIN_ROCK.afterAnd, AND_SITE = minRock + K.MIN_ROCK.andSite,
+  }))
+  for _, at in ipairs({ raiseAmount, lowerAmount }) do
+    table.insert(self.saved, { address = at, bytes = core.readBytes(at, 4) })
+  end
+  H.raiseAmount, H.lowerAmount = raiseAmount, lowerAmount
+  C.applyStrength(H)
+end
+
 local function enableMenu(self, O)
   local G = {}
   resolveMenu(G)
@@ -3982,6 +4614,10 @@ local function enableMenu(self, O)
   if data.rockTabs > 0 then patchRocks(self, G, data) end
   if O.herds then patchHerds(self, G, data) end
   if O.invisibleRocks then C.patchInvisibleRocks(self, data) end
+  if data.heights ~= nil then
+    local ok, problem = pcall(C.patchHeightTools, self, G, data)
+    if not ok then log(WARNING, tostring(problem) .. "; the height tools keep breaking rocks") end
+  end
   if data.pipette ~= nil then
     local ok, problem = pcall(C.patchPipettePreview, self, data.pipette, data.pipetteRead)
     if not ok then log(WARNING, tostring(problem) .. "; the pipette shows the whole brush while taking a tile") end
@@ -4841,6 +5477,9 @@ local function enable(self, config)
     noHeightsIron = setting(config, "textures", "no_heights_iron") == true,
     waterDecorations = setting(config, "water", "decorations") == true,
     foamOnSea = setting(config, "water", "foam_on_sea") == true,
+    maxHeight = setting(config, "heights", "max_height") == true,
+    heightTools = setting(config, "heights", "tool_options") == true,
+    lostRocks = setting(config, "rocks", "remove_lost") == true,
     undo = self.undo,
   }
   if setting(config, "pipette", "enabled") == true then
@@ -4871,7 +5510,7 @@ local function enable(self, config)
   }
   if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.sortedRows or O.textures
       or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
-      or O.undo or O.pipette or O.treePreview then
+      or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks then
     local ok, problem = pcall(enableMenu, self, O)
     if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
   end

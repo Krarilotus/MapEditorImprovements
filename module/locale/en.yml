@@ -126,6 +126,35 @@ rocks_erase_invisible_tooltip: |
   The landscape eraser (and the tools that remove rocks with it) frees the tiles of invisible
   rocks too, the way it removes normal rocks. Without this, each tile needs the shrub trick:
   place the shrub that ignores obstacles on it and erase that.
+rocks_remove_lost: Remove lost rocks button
+rocks_remove_lost_tooltip: |
+  Adds a "Remove lost rocks" button at the bottom right of the Rocks menu. A rock the raise or
+  lower tool broke, whose tiles were then all covered with shrubs, stays in the map's list of
+  rocks with no tile left: you cannot see, erase or reach it, and it uses up one of the 4000
+  rock slots. The button finds every such rock and takes it off the list. Tiles are not changed.
+
+heights_group: Heights
+heights_group_descr: |
+  The height tools of the landscape editor.
+heights_max_height: Max Height button
+heights_max_height_tooltip: |
+  Brings back the first Stronghold's Max Height tool, right of Min Height in the Heights menu:
+  it sets the ground under the brush to height 156. Crusader still has the tool and its button
+  pictures, only the button was taken out.
+heights_tool_options: Height tool options
+heights_tool_options_tooltip: |
+  While a height tool is chosen, a panel above the Heights menu offers:
+  - Reset ground textures (off at first): whether the height tools also turn the ground under
+  them back to its plain look (and the plateaus to dirt), as the game does. Off, they only
+  change the height.
+  - Break rock tiles (off at first): whether raise, lower, equalize, hill and mountain break the
+  rocks they touch the way the game does (the touched tiles turn invisible and walkable while the
+  rock stays). Off, rocks stay whole.
+  - Rocks (Whole rock at first): what the height tools do to a rock they touch. Tile only moves
+  just the tiles under the brush; Whole rock moves all of the rock's tiles by the same amount;
+  Erase rock removes the rock, as min height always did.
+  - Strength, for raise, lower and equalize: how much raise and lower change the height per step
+  (1 to 16, the game's is 1), and how fast equalize flattens (7 is the game's rate).
 
 castle_group: Castle mode
 castle_group_descr: |
