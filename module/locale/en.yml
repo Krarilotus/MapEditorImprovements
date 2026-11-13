@@ -80,10 +80,11 @@ textures_gravel_and_iron_tooltip: |
 textures_no_heights_iron: Iron only in the Textures menu
 textures_no_heights_iron_tooltip: |
   Takes the iron button out of the Heights menu, now that the Textures menu has one.
-textures_mask: Texture mask button
+textures_mask: Mask button
 textures_mask_tooltip: |
-  Adds a Mask button (a square, half filled) at the top left of the Textures and Water menus (one
-  switch for both). While it is on, a texture or water tool only paints tiles that have the same texture as the tile you first clicked on;
+  Adds a Mask button (a square, half filled) at the top left of the landscape editor's menu. While
+  it is on, the nature tools (heights, textures, water, trees and shrubs, rocks and the pipette) only
+  change tiles that have the same texture as the tile you first clicked on;
   when you let go of the mouse, the next click picks the texture to paint over anew.
 
 water_group: Water

@@ -1713,4 +1713,100 @@ mask_held:
 ret
 ]]
 
+-- The mask in the other nature tools: each replaces the instructions that load a tile and its
+-- flags at the start of a per-tile step, asks maskCheck (eax = the tile, ecx = the tile the
+-- command was clicked on) and goes to the tool's next tile when it says no.
+-- raiseLand (raise, lower, hill, mountain): `mov eax,[esp+0x18] / mov ecx,[esi+eax*4+LOGIC]`,
+-- the clicked tile in ebp.
+templates.raiseMask = [[
+mov eax,[esp+0x18]
+push ecx
+mov ecx,ebp
+mov edx,1
+call MASK_CHECK
+pop ecx
+test eax,eax
+je NEXT_TILE
+mov eax,[esp+0x18]
+mov ecx,[esi+eax*4+LOGIC]
+jmp BACK
+]]
+
+-- useLevelBrush (equalize): `mov ebp,[esp+TILE_AT] / mov eax,[edi+ebp*4+LOGIC]`, the clicked
+-- tile at [esp+CLICKED_AT].
+templates.levelMask = [[
+mov eax,[esp+TILE_AT]
+mov ecx,[esp+CLICKED_AT]
+mov edx,1
+call MASK_CHECK
+test eax,eax
+je NEXT_TILE
+mov ebp,[esp+TILE_AT]
+mov eax,[edi+ebp*4+LOGIC]
+jmp BACK
+]]
+
+-- useTerrainHeightBrush (min, max) and createPlateau: the same, the clicked tile in ebx.
+templates.brushMask = [[
+mov eax,[esp+TILE_AT]
+mov ecx,ebx
+mov edx,1
+call MASK_CHECK
+test eax,eax
+je NEXT_TILE
+mov ebp,[esp+TILE_AT]
+mov eax,[edi+ebp*4+LOGIC]
+jmp BACK
+]]
+
+-- placeTree, replacing `test dword [edi+ebp*4+LOGIC],TEST_MASK` (the tree's tile ebp; the jne
+-- after it, past two movs, leaves): leaves when the mask says no.
+templates.treeMask = [[
+push eax
+push ecx
+push edx
+mov eax,ebp
+mov ecx,ebp
+mov edx,1
+call MASK_CHECK
+test eax,eax
+pop edx
+pop ecx
+pop eax
+je TREE_LEAVE
+test dword [edi+ebp*4+LOGIC],TEST_MASK
+jmp BACK
+]]
+
+-- placeRock's start `push ecx / mov eax,[esp+8]` (x, y on the stack): returns at once when the
+-- mask says no for the rock's tile.
+templates.rockMask = [[
+mov eax,[esp+4]
+mov edx,[esp+8]
+cmp eax,MAP_SIZE
+jae rock_mask_go
+cmp edx,MAP_SIZE
+jae rock_mask_go
+push ecx
+imul edx,edx,MAP_SIZE
+cmp byte [VALID+edx+eax],0
+je rock_mask_go_pop
+mov edx,[esp+12]
+lea edx,[edx+edx*2]
+add eax,[ROWS+edx*4]
+mov ecx,eax
+mov edx,1
+call MASK_CHECK
+pop ecx
+test eax,eax
+jne rock_mask_go
+ret 0xC
+rock_mask_go_pop:
+pop ecx
+rock_mask_go:
+push ecx
+mov eax,[esp+8]
+jmp BACK
+]]
+
 return templates

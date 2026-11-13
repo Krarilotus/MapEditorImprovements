@@ -162,6 +162,10 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   sets a flag), and the tiles setLand lets through are marked in a byte per tile, since
   setTerrain then finds them changed. An every-frame item clears the reference while the map
   click is not held.
+  The same check sits at the start of each tile in raiseLand (raise, lower, hill, mountain),
+  useLevelBrush, useTerrainHeightBrush, createPlateau and placeTree, and at placeRock's start;
+  the pipette checks every brush tile in lua (C.maskAllows) before it changes any. One button,
+  in the always shown part of the landscape menu.
 * **Lost rocks.** A rock slot is in use when its word at +0x0C is not 0; the button collects the
   rock numbers (slot + 2000) of all 80400 tiles' organism words and zeroes every slot in use that
   no tile names (removeRock would also clear its footprint, which other plants now hold).

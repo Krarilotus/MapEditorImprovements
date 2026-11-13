@@ -821,6 +821,22 @@ K.AOB_MASK_LAND = "8B 74 24 18 8B 84 B7 ? ? ? ? A8 30 0F 85"
 K.MASK_LAND = { size = 11, logic = 7, next = 0x0F }
 K.AOB_MASK_CALL = "52 8B 45 0C 50 8B 4D E0 E8 ? ? ? ? 81 7D 18 00 00 00 40"
 K.MASK_CALL = 8
+-- ...and in the other nature tools, at the start of each tile: raiseLand (raise, lower, hill,
+-- mountain) `mov eax,[esp+0x18] / mov ecx,[esi+eax*4+LOGIC] / test cl,0x30 / jne <next>`;
+-- useLevelBrush, useTerrainHeightBrush and createPlateau `mov ebp,[esp+TILE] / mov eax,[edi+ebp*4+
+-- LOGIC] / test al,0x30 / jne <next>` (told apart by what follows); placeTree `test [edi+ebp*4+
+-- LOGIC],0x703E25B5 / mov / mov / mov / jne <leave>`; placeRock's start `push ecx / mov eax,[esp+8]`.
+K.AOB_MASK_RAISE = "8B 44 24 18 8B 8C 86 ? ? ? ? F6 C1 30 0F 85"
+K.MASK_RAISE = { size = 11, logic = 7, next = 0x10 }
+K.AOB_MASK_LEVEL = "8B 6C 24 24 8B 84 AF ? ? ? ? A8 30 0F 85 ? ? ? ? 8B C8 81 E1 01 00 00 20"
+K.AOB_MASK_MIN = "8B 6C 24 24 8B 84 AF ? ? ? ? A8 30 0F 85 ? ? ? ? A9 01 05 00 70"
+K.AOB_MASK_PLATEAU = "8B 6C 24 20 8B 84 AF ? ? ? ? A8 30 0F 85 ? ? ? ? A9 01 04 00 70"
+K.MASK_BRUSH = { size = 11, tile = 3, logic = 7, next = 0x0F }
+K.MASK_LEVEL_CLICKED = 0x18                 -- useLevelBrush keeps the clicked tile there
+K.AOB_MASK_TREE = "F7 84 AF ? ? ? ? B5 25 3E 70 89 44 24 18 8B 04 85 ? ? ? ? 89 44 24 14 89 6C 24 24 0F 85"
+K.MASK_TREE = { size = 11, logic = 3, test = 7, leave = 0x20 }
+K.AOB_MASK_ROCK = "51 8B 44 24 08 53 55 56 57 33 DB 33 FF 3D 8F 01 00 00"
+K.MASK_ROCK = { size = 5 }
 -- The mask button: at the top left of the menu's panel, right of the category buttons (menu
 -- coordinates; the category buttons sit at user controls 137..182, 460).
 K.MASK_BUTTON = { x = 240, y = 455 }
@@ -2221,6 +2237,7 @@ local function buildTable(G, O)
     end
     insert(INFO_BEFORE_ITEM, "pipettePanel")
   end
+  if O.textureMask then insert(G.firstBlock, "maskButton") end
   if O.counts or O.obstacles or O.invisibleRocks or O.apple or O.textures or O.waterDecorations
       or O.maxHeight or O.lostRocks or O.textureMask then
     insert(G.firstBlock, "tooltip")
@@ -2253,16 +2270,12 @@ local function buildTable(G, O)
     insert(G.blockEnd[TEXTURES], "gravel")
     insert(G.blockEnd[TEXTURES], "iron")
   end
-  -- After the button copies: the menu only gives a copy its group's renderer while the copies
-  -- follow the group's buttons without another item in between.
-  if O.textureMask then
-    insert(G.blockEnd[TEXTURES], "textureMask")
-    insert(MAP_CLICK_ITEM, "maskTick")
-  end
+  -- New items that are not button copies go after the copies: the menu only gives a copy its
+  -- group's renderer while the copies follow the group's buttons with nothing in between.
+  if O.textureMask then insert(MAP_CLICK_ITEM, "maskTick") end
   if O.waterDecorations and G.blockEnd[K.WATER] ~= nil then
     for _, decoration in ipairs(K.WATER_DECORATIONS) do insert(G.blockEnd[K.WATER], "water" .. decoration.command) end
   end
-  if O.textureMask and G.blockEnd[K.WATER] ~= nil then insert(G.blockEnd[K.WATER], "waterMask") end
   for _, tab in ipairs(rockTabs) do
     for v = 1, K.ROCK_VARIANTS + 1 do insert(G.blockEnd[tab], "rock" .. tab .. "/" .. v) end
     insert(G.blockEnd[tab], "rockPanel" .. tab)
@@ -2684,7 +2697,7 @@ local function buildTable(G, O)
       for i = #places, counts.places + 1, -1 do places[i] = nil end
       for i = #tooltips, counts.tooltips + 1, -1 do tooltips[i] = nil end
       data.mask = nil
-      for _, kind in ipairs({ "textureMask", "waterMask", "maskTick" }) do   -- harmless: never hit, never drawn
+      for _, kind in ipairs({ "maskButton", "maskTick" }) do   -- harmless: never hit, never drawn
         local into = added[kind]
         if into == nil then goto skip end
         wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
@@ -3805,10 +3818,13 @@ function C.pipette(G, O, data, added, guarded, places, button)
     local changed = false
     local tiles = brushTiles(x, y, rd32(T + R.brushField))
     if O.undo ~= nil then O.undo.beginEdit() end
+    -- The mask decides on every tile before anything changes (painting changes the texture).
+    local clicked, allowed = tileOf(x, y), {}
+    for _, at in ipairs(tiles) do allowed[at[1]] = C.maskAllows(T, R, at[1], clicked) end
     for _, at in ipairs(tiles) do
       local tile, ty = at[1], at[2]
       local logic = logicAt(tile)
-      if logic & K.MAP_BORDER == 0 then
+      if logic & K.MAP_BORDER == 0 and allowed[tile] then
         local done = false
         if P.mode == K.PIPETTE_TEXTURES or P.mode == K.PIPETTE_ALL then
           done = giveTextures(tile, logic, any) or done
@@ -3822,10 +3838,16 @@ function C.pipette(G, O, data, added, guarded, places, button)
       end
     end
     if P.mode == K.PIPETTE_ALL and P.stored.plant ~= nil then
+      -- The mask already chose the tiles; the tree and rock placement would test them again,
+      -- after their texture changed.
+      local mask = C.maskState
+      local on = mask ~= nil and rd32(mask.on) or 0
+      if mask ~= nil then wr32(mask.on, 0) end
       for _, at in ipairs(tiles) do
         local tile, ty = at[1], at[2]
-        placePlant(P.stored.plant, tile - rd32(R.rows + ty * 12), ty)
+        if allowed[tile] then placePlant(P.stored.plant, tile - rd32(R.rows + ty * 12), ty) end
       end
+      if mask ~= nil then wr32(mask.on, on) end
     end
     if not changed then return end
     -- What the game's height and terrain tools do afterwards.
@@ -4669,7 +4691,7 @@ function C.maskWords()
   return C.maskState
 end
 
--- The Mask button, at the top left of the Textures and Water menus' panel (one switch for both),
+-- The Mask button, at the top left of the landscape menu's panel (in every one of its menus),
 -- and the item that ends a stroke when the mouse button is let go (called while the landscape
 -- menu's new table is built).
 function C.textureMask(M)
@@ -4683,7 +4705,7 @@ function C.textureMask(M)
       SCRATCH = core.allocate(32, true), PIXEL_FORMAT = G.pixelFormat,
     })
   end
-  for _, box in ipairs({ added.textureMask, added.waterMask }) do
+  for _, box in ipairs({ added.maskButton }) do
     wr32(box + ITEM_TYPE, TYPE_CLICKABLE)
     wr32(box + ITEM_X, K.MASK_BUTTON.x)
     wr32(box + ITEM_Y, K.MASK_BUTTON.y)
@@ -4705,13 +4727,19 @@ function C.textureMask(M)
     end, raise = K.CHECK_BOX_TOOLTIP_RAISE }
   end
 
-  -- The tools it works for: the Textures menu's (gravel and iron included) and the Water menu's
-  -- (foam and small waves included).
+  -- The tools it works for, the nature tools: the Heights, Textures, Water, Vegetation and Rocks
+  -- menus' (and the module's own: gravel, iron, max height, foam, small waves, the shrubs, the
+  -- apple tree) and the pipette (its objects use the game's tools, already in the list).
   local tools = {}
+  local blocks = { [K.HEIGHTS_TAB] = true, [TEXTURES] = true, [K.WATER] = true, [VEGETATION] = true,
+    [ROCKS] = true, [K.ROCKS_SKIRMISH] = true }
   for param, entry in pairs(G.buttons) do
-    if entry.block == TEXTURES or entry.block == K.WATER then tools[#tools + 1] = param end
+    if blocks[entry.block] then tools[#tools + 1] = param end
   end
+  for _, rock in ipairs(G.rockButtons) do tools[#tools + 1] = rd32(item(G.table, rock.index, ITEM_PARAM)) end
   for _, decoration in ipairs(K.WATER_DECORATIONS) do tools[#tools + 1] = decoration.command end
+  for _, command in ipairs(SHRUB_COMMANDS) do tools[#tools + 1] = command end
+  for _, command in ipairs({ APPLE_COMMAND, K.MAX_HEIGHT_TOOL, K.PIPETTE_TOOL }) do tools[#tools + 1] = command end
   tools[#tools + 1] = GRAVEL_COMMAND
   tools[#tools + 1] = IRON_COMMAND
   tools[#tools + 1] = -1
@@ -4752,6 +4780,58 @@ function C.patchTextureMask(self, G, data)
   C.patchCall(self, call, core.allocateAssembly(templates.maskNested, {
     NESTED = W.nested, RETURN = W.ret, SET_LAND = readCallTarget(call, 0, "setLand"),
   }))
+
+  -- The height tools, trees and rocks: every stub first, then the patches.
+  local function nextOf(site, at) return site + at + 4 + rd32(site + at) end
+  local stubs = {}
+  local raise = scan(K.AOB_MASK_RAISE, "raiseLand's tile loop")
+  local RM = K.MASK_RAISE
+  stubs[#stubs + 1] = { raise, RM.size, C.assemble("raiseMask", {
+    MASK_CHECK = check, NEXT_TILE = nextOf(raise, RM.next), LOGIC = rd32(raise + RM.logic), BACK = raise + RM.size,
+  }) }
+  local B = K.MASK_BRUSH
+  local level = scan(K.AOB_MASK_LEVEL, "the equalize tool's tile loop")
+  stubs[#stubs + 1] = { level, B.size, C.assemble("levelMask", {
+    MASK_CHECK = check, NEXT_TILE = nextOf(level, B.next), LOGIC = rd32(level + B.logic), BACK = level + B.size,
+    TILE_AT = rd8(level + B.tile) & 0xFF, CLICKED_AT = K.MASK_LEVEL_CLICKED,
+  }) }
+  for _, entry in ipairs({ { K.AOB_MASK_MIN, "the min and max height tools' tile loop" },
+      { K.AOB_MASK_PLATEAU, "the plateau tools' tile loop" } }) do
+    local at = scan(entry[1], entry[2])
+    stubs[#stubs + 1] = { at, B.size, C.assemble("brushMask", {
+      MASK_CHECK = check, NEXT_TILE = nextOf(at, B.next), LOGIC = rd32(at + B.logic), BACK = at + B.size,
+      TILE_AT = rd8(at + B.tile) & 0xFF,
+    }) }
+  end
+  local tree = scan(K.AOB_MASK_TREE, "placeTree's tile test")
+  local TM = K.MASK_TREE
+  stubs[#stubs + 1] = { tree, TM.size, C.assemble("treeMask", {
+    MASK_CHECK = check, TREE_LEAVE = nextOf(tree, TM.leave), LOGIC = rd32(tree + TM.logic),
+    TEST_MASK = rd32(tree + TM.test), BACK = tree + TM.size,
+  }) }
+  local rock = scan(K.AOB_MASK_ROCK, "placeRock")
+  stubs[#stubs + 1] = { rock, K.MASK_ROCK.size, C.assemble("rockMask", {
+    MASK_CHECK = check, MAP_SIZE = K.MAP_SIZE, VALID = R.validTiles, ROWS = R.rows, BACK = rock + K.MASK_ROCK.size,
+  }) }
+  for _, stub in ipairs(stubs) do C.patchJump(self, stub[1], stub[2], stub[3]) end
+end
+
+-- The mask for lua that paints tiles (the pipette): answers whether tile may change, taking the
+-- reference from clicked when a stroke starts, like maskCheck.
+function C.maskAllows(T, R, tile, clicked)
+  local W = C.maskState
+  if W == nil or rd8(W.on) == 0 then return true end
+  local function look(at)
+    return rd32(T + R.logic + at * 4) & K.TEXTURE_FLAGS & 0xFFFFFFFF, rd8(T + K.TMS.decoration + at) & 0xFF
+  end
+  if rd32(W.valid) == 0 then
+    local flags, decoration = look(clicked)
+    wr32(W.flags, flags)
+    wr32(W.decoration, decoration)
+    wr32(W.valid, 1)
+  end
+  local flags, decoration = look(tile)
+  return flags == (rd32(W.flags) & 0xFFFFFFFF) and decoration == (rd32(W.decoration) & 0xFF)
 end
 
 local function enableMenu(self, O)
