@@ -166,6 +166,19 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   useLevelBrush, useTerrainHeightBrush, createPlateau and placeTree, and at placeRock's start;
   the pipette checks every brush tile in lua (C.maskAllows) before it changes any. One button,
   in the always shown part of the landscape menu.
+* **Height range, snap, invert, ignore boxes.** raiseLand's ordinary-ground limits (`mov ecx,8 /
+  lea edx,[ecx+0x78]`) become the range for raise and lower; useLevelBrush's 8 / 0x9C limits become
+  the range; its first loop (the lowest and highest height, whose middle the tiles move to) skips
+  tiles the height filter leaves alone. The height filter (templates.heightFilter) runs at the
+  start of every tile of the height tools: Ignore water (sea, river, ford, marsh, moat flags),
+  Ignore farmland (scrub, thick scrub, oasis grass looks), and the range when not snapping, then
+  the mask. Invert flips equalize's steps; at the middle height a random step (2 x strength %
+  each way) replaces the game's `jle <no step>`. The settings reset outside the map editor from
+  a detour after renderMap (the `mov ecx,[..]` after resource-grid-overlay's own detour), which
+  also draws the tree preview, so it shows with the menu hidden too.
+* **Variant pictures.** The castle panels' variant entries compose the building from its tiles
+  (like the tunnel entrance) with its first picture (getSpriteID, or the hovel preview's table of
+  variant pictures, or the ruin's 0x11F) and shrink it by whole steps (block averages).
 * **Lost rocks.** A rock slot is in use when its word at +0x0C is not 0; the button collects the
   rock numbers (slot + 2000) of all 80400 tiles' organism words and zeroes every slot in use that
   no tile names (removeRock would also clear its footprint, which other plants now hold).

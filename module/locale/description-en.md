@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.48
+**Version**: 1.0.49
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -71,7 +71,8 @@ right to make room for it.
 
 - **Tree preview.** While a tree or shrub is chosen, the tree it would plant is shown on the tile
   under the mouse, at the stage the brush gives it or felled with the chosen logs - also for the
-  pipette, which shows the very tree it took. Not while zoomed out.
+  pipette, which shows the very tree it took. Not while zoomed out, and not where the tree
+  cannot be planted; it also shows with the menu hidden (Tab).
 - **No shrub stacks.** A tree or shrub can no longer be placed on a tile that already has
   one. Some shrubs used to pile up on one tile, invisible but each taking a place of the tree
   limit for good; the eraser now also clears every shrub piled up on a tile, so old stacks can
@@ -136,18 +137,25 @@ module's repository).
 
 - **Max Height.** The first Stronghold's Max Height tool is back, right of Min Height: it sets
   the ground under the brush to height 156.
-- **Height tool options.** While a height tool is chosen, a panel above the Heights menu has:
+- **Height tool options.** While a height tool is chosen, a panel above the Heights menu has, in
+  rows from the bottom:
   - **Reset ground textures** (off at first): whether the height tools also turn the ground
     back to its plain look (and the plateaus to dirt). Off, they only change the height.
   - **Break rock tiles** (off at first): whether raise, lower, equalize, hill and mountain break
     rocks the way the game does: the touched tiles turn invisible and walkable while the rock
     stays. Off, rocks stay whole.
-  - **Rocks** (a list; Whole rock at first): what the height tools do to a rock they touch.
-    *Tile only* moves just the tiles under the brush, *Whole rock* moves all of the rock's tiles
-    by the same amount, *Erase rock* removes the rock (what min height always did).
-  - **Strength** (for raise, lower and equalize): click the slider. Raise and lower change the
-    height by that much per step (1 to 16; the game's is 1); equalize flattens faster the higher
-    it is (7 is the game's rate).
+  - **Ignore water** and **Ignore farmland** (off at first): the height tools leave sea, river,
+    ford, marsh and moat tiles, or scrub, thick scrub and oasis grass tiles, untouched.
+  - For raise, lower and equalize: **Snap to range** (on at first; off, tiles outside the range
+    are left alone instead of brought into it), **Invert** (equalize only: it roughens the ground,
+    and flat ground gets random bumps; hold Ctrl for the same, a setting), the **height range**
+    (a slider with two ends, 8 to 156 at first, any of 0 to 255) and the **strength** (raise and
+    lower by that much per step; equalize faster, 7 is the game's rate). Drag the sliders.
+  - **Rock height changes** (a list; Whole rock at first): what the height tools do to a rock they
+    touch. *Tile only* moves just the tiles under the brush, *Whole rock* moves all of the rock's
+    tiles by the same amount, *Erase rock* removes the rock (what min height always did).
+  The range, Snap to range, Invert and the ignore boxes go back to their defaults when you leave
+  the map editor.
   Raise and lower no longer wrap round at the lowest and highest heights.
 
 ## Castle mode
@@ -170,8 +178,10 @@ In the building menu of the map editor's castle mode:
   statue's and the shrine's variants, or (with building variants off) in a row above the menu of
   good things.
 - **Building variants.** While a garden (2x2, 3x3 or 4x4), statue, shrine or cesspit is chosen,
-  a row above the menu offers each of its variants. One chosen there stays chosen, instead of the
-  game turning it into the next variant every second. The hovel gets the same row: a variant
+  a row above the menu offers each of its variants, each shown as it looks on the map. One chosen
+  there stays chosen, instead of the
+  game turning it into the next variant every second. The hovel gets the same row (and the ruined
+  cathedral its own picture): a variant
   chosen there is placed every time instead of each player's next one. Choosing the building in
   the menu itself goes back to the game's cycling.
 - **Several keeps.** Placing a keep no longer removes the player's earlier keep (or its

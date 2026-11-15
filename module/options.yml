@@ -240,6 +240,110 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.heights.invert_key_on
+    name: map-editor-improvements-heights-invert-key-on
+    text: '{{heights_invert_key_on}}'
+    tooltip: '{{heights_invert_key_on_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.heights.invert_key
+    name: map-editor-improvements-heights-invert-key
+    text: '{{heights_invert_key}}'
+    tooltip: '{{heights_invert_key_tooltip}}'
+    enabled: map-editor-improvements.heights.invert_key_on == true
+    display: Choice
+    contents:
+      type: string
+      value: ctrl
+      choices:
+      - name: ctrl
+        text: '{{key_ctrl}}'
+      - name: shift
+        text: '{{key_shift}}'
+      - name: alt
+        text: '{{key_alt}}'
+      - name: space
+        text: '{{key_space}}'
+      - name: tab
+        text: '{{key_tab}}'
+      - name: letter_a
+        text: '{{key_letter_a}}'
+      - name: letter_b
+        text: '{{key_letter_b}}'
+      - name: letter_c
+        text: '{{key_letter_c}}'
+      - name: letter_d
+        text: '{{key_letter_d}}'
+      - name: letter_e
+        text: '{{key_letter_e}}'
+      - name: letter_f
+        text: '{{key_letter_f}}'
+      - name: letter_g
+        text: '{{key_letter_g}}'
+      - name: letter_h
+        text: '{{key_letter_h}}'
+      - name: letter_i
+        text: '{{key_letter_i}}'
+      - name: letter_j
+        text: '{{key_letter_j}}'
+      - name: letter_k
+        text: '{{key_letter_k}}'
+      - name: letter_l
+        text: '{{key_letter_l}}'
+      - name: letter_m
+        text: '{{key_letter_m}}'
+      - name: letter_n
+        text: '{{key_letter_n}}'
+      - name: letter_o
+        text: '{{key_letter_o}}'
+      - name: letter_p
+        text: '{{key_letter_p}}'
+      - name: letter_q
+        text: '{{key_letter_q}}'
+      - name: letter_r
+        text: '{{key_letter_r}}'
+      - name: letter_s
+        text: '{{key_letter_s}}'
+      - name: letter_t
+        text: '{{key_letter_t}}'
+      - name: letter_u
+        text: '{{key_letter_u}}'
+      - name: letter_v
+        text: '{{key_letter_v}}'
+      - name: letter_w
+        text: '{{key_letter_w}}'
+      - name: letter_x
+        text: '{{key_letter_x}}'
+      - name: letter_y
+        text: '{{key_letter_y}}'
+      - name: letter_z
+        text: '{{key_letter_z}}'
+      - name: f1
+        text: '{{key_f1}}'
+      - name: f2
+        text: '{{key_f2}}'
+      - name: f3
+        text: '{{key_f3}}'
+      - name: f4
+        text: '{{key_f4}}'
+      - name: f5
+        text: '{{key_f5}}'
+      - name: f6
+        text: '{{key_f6}}'
+      - name: f7
+        text: '{{key_f7}}'
+      - name: f8
+        text: '{{key_f8}}'
+      - name: f9
+        text: '{{key_f9}}'
+      - name: f10
+        text: '{{key_f10}}'
+      - name: f11
+        text: '{{key_f11}}'
+      - name: f12
+        text: '{{key_f12}}'
 
 - display: GroupBox
   category: [Map Editor Improvements]

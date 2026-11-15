@@ -1494,12 +1494,21 @@ mov eax,ecx
 cdq
 idiv dword [DIVISOR]
 inc eax
+cmp dword [INVERT],0
+jne level_rise_invert
 cmp eax,ecx
 jbe level_rise_short
 mov eax,ecx
 level_rise_short:
 mov cl,bl
 add cl,al
+jmp HEIGHT_STORE
+level_rise_invert:
+movzx ecx,bl
+sub ecx,eax
+jns level_rise_inverted
+xor ecx,ecx
+level_rise_inverted:
 jmp HEIGHT_STORE
 ]]
 
@@ -1513,11 +1522,21 @@ cdq
 idiv dword [DIVISOR]
 pop edx
 inc eax
+cmp dword [INVERT],0
+jne level_fall_invert
 cmp eax,edx
 jbe level_fall_short
 mov eax,edx
 level_fall_short:
 sub cl,al
+jmp HEIGHT_STORE
+level_fall_invert:
+movzx ecx,cl
+add ecx,eax
+cmp ecx,0xFF
+jbe level_fall_inverted
+mov ecx,0xFF
+level_fall_inverted:
 jmp HEIGHT_STORE
 ]]
 
@@ -1711,6 +1730,210 @@ jne mask_held
 mov dword [REF_VALID],0
 mask_held:
 ret
+]]
+
+-- Inverted equalize up and down (above): away from the middle height, without wrapping.
+
+-- useLevelBrush, replacing `jle <no step> / mov cl,[edi+ebp+HEIGHT]` (a tile not below the middle
+-- height: at it, or above it). At it, inverted: a chance of 2 x strength % to go up and as much
+-- to go down, by strength / 2 (at least 1); the strength is STRENGTH_SUM - [DIVISOR].
+templates.levelEqual = [[
+jle level_equal
+mov cl,[edi+ebp+HEIGHT]
+jmp FALL
+level_equal:
+cmp dword [INVERT],0
+je NO_STEP
+mov eax,[SEED]
+imul eax,eax,RANDOM_MULTIPLIER
+add eax,RANDOM_INCREMENT
+mov [SEED],eax
+shr eax,16
+and eax,0x7FFF
+xor edx,edx
+mov ecx,100
+div ecx
+mov ebx,STRENGTH_SUM
+sub ebx,[DIVISOR]
+lea eax,[ebx+ebx]
+cmp edx,eax
+jb level_equal_up
+add eax,eax
+cmp edx,eax
+jae NO_STEP
+shr ebx,1
+jnz level_equal_down_by
+mov ebx,1
+level_equal_down_by:
+movzx eax,byte [edi+ebp+HEIGHT]
+sub eax,ebx
+jns level_equal_down
+xor eax,eax
+level_equal_down:
+mov cl,al
+jmp HEIGHT_STORE
+level_equal_up:
+shr ebx,1
+jnz level_equal_up_by
+mov ebx,1
+level_equal_up_by:
+movzx eax,byte [edi+ebp+HEIGHT]
+add eax,ebx
+cmp eax,0xFF
+jbe level_equal_raised
+mov eax,0xFF
+level_equal_raised:
+mov cl,al
+jmp HEIGHT_STORE
+]]
+
+-- useLevelBrush's limits `cmp [height],8 / jae / mov [height],8 / cmp [height],0x9C / jbe / mov
+-- [height],0x9C`: the height range instead.
+templates.levelRange = [[
+movzx eax,byte [edi+ebp+HEIGHT]
+cmp eax,[RANGE_MIN]
+jae level_range_low
+mov eax,[RANGE_MIN]
+level_range_low:
+cmp eax,[RANGE_MAX]
+jbe level_range_high
+mov eax,[RANGE_MAX]
+level_range_high:
+mov [edi+ebp+HEIGHT],al
+jmp BACK
+]]
+
+-- useLevelBrush's first loop (the lowest and highest height under the brush), replacing `movzx
+-- eax,byte [eax+edi+HEIGHT]` (eax the tile, ebp the clicked tile): tiles the height filter leaves
+-- alone do not count.
+templates.levelAverage = [[
+push ecx
+push edx
+push eax
+mov ecx,ebp
+call HEIGHT_FILTER
+test eax,eax
+pop eax
+pop edx
+pop ecx
+je AVERAGE_NEXT
+movzx eax,byte [eax+edi+HEIGHT]
+jmp BACK
+]]
+
+-- raiseLand's limits for ordinary ground, `mov ecx,8 / lea edx,[ecx+0x78]` (lowest, highest): the
+-- height range for the raise and lower tools (hill and mountain keep the game's).
+templates.raiseRange = [[
+mov ecx,GAME_LOWEST
+mov edx,GAME_HIGHEST
+push eax
+mov eax,[SUBTYPE]
+cmp eax,RAISE_TOOL
+je raise_range
+cmp eax,LOWER_TOOL
+jne raise_range_done
+raise_range:
+mov ecx,[RANGE_MIN]
+mov edx,[RANGE_MAX]
+raise_range_done:
+pop eax
+jmp BACK
+]]
+
+-- The height tools' filter, before the mask: eax = the tile, ecx = the clicked tile. Ignore water
+-- (WATER_FLAGS), ignore farmland (FARMLAND looks, not on river), and for raise, lower and
+-- equalize the height range when the tool does not snap to it (equalize inverted never does).
+-- Then maskCheck. Answers eax = 1 to change the tile, 0 to leave it.
+templates.heightFilter = [[
+push ebx
+push edx
+mov ebx,[LOGIC+eax*4]
+cmp dword [IGNORE_WATER],0
+je filter_land
+test ebx,WATER_FLAGS
+jne filter_skip
+filter_land:
+cmp dword [IGNORE_FARMLAND],0
+je filter_range
+test ebx,RIVER
+jne filter_range
+test byte [DECORATION+eax],FARMLAND
+jne filter_skip
+filter_range:
+mov edx,[SUBTYPE]
+cmp edx,RAISE_TOOL
+je filter_ranged
+cmp edx,LOWER_TOOL
+je filter_ranged
+cmp edx,EQUALIZE_TOOL
+jne filter_mask
+cmp dword [INVERT],0
+jne filter_check_range
+filter_ranged:
+cmp dword [SNAP],0
+jne filter_mask
+filter_check_range:
+movzx edx,byte [BASE_HEIGHT+eax]
+cmp edx,[RANGE_MIN]
+jb filter_skip
+cmp edx,[RANGE_MAX]
+ja filter_skip
+filter_mask:
+pop edx
+pop ebx
+mov edx,1
+jmp MASK_CHECK
+filter_skip:
+pop edx
+pop ebx
+xor eax,eax
+ret
+]]
+
+-- For a filter without the mask.
+templates.alwaysYes = [[
+mov eax,1
+ret
+]]
+
+-- After the map is drawn (the instruction after renderMap's call and the floater pass: `mov
+-- ecx,[OPERAND]`), every frame on the game screen: in the map editor the tree preview while a
+-- plant tool is chosen (PLANTS: a byte per tool); outside it the height tool settings go back to
+-- their defaults.
+templates.frameHook = [[
+pushad
+cmp dword [GAME_MODE],MAP_EDITOR
+je frame_editor
+mov dword [RANGE_MIN],DEFAULT_MIN
+mov dword [RANGE_MAX],DEFAULT_MAX
+mov dword [SNAP],1
+mov dword [INVERT],0
+mov dword [IGNORE_WATER],0
+mov dword [IGNORE_FARMLAND],0
+jmp frame_done
+frame_editor:
+mov eax,[SUBTYPE]
+cmp eax,PLANT_TOOLS
+jae frame_done
+cmp byte [PLANTS+eax],0
+je frame_done
+call PAD
+frame_done:
+popad
+mov ecx,[OPERAND]
+jmp BACK
+]]
+
+-- Every-frame item of the heights menu: PAD while COUNT is not 0 (a whole rock to move) or the
+-- equalize tool is chosen (its invert key).
+templates.heightTick = [[
+cmp dword [COUNT],0
+jne height_tick_go
+cmp dword [SUBTYPE],EQUALIZE_TOOL
+je height_tick_go
+ret
+height_tick_go:
+jmp PAD
 ]]
 
 -- The mask in the other nature tools: each replaces the instructions that load a tile and its
