@@ -86,6 +86,12 @@ textures_mask_tooltip: |
   it is on, the nature tools (heights, textures, water, trees and shrubs, rocks and the pipette) only
   change tiles that have the same texture as the tile you first clicked on;
   when you let go of the mouse, the next click picks the texture to paint over anew.
+textures_mask_by_type: Mask treats water variants as one
+textures_mask_by_type_tooltip: |
+  The mask only lets through tiles of the same texture as the one you clicked; every texture stays
+  its own (grass, scrub, thick scrub, stones, beach ... are all different). With this on, the
+  variants of one water count as that water: all sea including its edges and deeper parts, all
+  river including foam and waves, all river crossing. Sea, river and river crossing stay apart.
 
 water_group: Water
 water_group_descr: |
@@ -396,3 +402,62 @@ menu_always_update_tooltip: |
   example a hotkey that picks another tool, or the counts changing as you place animals,
   only shows once you move the mouse back onto the menu. With this on, the menu is redrawn
   all the time in the map editor.
+castle_all_players: All eight player shields on every map
+castle_all_players_tooltip: The shields beside the minimap show all eight players on every map type, not only on multiplayer maps.
+castle_all_keeps: Manor house and stronghold on every map
+castle_all_keeps_tooltip: The keeps menu offers the manor house and the stronghold on multiplayer maps too.
+castle_player_zero: Player 0 shield
+castle_player_zero_tooltip: A white ninth shield in the middle of the player shields chooses player 0, who can own buildings and units on a map too.
+castle_keep_crests: Active keep crests
+castle_keep_crests_tooltip: Every keep shows its owner's shield above it; the player's active keep (where the lord, the starting units and new peasants appear) shows it framed. Click a shield to make that keep active, or click the active one to leave the player without one. A new keep no longer takes over the active keep, and when the active keep is removed another keep of that player takes over. Needs Several keeps.
+castle_wall_tools: Wall heights and free crenellations
+castle_wall_tools_tooltip: Crenellations can stand on their own. Their panel offers low, high, low damaged and high damaged. A slider above the wall panel sets the height of high walls, low walls and crenellations (0-255) and the steepness of stairs (0-16), each on its own; Reset beside it gives the chosen one its usual value back, and leaving the map editor puts them all back.
+trees_spread_order: Trees in spreading order
+trees_spread_order_tooltip: |
+  In the Vegetation menu the trees that spread on fertile ground (oasis grass, thick and thin
+  scrub) come first, then the tree that spreads on infertile ground (dirt, stony dirt, dunes): the
+  third and fourth tree swap places.
+trees_spread_outlines: Outlines for spreading ground
+trees_spread_outlines_tooltip: |
+  A thin green outline round the trees that spread on fertile ground and a thin beige outline
+  round the tree that spreads on infertile ground. The apple tree does not spread and gets none.
+herds_bird_bins: Erase all crows / seagulls buttons
+herds_bird_bins_tooltip: |
+  Red wastebin buttons right of the crow and the seagull button in the Animals menu: one click
+  takes every crow (the trees stay) or every seagull off the map.
+herds_animal_bin: Erase all animals button
+herds_animal_bin_tooltip: |
+  A red wastebin button on the right of the Animals menu that takes every animal off the map,
+  like Alt + E. Crows and seagulls stay.
+herds_group_warning: Herds and groups warning
+herds_group_warning_tooltip: |
+  When fewer than 200 herds and groups can still be made, a line at the top of the screen says
+  how many are left, like the game's own line for units.
+eraser_choice: Eraser choice panel
+eraser_choice_tooltip: |
+  While the eraser is chosen, a panel above the menu picks what it takes: All (as before),
+  Animals (also crows and seagulls), Units, Buildings (with keeps, ruins and walls), Vegetation or
+  Rocks (also invisible rocks).
+eraser_seagulls: Eraser takes seagulls
+eraser_seagulls_tooltip: |
+  The eraser also takes the seagulls flying over the tiles it erases (with All or Animals).
+map_settings_show_locked: Show locked maps box
+map_settings_show_locked_tooltip: |
+  A "Show locked maps" box in the editor's Load dialog. Ticked, locked maps are listed too;
+  the list updates at once.
+map_settings_button: Map Settings button
+map_settings_button_tooltip: |
+  A Map Settings button on the map's menu screen, right of the Balanced / Unbalanced and
+  Invasion / Economy buttons. It opens the Alt + , menu.
+map_settings_menu: Bigger Map Settings menu
+map_settings_menu_tooltip: |
+  The Alt + , menu gets a title, Singleplayer and Multiplayer, the four singleplayer map types
+  (Siege, Invasion, Economic, Just Build), the four map sizes plus Custom and a Map size slider (10
+  to 400; the map changes size when you let go), Balanced, King of the Hill, Lock map and a Back
+  button.
+eraser_group: Eraser
+eraser_group_descr: |
+  What the landscape editor's eraser takes.
+map_settings_group: Map settings
+map_settings_group_descr: |
+  The map's settings: map type, size, lock and the menus that show them.

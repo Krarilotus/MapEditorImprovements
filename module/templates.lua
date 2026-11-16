@@ -900,8 +900,27 @@ templates.damagedWall = [[
 cmp dword [GAME_MODE],MAP_EDITOR
 jne wall_done
 cmp byte [FLAG],0
-je wall_done
+je wall_height
 mov byte [esi+edi+DAMAGE],1
+wall_height:
+; a crenellation with a chosen height gets it again here: the game places a one-tile wall
+; twice, and on the second pass Smarter Walls puts a "damaged" crenellation back at the
+; height it remembers, after the crenellation height hook ran
+cmp dword [CRENEL_HEIGHT],0
+je wall_done
+test dword [edi+esi*4+LOGIC],0x200
+jz wall_done
+push eax
+push edx
+mov eax,[CRENEL_HEIGHT]
+mov dl,[esi+edi+BASE]
+add dl,al
+jnc wall_set
+mov dl,0xFF
+wall_set:
+mov [esi+edi+LIVE],dl
+pop edx
+pop eax
 wall_done:
 push esi
 mov ecx,edi
@@ -1198,6 +1217,70 @@ push eax
 call BLIT
 add esp,12
 pop dword [PENCIL+PENCIL_TARGET]
+ret
+]]
+
+-- Crenellations may stand free in the map editor: validateWallBuildPath's two answers of
+-- isTileEnclosedByWalls count as yes there. The first replaces `test eax,eax / mov edx,ecx / jne`,
+-- the second `test eax,eax / jne / pop ebx`.
+templates.crenelFree1 = [[
+test eax,eax
+mov edx,ecx
+jne free_yes
+cmp dword [GAME_MODE],MAP_EDITOR
+je free_yes
+jmp REFUSE
+free_yes:
+jmp YES
+]]
+
+templates.crenelFree2 = [[
+test eax,eax
+jne free_yes
+cmp dword [GAME_MODE],MAP_EDITOR
+je free_yes
+pop ebx
+jmp REFUSE
+free_yes:
+jmp YES
+]]
+
+-- Where every crenellation height of placeWalls meets (esi the tile, edi the tile map): in the
+-- map editor with a height chosen (HEIGHT, 0 = the game's own), the crenellation stands that
+-- high above the ground, low (LOW) or high in the game's sense ([esp+0x34], the 0x10000 flag).
+templates.crenelHeight = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne crenel_parity
+mov eax,[HEIGHT]
+test eax,eax
+jz crenel_parity
+mov dl,[esi+edi+BASE]
+add dl,al
+jnc crenel_set
+mov dl,0xFF
+crenel_set:
+mov [esi+edi+LIVE],dl
+mov eax,[LOW]
+mov [esp+0x34],eax
+crenel_parity:
+mov eax,[esp+0x20]
+and eax,1
+jmp BACK
+]]
+
+-- Player 0's shield picture: only in the map editor (its click item is hidden elsewhere), in its
+-- chosen look while player 0 is the current player.
+templates.shieldZero = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne shield_off
+mov word [CLICK+ITEM_HIDDEN],0
+xor eax,eax
+cmp dword [CURRENT],0
+sete al
+mov [CHOSEN],eax
+jmp BUTTON
+shield_off:
+mov word [CLICK+ITEM_HIDDEN],1
 ret
 ]]
 
@@ -1619,7 +1702,8 @@ ret
 ---------------------------------------------------------------------------------------
 
 -- Called with eax = a tile a texture tool is about to paint, ecx = the tile the command was
--- clicked on, edx = 1 from setTerrain's tile loop, 0 from setLand's. With the mask on and a
+-- clicked on, edx = 1 from setTerrain's tile loop, 0 from setLand's. BY_TYPE: water's variants
+-- count as one (its look is not compared). With the mask on and a
 -- Textures menu tool chosen (TOOLS, ending in -1), the first command of a stroke takes the
 -- clicked tile's texture (ground flags and look) as the reference; after that only tiles with
 -- that texture are painted. setLand runs first for the ground looks when called from setTerrain
@@ -1644,7 +1728,7 @@ mask_tool_found:
 cmp dword [REF_VALID],0
 jne mask_compare
 mov edx,[LOGIC+ecx*4]
-and edx,TEXTURE_FLAGS
+call mask_kind
 mov [REF_FLAGS],edx
 movzx edx,byte [DECORATION+ecx]
 mov [REF_DECORATION],edx
@@ -1658,12 +1742,18 @@ mov byte [STAMPS+eax],0
 jmp mask_paint
 mask_look:
 mov edx,[LOGIC+eax*4]
-and edx,TEXTURE_FLAGS
+call mask_kind
 cmp edx,[REF_FLAGS]
 jne mask_skip
+cmp dword [BY_TYPE],0
+je mask_exact
+test dword [REF_FLAGS],WATER_FLAGS
+jnz mask_same
+mask_exact:
 movzx edx,byte [DECORATION+eax]
 cmp edx,[REF_DECORATION]
 jne mask_skip
+mask_same:
 test ebx,ebx
 jne mask_paint
 cmp dword [NESTED],0
@@ -1677,6 +1767,12 @@ xor eax,eax
 mask_done:
 pop esi
 pop ebx
+ret
+; edx = a tile's flags -> its ground flags, which the mask compares together with the look (each
+; texture is its own). With BY_TYPE a water tile's look is not compared, so every variant of sea,
+; river or ford (edges, deeper water, foam, waves) counts as that water.
+mask_kind:
+and edx,TEXTURE_FLAGS
 ret
 ]]
 
@@ -1912,6 +2008,26 @@ mov dword [IGNORE_WATER],0
 mov dword [IGNORE_FARMLAND],0
 jmp frame_done
 frame_editor:
+cmp dword [GROUP_ON],0
+je frame_plants
+xor edx,edx
+mov esi,FIRST_GROUP
+mov ecx,GROUP_SLOTS
+frame_group:
+cmp word [esi],0
+je frame_group_next
+inc edx
+frame_group_next:
+add esi,GROUP_SIZE
+dec ecx
+jnz frame_group
+mov [GROUP_COUNT],edx
+mov eax,GROUP_SLOTS
+sub eax,edx
+cmp eax,GROUP_MARGIN
+jge frame_plants
+call GROUP_PAD
+frame_plants:
 mov eax,[SUBTYPE]
 cmp eax,PLANT_TOOLS
 jae frame_done
@@ -2030,6 +2146,162 @@ rock_mask_go:
 push ecx
 mov eax,[esp+8]
 jmp BACK
+]]
+
+-- The eraser's choice of what it takes (37.2). Its first loop, replacing `movsx eax, word
+-- [esi + reg*2 + organisms]` (ORIG_LO/HI, put back as it was): a tile's tree or rock is left
+-- (eax 0, so the game's `test eax,eax / je` skips it) unless the choice takes it; with Animals a
+-- tree loses its crows and stays.
+templates.eraseOrganism = [[
+dd ORIG_LO
+dd ORIG_HI
+test eax,eax
+je organism_back
+cmp dword [MODE],MODE_ALL
+je organism_back
+cmp eax,ROCK_FIRST
+jl organism_tree
+cmp dword [MODE],MODE_ROCKS
+je organism_back
+xor eax,eax
+jmp organism_back
+organism_tree:
+cmp dword [MODE],MODE_PLANTS
+je organism_back
+cmp dword [MODE],MODE_ANIMALS
+jne organism_none
+push edx
+mov edx,eax
+imul edx,edx,TREE_SIZE
+mov word [edx+CROW_BASE],0
+mov word [edx+CROW_BASE+2],0
+pop edx
+organism_none:
+xor eax,eax
+organism_back:
+jmp BACK
+]]
+
+-- Its second loop, in place of `call findBuildingOrWallAt` (thiscall, 3 arguments): unless the
+-- choice takes buildings, the answer is "nothing there" (the fields the call fills).
+templates.eraseBuilding = [[
+cmp dword [MODE],MODE_ALL
+je building_find
+cmp dword [MODE],MODE_BUILDINGS
+je building_find
+mov dword [ecx+WALL_FOUND],0
+mov dword [ecx+BLOCKED],0
+mov dword [ecx+BUILDING_FOUND],-1
+ret 0xC
+building_find:
+jmp FIND
+]]
+
+-- Its third loop, replacing `mov word [eax + state], 3` (eax: the unit's offset): animals (the
+-- types ANIMALS marks) go with Animals, every other unit with Units.
+templates.eraseUnit = [[
+cmp dword [MODE],MODE_ALL
+je unit_kill
+push edx
+movzx edx,word [eax+UNIT_TYPE]
+cmp edx,ANIMAL_TYPES
+jae unit_person
+movzx edx,byte [ANIMALS+edx]
+jmp unit_kind
+unit_person:
+xor edx,edx
+unit_kind:
+cmp dword [MODE],MODE_ANIMALS
+jne unit_not_animal
+test edx,edx
+pop edx
+jne unit_kill
+jmp BACK
+unit_not_animal:
+cmp dword [MODE],MODE_UNITS
+jne unit_leave
+test edx,edx
+pop edx
+je unit_kill
+jmp BACK
+unit_leave:
+pop edx
+jmp BACK
+unit_kill:
+mov word [eax+STATE],3
+jmp BACK
+]]
+
+-- Seagulls under the eraser (37.1), once per tile of its third loop, before `movsx eax, word
+-- [reg*2 + units on tile]` (ORIG_LO/HI): every seagull whose entity stands on the tile ([esp+0x20]
+-- there) is deleted and its slot cleared. Only with All and Animals.
+templates.eraseGulls = [[
+pushad
+cmp dword [MODE],MODE_ALL
+je gull_go
+cmp dword [MODE],MODE_ANIMALS
+jne gull_done
+gull_go:
+mov ebx,[esp+0x40]
+mov esi,FIRST_GULL
+mov edi,1
+gull_next:
+cmp word [esi+GULL_STATE],0
+je gull_skip
+movsx eax,word [esi]
+test eax,eax
+jle gull_skip
+cmp eax,ENTITY_SLOTS
+jge gull_skip
+imul eax,eax,ENTITY_SIZE
+add eax,ENTITY_ZERO
+mov ecx,[esi+GULL_UID]
+cmp ecx,[eax+ENTITY_UID]
+jne gull_skip
+cmp [eax+ENTITY_TILE],ebx
+jne gull_skip
+movsx eax,word [esi]
+push eax
+mov ecx,ENTITY_STATE
+call DELETE_ENTITY
+push edi
+mov edi,esi
+mov ecx,GULL_SIZE/4
+xor eax,eax
+cld
+rep stosd
+pop edi
+gull_skip:
+add esi,GULL_SIZE
+inc edi
+cmp edi,GULL_SLOTS
+jl gull_next
+gull_done:
+popad
+dd ORIG_LO
+dd ORIG_HI
+jmp BACK
+]]
+
+-- The map list filter (mapNames_filterMapsIfMapLock), replacing `cmp dword [lock], 0 / jne
+-- DROP`: with Show locked maps ticked every map stays in the list.
+templates.lockedMaps = [[
+cmp dword [SHOW],0
+jne locked_keep
+cmp dword [LOCK_STATE],0
+jne locked_drop
+locked_keep:
+jmp KEEP
+locked_drop:
+jmp DROP
+]]
+
+-- A cdecl map size change: the Map settings menu's own size code (its size buttons' case) run
+-- with a size of the caller's choice, as if no size button but a custom value were clicked.
+templates.mapSize = [[
+push esi
+xor esi,esi
+jmp SIZE_CODE
 ]]
 
 return templates

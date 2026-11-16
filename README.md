@@ -182,5 +182,27 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
 * **Lost rocks.** A rock slot is in use when its word at +0x0C is not 0; the button collects the
   rock numbers (slot + 2000) of all 80400 tiles' organism words and zeroes every slot in use that
   no tile names (removeRock would also clear its footprint, which other plants now hold).
+* **Birds.** Crows are no list: the crow tool (markNearbyTreesAsCrowTargets) sets a word of each
+  grown tree near the click (in-use word + 0x50; + 0x52 says they flew off). Seagulls are entities
+  (type 0x1D) with a slot in the entity state's seagull list (slots 1..99: +0 entity, +4 uid, +8 in
+  use). Erase all seagulls calls the game's own unused deleteAllSeagulls; erase all crows clears the
+  tree words and deletes crow entities (type 0x1C); erase all animals is Alt + E's call. The real
+  unit limit is the "N more units" line's `mov ecx, 2499 / sub ecx, [units]` (9999 in Extreme).
+  The herds and groups line is drawn from the renderMap detour, which counts the group slots.
+* **Eraser choice.** useEraserBrush and eraseAreaWithBrush have the same three loops. The first's
+  `movsx eax, [organisms]` answers 0 for a tree or rock the choice leaves (with Animals the tree's
+  crow words are cleared); the second's building search answers "nothing" (it fills the found
+  fields itself); the third's `mov word [unit + state], 3` only runs for animals (unit types 44-49,
+  51, 62, 68, 69) or the others. Seagulls whose entity tile (+0x4C) is the tile go before the
+  third loop's unit lookup.
+* **Map settings.** Alt + , opens modal 0x1F (MenuItems_EditorMapTypeQuickChange). Its action
+  still handles params 0-2 (lock state Editable / Playable / Mission), 3-6 (map types Siege,
+  Invasion, Economic, Just Build) and the sizes 0x14-0x17; its renderer also still has King of
+  the Hill (0xC, the flag the skirmish code reads). The module builds a new table with those, its
+  own items (title, Custom, slider, Balanced, King of the Hill, Lock map, Back), widens the modal
+  record and the constructor's pushes, and runs the size case with esi 0 for any size. The map
+  menu (MapEditorProperties) and the Load dialog get one item each by copying whatever table the
+  constructor pushes now (autosave extends the Load dialog first); locked maps stay in the list
+  when mapNames_filterMapsIfMapLock's `cmp [lock], 0 / jne` is answered "keep".
 * Every address is found by pattern scan or read out of the instruction that uses it, and
   checked against the bytes the module expects. Verified offline against both exes.

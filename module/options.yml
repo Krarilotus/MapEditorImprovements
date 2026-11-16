@@ -100,6 +100,22 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.trees.spread_order
+    name: map-editor-improvements-trees-spread-order
+    text: '{{trees_spread_order}}'
+    tooltip: '{{trees_spread_order_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.trees.spread_outlines
+    name: map-editor-improvements-trees-spread-outlines
+    text: '{{trees_spread_outlines}}'
+    tooltip: '{{trees_spread_outlines_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
 
 - display: GroupBox
   category: [Map Editor Improvements]
@@ -119,6 +135,14 @@ options:
     name: map-editor-improvements-textures-mask
     text: '{{textures_mask}}'
     tooltip: '{{textures_mask_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.textures.mask_by_type
+    name: map-editor-improvements-textures-mask-by-type
+    text: '{{textures_mask_by_type}}'
+    tooltip: '{{textures_mask_by_type_tooltip}}'
     display: Switch
     contents:
       type: boolean
@@ -431,6 +455,46 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.castle.all_players
+    name: map-editor-improvements-castle-all-players
+    text: '{{castle_all_players}}'
+    tooltip: '{{castle_all_players_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.castle.player_zero
+    name: map-editor-improvements-castle-player-zero
+    text: '{{castle_player_zero}}'
+    tooltip: '{{castle_player_zero_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.castle.keep_crests
+    name: map-editor-improvements-castle-keep-crests
+    text: '{{castle_keep_crests}}'
+    tooltip: '{{castle_keep_crests_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.castle.wall_tools
+    name: map-editor-improvements-castle-wall-tools
+    text: '{{castle_wall_tools}}'
+    tooltip: '{{castle_wall_tools_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.castle.all_keeps
+    name: map-editor-improvements-castle-all-keeps
+    text: '{{castle_all_keeps}}'
+    tooltip: '{{castle_all_keeps_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.castle.damaged_walls
     name: map-editor-improvements-castle-damaged-walls
     text: '{{castle_damaged_walls}}'
@@ -490,6 +554,30 @@ options:
     name: map-editor-improvements-herds-panel
     text: '{{herds_panel}}'
     tooltip: '{{herds_panel_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.herds.bird_bins
+    name: map-editor-improvements-herds-bird-bins
+    text: '{{herds_bird_bins}}'
+    tooltip: '{{herds_bird_bins_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.herds.animal_bin
+    name: map-editor-improvements-herds-animal-bin
+    text: '{{herds_animal_bin}}'
+    tooltip: '{{herds_animal_bin_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.herds.group_warning
+    name: map-editor-improvements-herds-group-warning
+    text: '{{herds_group_warning}}'
+    tooltip: '{{herds_group_warning_tooltip}}'
     display: Switch
     contents:
       type: boolean
@@ -861,6 +949,60 @@ options:
         text: '{{key_f11}}'
       - name: f12
         text: '{{key_f12}}'
+
+- display: GroupBox
+  category: [Map Editor Improvements]
+  header: '{{eraser_group}}'
+  text: '{{eraser_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.eraser.choice
+    name: map-editor-improvements-eraser-choice
+    text: '{{eraser_choice}}'
+    tooltip: '{{eraser_choice_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.eraser.seagulls
+    name: map-editor-improvements-eraser-seagulls
+    text: '{{eraser_seagulls}}'
+    tooltip: '{{eraser_seagulls_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+
+- display: GroupBox
+  category: [Map Editor Improvements]
+  header: '{{map_settings_group}}'
+  text: '{{map_settings_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.map_settings.show_locked
+    name: map-editor-improvements-map-settings-show-locked
+    text: '{{map_settings_show_locked}}'
+    tooltip: '{{map_settings_show_locked_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.map_settings.button
+    name: map-editor-improvements-map-settings-button
+    text: '{{map_settings_button}}'
+    tooltip: '{{map_settings_button_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.map_settings.menu
+    name: map-editor-improvements-map-settings-menu
+    text: '{{map_settings_menu}}'
+    tooltip: '{{map_settings_menu_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
 
 - display: GroupBox
   category: [Map Editor Improvements]

@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.49
+**Version**: 1.0.56
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -13,9 +13,10 @@ In the landscape editor:
 
 - **Tooltips on the category buttons.** Point at a button and a tooltip shows how many the
   map has against the game's limit:
-  - **Animals:** animals and units (the editor stops placing more at the limit), and herds and
-    troops - every herd you place and every group of troops takes one of these, and they have
-    a limit of their own.
+  - **Animals:** animals and units against the real limit (2499, 9999 in Extreme), herds and
+    groups - every herd you place and every group of troops takes one of these, and they have
+    a limit of their own (1249) - and birds: the crows (marks on trees, no limit of their own) and
+    the seagulls (at most 99).
   - **Vegetation:** trees and shrubs. All plants share one limit of 1999.
   - **Rocks:** rocks.
 - **Animals menu:** the deer, camel, rabbit and lion buttons each show how many of that
@@ -29,6 +30,10 @@ description line (the text that appears when you point at a button) moves a litt
 right to make room for it.
 
 ## Trees and shrubs
+
+The Vegetation menu's trees are sorted by what they spread on: first the three that spread on
+fertile ground (oasis grass, thick and thin scrub) with a thin green outline, then the one
+that spreads on infertile ground (dirt, stony dirt, dunes) with a thin beige outline.
 
 - **Growth stage from the brush size.** With a tree chosen, the brush size button sets how
   big the placed trees are:
@@ -229,6 +234,41 @@ While the deer, lion, rabbit or camel is chosen, a panel above the Animals menu 
 big that animal's herds are (a fixed number plus a random number) and which group behaviour type the
 herd uses. Tick its check box and herds come out as big as the brush: 2 x brush size - 1
 animals, so brush 1 places single animals and brush 7 herds of 13.
+
+Red wastebin buttons in the Animals menu: right of the crow button **Erase all crows** (the trees
+stay), right of the seagull button **Erase all seagulls**, and on the right **Erase all
+animals** (the same as Alt + E; birds stay).
+
+When fewer than 200 herds and groups can still be made, a line at the top of the screen says how
+many are left, like the game's own line for units.
+
+## Eraser
+
+The eraser also takes the seagulls over the tiles it erases. While it is chosen, a panel above the
+menu picks what it takes:
+
+- **All** - everything, as before.
+- **Animals** - animals, crows (the trees stay) and seagulls.
+- **Units** - every other unit.
+- **Buildings** - buildings, keeps, ruins and walls.
+- **Vegetation** - trees and shrubs.
+- **Rocks** - rocks, invisible rocks too.
+
+## Map settings
+
+- **Show locked maps:** a box in the editor's Load dialog. Ticked, the list also shows locked
+  maps (the game hides them).
+- **Map Settings button** on the map's menu screen (where Save and Exit are), right of the
+  Balanced / Unbalanced or Invasion / Economy buttons. It opens the menu Alt + , opens.
+- **The Map Settings menu** is bigger: a title; Singleplayer and Multiplayer; under
+  Singleplayer the map types Siege, Invasion, Economic and Just Build (castle builder); under
+  Multiplayer the sizes 160, 200, 300, 400 and Custom, and a Map size slider from 10 to 400
+  (the map takes the size when you let go of the mouse); Balanced and King of the Hill; Lock map;
+  and Back (Esc and Alt + , still close it too). These were all still in the game: its menu code
+  knew the map types, the lock states (Editable, Playable, Mission) and King of the Hill, only
+  the buttons were gone. Lock map sets the "Mission" lock, which keeps the map in the skirmish
+  list; a locked map no longer shows in the editor's Load dialog unless Show locked maps is
+  ticked.
 
 ## Pictures
 
