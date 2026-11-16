@@ -6572,7 +6572,7 @@ function C.keepCrests(G, B, data, at)
     error(MODULE_NAME .. ": placeKeep does not call the function this module knows")
   end
   local stride = readOperand(entryFn, K.KEEP_ENTRY.strideAt, "the keep's entry")
-  local setEntry = core.exposeCode(entryFn, 3, 1)
+  local setEntry = core.exposeCode(entryFn, 4, 1)   -- this + keep, player, category (ret 0xC)
   local renderGM = core.exposeCode(G.renderGM, 5, 1)
   local blit = core.exposeCode(G.blit, 3, 0)
   local inside = core.exposeCode(G.isMouseInside, 5, 1)
@@ -6698,6 +6698,8 @@ function C.keepCrests(G, B, data, at)
     local mode, target = rd32(t + TEXTURES_MODE), rd32(G.pencil + PENCIL_TARGET)
     wr32(t + TEXTURES_MODE, MAP_LAYER)
     wr32(G.pencil + PENCIL_TARGET, MAP_LAYER)
+    -- An error must not leave the menu drawing onto the map surface.
+    local ok, problem = pcall(function()
     local used, hovered = 0, nil
     for _, keep in ipairs(keeps) do
       local p = keep.owner
@@ -6732,8 +6734,10 @@ function C.keepCrests(G, B, data, at)
       hovered.active = rd32(entry(hovered.player, 0)) == hovered.keep   -- after a click this frame
       explain(hovered, camY)
     end
+    end)
     wr32(G.pencil + PENCIL_TARGET, target)
     wr32(t + TEXTURES_MODE, mode)
+    if not ok then error(problem, 0) end
   end
   wr32(at + ITEM_TYPE, TYPE_CLICKABLE)       -- no size, so never under the mouse
   wr32(at + ITEM_WIDTH, 0)
