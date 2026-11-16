@@ -82,7 +82,7 @@ local MODULE_FOLDERS = { "ucp/modules/map-editor-improvements/" }   -- UCP maps 
 
 local DEFAULTS = {
   counts = { enabled = true, shown = true },
-  menu = { always_update = true },
+  menu = { always_update = true, dust_clouds = true },
   trees = { growth_from_brush = true, apple = true, shrubs = true, felled = true, random_mix = true, preview = true,
     obstacles = true, sorted_rows = true, no_shrub_stacking = true, spread_order = true, spread_outlines = true },
   textures = { gravel_and_iron = true, no_heights_iron = true, mask = true, mask_by_type = true },
@@ -97,7 +97,7 @@ local DEFAULTS = {
     barrier = true, several_keeps = true, several_storage_and_recruitment = true, tower_engines_anywhere = true,
     keep_parts = true, damaged_walls = true, hover_text_left = true, moat_kinds = true, moat_on_marsh = true,
     moat_removal_keeps_ground = true, variant_panels = true, ruined_cathedral = true, all_players = true,
-    all_keeps = true, player_zero = true, keep_crests = true,
+    all_keeps = true, player_zero = true, keep_crests = true, keep_crest_tooltip = true,
     wall_tools = true },
   herds = { panel = true, bird_bins = true, animal_bin = true, group_warning = true },
   eraser = { choice = true, seagulls = true },
@@ -625,6 +625,14 @@ K.CAMPFIRE_TYPE = 55
 -- Building fields from the start of a building (BuildingsState + 0x14 is building 0).
 K.BUILDING = { first = 0x14, type = 0xD2, owner = 0xD6, x = 0xEE, y = 0xF0, size = 0xF8, uid = 0x2A8 }
 K.CREST = { lift = 120, rects = 40, selected = 8 }
+-- The crest tooltip's lines ({player}: "player N"); gap: between crest and box.
+K.CREST_TOOLTIP = {
+  gap = 4,
+  active = { "Active keep of {player}", "The lord, the starting units and new peasants appear here.",
+    "Click: leave {player} without an active keep." },
+  other = { "Keep of {player}", "Click: make this the active keep, where the lord,",
+    "the starting units and new peasants appear." },
+}
 -- Wall tools (35): placeWalls' `cmp dx,0x19 / jne / add byte [esi+edi+LIVE],0x5A / jmp / cmp dx,0x2E /
 -- jne / add byte [..],0x3C` (high and low wall heights); its high crenellation add followed by
 -- the join point of every crenellation height, `mov eax,[esp+0x20] / and eax,1`; the stairs'
@@ -742,6 +750,17 @@ K.MAP_BORDER = 0x30
 -- marsh, oil.
 K.TEXTURE_FLAGS = 0xA03E800D
 K.MASK_WATER = 0x00300001                -- sea, river, ford: their variants count as one
+-- What the mask compares: the ground flags and the rocky flag (the Rocky texture is earth with
+-- it). With water variants as one, a water tile's earth flag is dropped: a river running down a
+-- slope (the waterfall edge) is river with earth.
+K.MASK_FLAGS = 0xA03E808D
+K.EARTH = 0x8000
+-- Dust clouds (entity 0x15) step their x and y by `count % speed`; a cloud whose speeds are 0
+-- divides by zero and takes the game down. In updateEntities, each step: `movsx ebp,dx / cdq /
+-- jge GE` (x, after `cmp dx,bp`) and `movsx ebp,dx / test dx,dx / cdq / jge GE` (y), twice each.
+K.AOB_DUST_X = "66 3B D5 0F BF EA 99 7D 0C F7 FD 85 D2 75 10 66 01 79 4C EB 0A F7 FD 85 D2 75 04 66 01 59 4C"
+K.AOB_DUST_Y = "0F BF EA 66 85 D2 99 7D 0C F7 FD 85 D2 75 10 66 01 79 4E EB 0A F7 FD 85 D2 75 04 66 01 59 4E"
+K.DUST_STEP = { x = 3, xSize = 6, ySize = 9, skip = 0x0A, sites = 2 }   -- skip: idiv, test, jne, add after GE
 -- Heights stay off sea, walls, crenels, stairs, buildings, keeps, marsh and moat (and beach, a
 -- decoration); textures off walls, crenels, stairs, buildings and keeps. Both stay off rocks,
 -- but not off cliff rocks: in the map editor updateGfxLayer marks cliff edges rocky (0x80)
@@ -5096,7 +5115,8 @@ function C.patchTextureMask(self, G, data)
   local MT, ML = K.MASK_TERRAIN, K.MASK_LAND
   local check = C.assemble("maskCheck", {
     MASK_ON = W.on, SUBTYPE = G.subtype, TOOLS = data.mask.tools, REF_VALID = W.valid,
-    LOGIC = T + rd32(terrain + MT.logic), TEXTURE_FLAGS = K.TEXTURE_FLAGS, REF_FLAGS = W.flags,
+    LOGIC = T + rd32(terrain + MT.logic), TEXTURE_FLAGS = K.MASK_FLAGS, REF_FLAGS = W.flags,
+    NOT_EARTH = (~K.EARTH) & 0xFFFFFFFF,
     DECORATION = T + K.TMS.decoration, REF_DECORATION = W.decoration, STAMPS = W.stamps, NESTED = W.nested,
     BY_TYPE = W.byType, WATER_FLAGS = K.MASK_WATER,
   })
@@ -5213,7 +5233,9 @@ end
 -- Whether the mask would let a tile be changed, without starting a stroke (for previews).
 -- What the mask compares for a tile's flags (maskCheck's mask_kind): its ground flags.
 function C.maskKind(W, logic)
-  return logic & K.TEXTURE_FLAGS & 0xFFFFFFFF
+  local kind = logic & K.MASK_FLAGS & 0xFFFFFFFF
+  if rd32(W.byType) ~= 0 and kind & K.MASK_WATER ~= 0 then kind = kind & ~K.EARTH & 0xFFFFFFFF end
+  return kind
 end
 
 function C.maskPeek(T, R, tile)
@@ -6499,6 +6521,43 @@ function C.shieldZero(G, click, draw)
   wr16(draw + ITEM_HIDDEN, 0)
 end
 
+-- The tooltip of the keep crest under the mouse: what the crest is and what a click does, in a
+-- box above the crest (below it near the top of the screen), drawn on the map surface after the
+-- crests. hovered: player, active, and the crest's place on the map surface (x, y, w, h).
+function C.crestTooltip(G)
+  local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
+  local textWidth = core.exposeCode(G.textWidth, 4, 1)
+  local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
+  local buffers = {}
+  for i = 1, math.max(#K.CREST_TOOLTIP.active, #K.CREST_TOOLTIP.other) do buffers[i] = core.allocate(96, true) end
+  return function(hovered, camY)
+    local who = "player " .. hovered.player
+    local lines = {}
+    for i, text in ipairs(hovered.active and K.CREST_TOOLTIP.active or K.CREST_TOOLTIP.other) do
+      lines[i] = text:gsub("{player}", who)
+    end
+    local widest = 0
+    for i, text in ipairs(lines) do
+      writeCString(buffers[i], text)
+      widest = math.max(widest, textWidth(G.textManager, buffers[i], #text, TOOLTIP_FONT))
+    end
+    local width = widest + 2 * TOOLTIP_PADDING
+    local height = #lines * TOOLTIP_LINE + TOOLTIP_PADDING
+    local left = hovered.x + hovered.w // 2 - width // 2
+    local bottom = hovered.y - K.CREST_TOOLTIP.gap
+    if bottom - height < camY then bottom = hovered.y + hovered.h + K.CREST_TOOLTIP.gap + height end
+    local top = bottom - height
+    roundedBox(G.pencil, left, top, left + width, bottom, BOX_BLEND)
+    local layer = rd32(G.textLayer)
+    wr32(G.textLayer, MAP_LAYER)
+    for i = 1, #lines do
+      shadowedText(G.textManager, buffers[i], left + TOOLTIP_PADDING, top + TOOLTIP_PADDING // 2 + (i - 1) * TOOLTIP_LINE,
+        ALIGN_LEFT, TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
+    end
+    wr32(G.textLayer, layer)
+  end
+end
+
 -- The keep crests, drawn every frame in castle mode of the map editor; also keeps each player's
 -- active keep where the map maker left it: a newly placed keep does not take it over (the game
 -- makes every new keep the active one), and a removed active keep hands over to another keep of
@@ -6544,6 +6603,7 @@ function C.keepCrests(G, B, data, at)
   end
   local rects = {}
   for i = 1, K.CREST.rects do rects[i] = C.takeRect(data) end
+  local explain = data.crestTooltip and C.crestTooltip(G) or nil
 
   local function keepsNow()
     local list = {}
@@ -6638,7 +6698,7 @@ function C.keepCrests(G, B, data, at)
     local mode, target = rd32(t + TEXTURES_MODE), rd32(G.pencil + PENCIL_TARGET)
     wr32(t + TEXTURES_MODE, MAP_LAYER)
     wr32(G.pencil + PENCIL_TARGET, MAP_LAYER)
-    local used = 0
+    local used, hovered = 0, nil
     for _, keep in ipairs(keeps) do
       local p = keep.owner
       local half = (rd32(keep.b + K.BUILDING.size) & 0xFF) // 2
@@ -6658,13 +6718,19 @@ function C.keepCrests(G, B, data, at)
           local screenX, screenY = sx - camX, sy - camY
           used = used + 1
           if rects[used] ~= nil then C.markRect(rects[used], screenX - menuX, screenY - menuY, w, h) end
-          if pressed and inside(G.mouse, screenX, screenY, w, h) ~= 0 then
+          local over = inside(G.mouse, screenX, screenY, w, h) ~= 0
+          if over then hovered = { player = p, keep = keep.id, x = sx, y = sy, w = w, h = h } end
+          if pressed and over then
             pressed = false
             if active then clear(p) else activate(keep.id, p) end
             known[p] = rd32(entry(p, 0))
           end
         end
       end
+    end
+    if hovered ~= nil and explain ~= nil then
+      hovered.active = rd32(entry(hovered.player, 0)) == hovered.keep   -- after a click this frame
+      explain(hovered, camY)
     end
     wr32(G.pencil + PENCIL_TARGET, target)
     wr32(t + TEXTURES_MODE, mode)
@@ -7249,6 +7315,7 @@ function C.build(G, B, O)
     if not ok then log(WARNING, tostring(problem) .. "; no wall height slider") end
   end
   if added.keepCrests ~= nil then
+    data.crestTooltip = O.crestTooltip
     local ok, problem = pcall(C.keepCrests, G, B, data, added.keepCrests)
     if not ok then log(WARNING, tostring(problem) .. "; no keep crests") end
   end
@@ -7481,6 +7548,34 @@ end
 
 -- Damaged walls: in the map editor, with the choice on, every wall tile placeWalls builds or
 -- repairs gets the damaged look (its damage byte; the height stays).
+-- A dust cloud whose speed is 0 skips its step instead of dividing by zero (all four steps).
+function C.patchDustClouds(self)
+  local D = K.DUST_STEP
+  local sites = {}
+  for _, kind in ipairs({ { K.AOB_DUST_X, D.x, D.xSize }, { K.AOB_DUST_Y, 0, D.ySize } }) do
+    local from, found = 0x400000, {}
+    while #found <= D.sites do
+      local ok, at = pcall(core.scanForAOB, kind[1], from, 0x600000)
+      if not ok or at == nil or at == 0 then break end
+      found[#found + 1] = at
+      from = at + 1
+    end
+    if #found ~= D.sites then error(MODULE_NAME .. ": the dust clouds' steps are not the ones this module knows") end
+    for _, at in ipairs(found) do
+      -- The step's code ends in `jge rel8`: its next instruction is the negative case, its
+      -- target the positive one, and the step ends 10 bytes after that.
+      local step = at + kind[2]
+      local negative = step + kind[3]
+      expectBytes(negative - 2, { 0x7D }, "the dust clouds' steps")
+      local positive = negative + (rd8(negative - 1) & 0xFF)
+      sites[#sites + 1] = { site = step, size = kind[3], stub = core.allocateAssembly(templates.dustStep, {
+        STEP_NEGATIVE = negative, STEP_POSITIVE = positive, STEP_SKIP = positive + D.skip,
+      }) }
+    end
+  end
+  for _, s in ipairs(sites) do patchJump(self, s.site, s.size, s.stub) end
+end
+
 function C.patchDamagedWalls(self, G, data)
   local site = scan(K.AOB_WALL_TILE_DONE, "the wall placement")
   local damage = rd32(scan(K.AOB_WALL_DAMAGE, "the wall drawing") + K.WALL_DAMAGE_OPERAND)
@@ -7650,6 +7745,7 @@ local function enable(self, config)
     allKeeps = setting(config, "castle", "all_keeps") == true,
     playerZero = setting(config, "castle", "player_zero") == true,
     keepCrests = setting(config, "castle", "keep_crests") == true,
+    crestTooltip = setting(config, "castle", "keep_crest_tooltip") == true,
     wallTools = setting(config, "castle", "wall_tools") == true,
     hoverTextLeft = setting(config, "castle", "hover_text_left") == true,
     moatKinds = setting(config, "castle", "moat_kinds") == true,
@@ -7704,6 +7800,10 @@ local function enable(self, config)
   if setting(config, "rocks", "random_preview") == true then
     local ok, problem = pcall(enableRandomPreview, self)
     if not ok then log(WARNING, tostring(problem) .. "; the random rotation is left as it is") end
+  end
+  if setting(config, "menu", "dust_clouds") == true then
+    local ok, problem = pcall(C.patchDustClouds, self)
+    if not ok then log(WARNING, tostring(problem) .. "; dust clouds are left as they are") end
   end
   if setting(config, "menu", "always_update") == true then
     local ok, problem = pcall(enableRedraw, self)

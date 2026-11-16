@@ -1773,7 +1773,24 @@ ret
 ; river or ford (edges, deeper water, foam, waves) counts as that water.
 mask_kind:
 and edx,TEXTURE_FLAGS
+cmp dword [BY_TYPE],0
+je mask_kind_done
+test edx,WATER_FLAGS
+jz mask_kind_done
+and edx,NOT_EARTH
+mask_kind_done:
 ret
+]]
+
+-- A dust cloud's step (updateEntities), replacing `movsx ebp,dx / [test dx,dx] / cdq / jge GE`:
+-- with a speed of 0 the step is skipped (SKIP) instead of dividing by it.
+templates.dustStep = [[
+movsx ebp,dx
+cdq
+test ebp,ebp
+jz STEP_SKIP
+jg STEP_POSITIVE
+jmp STEP_NEGATIVE
 ]]
 
 -- setTerrain's tile loop, replacing `mov ecx,[ebp+0xC] / mov edx,[ebp-0x20] / mov eax,[edx+ecx*4+

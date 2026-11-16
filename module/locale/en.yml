@@ -91,7 +91,8 @@ textures_mask_by_type_tooltip: |
   The mask only lets through tiles of the same texture as the one you clicked; every texture stays
   its own (grass, scrub, thick scrub, stones, beach ... are all different). With this on, the
   variants of one water count as that water: all sea including its edges and deeper parts, all
-  river including foam and waves, all river crossing. Sea, river and river crossing stay apart.
+  river including foam, waves and the waterfall edges where it runs down a slope, all river
+  crossing. Sea, river and river crossing stay apart.
 
 water_group: Water
 water_group_descr: |
@@ -396,6 +397,10 @@ key_tab: 'Tab'
 menu_group: Editor menu
 menu_group_descr: |
   How the editor's menu at the bottom of the screen is drawn.
+menu_dust_clouds: Dust clouds cannot crash the game
+menu_dust_clouds_tooltip: |
+  A dust cloud whose movement data has been lost made the game divide by zero and crash. With
+  this on, such a cloud stays where it is instead.
 menu_always_update: Always keep the menu up to date
 menu_always_update_tooltip: |
   The game only redraws the menu while the mouse is over it. A change made elsewhere, for
@@ -410,6 +415,8 @@ castle_player_zero: Player 0 shield
 castle_player_zero_tooltip: A white ninth shield in the middle of the player shields chooses player 0, who can own buildings and units on a map too.
 castle_keep_crests: Active keep crests
 castle_keep_crests_tooltip: Every keep shows its owner's shield above it; the player's active keep (where the lord, the starting units and new peasants appear) shows it framed. Click a shield to make that keep active, or click the active one to leave the player without one. A new keep no longer takes over the active keep, and when the active keep is removed another keep of that player takes over. Needs Several keeps.
+castle_keep_crest_tooltip: Keep crest tooltip
+castle_keep_crest_tooltip_tooltip: Hovering over a keep crest shows what it means and what a click on it does. Needs Active keep crests.
 castle_wall_tools: Wall heights and free crenellations
 castle_wall_tools_tooltip: Crenellations can stand on their own. Their panel offers low, high, low damaged and high damaged. A slider above the wall panel sets the height of high walls, low walls and crenellations (0-255) and the steepness of stairs (0-16), each on its own; Reset beside it gives the chosen one its usual value back, and leaving the map editor puts them all back.
 trees_spread_order: Trees in spreading order

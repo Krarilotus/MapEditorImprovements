@@ -479,6 +479,14 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.castle.keep_crest_tooltip
+    name: map-editor-improvements-castle-keep-crest-tooltip
+    text: '{{castle_keep_crest_tooltip}}'
+    tooltip: '{{castle_keep_crest_tooltip_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.castle.wall_tools
     name: map-editor-improvements-castle-wall-tools
     text: '{{castle_wall_tools}}'
@@ -1014,6 +1022,14 @@ options:
     name: map-editor-improvements-menu-always-update
     text: '{{menu_always_update}}'
     tooltip: '{{menu_always_update_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.menu.dust_clouds
+    name: map-editor-improvements-menu-dust-clouds
+    text: '{{menu_dust_clouds}}'
+    tooltip: '{{menu_dust_clouds_tooltip}}'
     display: Switch
     contents:
       type: boolean
