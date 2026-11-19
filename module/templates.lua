@@ -833,29 +833,22 @@ jmp HAS_NEIGHBOUR
 ]]
 
 -- The tower engine click with the mouse button let go, replacing `cmp esi,ebx / je REFUSE`
--- (esi: the building on the tile, eax: the tile, ebp/edi: its x/y): in the map editor any tile
--- but the player's own big towers gets the spawn command straight away, if no unit stands
--- there; the towers go on to the game's own tests (TOWER_PATH).
+-- (esi: the building on the tile, eax: the tile, ebp/edi: its x/y): in the map editor lua
+-- decides (RULE with the tile in TILE): 0 refuses, 2 leaves the player's own big towers to the
+-- game's own tests (TOWER_PATH), 1 gives the spawn command for the clicked tile itself (spawnUnit
+-- adds half a tile to the position, so the tile's corner, x * 8, is its middle).
 templates.towerEngineGround = [[
 cmp dword [GAME_MODE],MAP_EDITOR
 jne in_game
-test esi,esi
-je on_ground
-imul ecx,esi,BUILDING_SIZE
-movsx edx,word [ecx+OWNERS]
-cmp edx,[CURRENT_PLAYER]
-jne on_ground
-movzx edx,word [ecx+TYPES]
-cmp edx,TOWER_4
+mov [TILE],eax
+call RULE
+cmp dword [ANSWER],2
 je on_tower
-cmp edx,TOWER_5
-je on_tower
-on_ground:
-cmp word [UNIT_TILES+eax*2],0
-jne refuse
-lea edx,[ebp*8+4]
+cmp dword [ANSWER],0
+je refuse
+lea edx,[ebp*8]
 mov [PARAM0],edx
-lea edx,[edi*8+4]
+lea edx,[edi*8]
 mov [PARAM1],edx
 movzx edx,byte [HEIGHTS+eax]
 mov [PARAM2],edx
@@ -871,6 +864,44 @@ on_tower:
 jmp TOWER_PATH
 refuse:
 jmp REFUSE
+]]
+
+-- The tower engine preview with the mouse button up, replacing `cmp esi,ebx / je TRANSPARENT /
+-- imul esi,esi,BUILDING_SIZE`: in the map editor the same lua rule as the click picks the
+-- solid preview (OPAQUE), the see-through one, or the game's own tower tests.
+templates.towerEnginePreview = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne in_game
+mov [TILE],eax
+call RULE
+cmp dword [ANSWER],2
+je game_test
+cmp dword [ANSWER],0
+je transparent
+jmp OPAQUE
+in_game:
+cmp esi,ebx
+je transparent
+game_test:
+imul esi,esi,BUILDING_SIZE
+jmp BACK
+transparent:
+jmp TRANSPARENT
+]]
+
+-- placeTree's tile test, replacing `test dword [edi+ebp*4+LOGIC],MASK`: in the map editor with
+-- the Vegetation on rocks and water box ticked, marsh, river, ford, rocky, boulder and pebble
+-- tiles are left out of the test.
+templates.treeGround = [[
+cmp byte [FLAG],0
+je strict
+cmp dword [GAME_MODE],MAP_EDITOR
+jne strict
+test dword [edi+ebp*4+LOGIC],LOOSE_MASK
+jmp BACK
+strict:
+test dword [edi+ebp*4+LOGIC],MASK
+jmp BACK
 ]]
 
 -- Action of a panel entry that is a way of placing a tool: remember the choice, then choose the

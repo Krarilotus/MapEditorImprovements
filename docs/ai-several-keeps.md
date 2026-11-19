@@ -4,20 +4,36 @@ Request 34.4: on a skirmish map where an AI player has more than one keep, the A
 turned towards the map centre at the start of a match and no AIV is used. This note says why.
 Addresses are for the vanilla 1.41 exe (`Stronghold Crusader.exe`); Extreme has the same code.
 
-## Short answer
+## Short answer (corrected for request 42)
 
-Nothing is wrong in the map data. The problem is in the match-start code, which assumes one
-keep per player:
+The first version of this note blamed lack of room: the extra keeps standing inside the AI's
+castle plan. A test on an empty 400 x 400 map, with the extra keep far outside any plan, still
+failed, so that was not the whole story. The real link is in the map data:
 
-1. It reads only the player's **active keep**, records where that keep stood, and removes it
-   together with its own parts.
-2. The player's **other keeps stay on the map**, with their doors, campfires and stockpiles.
-3. The AI's castle plan (AIV) is then test-fitted around the recorded spot, and it has to find
-   its tiles free. The leftover keeps occupy them, so **no AIV fits**.
-4. Without a fitting AIV the game falls back to placing a **plain keep at the recorded spot with
-   a fixed orientation**, which means no rotation and no castle plan for the rest of the match.
+1. Each player has a small table of "main" buildings (PlayerData, entries of 0x28 bytes from
+   `+0x94`): category 0 the keep, 1 the stockpile, 8 the keep's campfire area, and others.
+2. `computeBuildingCategoryEntryPointAndDestroyEarlierBuilding` (VAN `0x456FD0`) fills it.
+   For the keep it replaces the entry (and, without Several keeps, destroys the old keep).
+   **For category 1 it does nothing when the entry is already set** (`cmp [entry],0 / jg skip`),
+   so the stockpile entry stays on the **first stockpile ever placed**.
+3. With two keeps, the keep entry pointed at keep 2 (the last placed, or the one chosen with the
+   crests), but the stockpile entry still pointed at keep 1's stockpile.
+4. At the match start the game removes the keep in entry 0 **and the stockpile in entry 1**
+   (below). So keep 2 went, but keep 1's far-away stockpile went with it (what you saw), while
+   keep 2's own stockpile stayed next to the recorded spot. That stockpile is inside the AI's
+   castle plan, so no AIV fitted and the fallback placed an unrotated keep without a plan.
+5. The landscape eraser follows the same table: erasing the stockpile in entry 1 removes the
+   player's keep group in entry 0 too. That is why erasing keep 1's stockpile took keep 2 (with
+   its doors and campfire) along, however far away it was.
 
-So both symptoms have one cause: the AI's extra keeps block the AIV fit.
+The fix is purely in the map data (1.0.61, part of Active keep crests): the stockpile entry now
+always follows the active keep's own stockpile (the stockpile with the keep's uidWhenPlaced),
+when a keep is made active, when the active keep changes or is removed, and when a map is opened
+in the editor (so maps made before are repaired once they are saved again). A keep placed without
+a stockpile leaves the entry alone. Nothing outside the map editor is changed. Not yet tested in
+a match.
+
+Extra keeps that do stand inside the plan's area can still block it, as described below.
 
 ## The match start in detail (`LaunchSkirmishGame`, VAN `0x441270`)
 

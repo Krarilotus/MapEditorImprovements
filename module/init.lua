@@ -84,7 +84,8 @@ local DEFAULTS = {
   counts = { enabled = true, shown = true },
   menu = { always_update = true, dust_clouds = true },
   trees = { growth_from_brush = true, apple = true, shrubs = true, felled = true, random_mix = true, preview = true,
-    obstacles = true, sorted_rows = true, no_shrub_stacking = true, spread_order = true, spread_outlines = true },
+    obstacles = true, sorted_rows = true, no_shrub_stacking = true, spread_order = true, spread_outlines = true,
+    rocks_and_water = true },
   textures = { gravel_and_iron = true, no_heights_iron = true, mask = true, mask_by_type = true },
   water = { decorations = true, foam_on_sea = true },
   brushes = { full_shape = true },
@@ -224,6 +225,12 @@ K.AOB_OBSTACLES = "33 DB 85 C0 89 74 24 10 7E 50 56 55 8D 44 24 18"
 K.OBSTACLES_SIZE = 10
 K.OBSTACLES_JUMP = 0x09
 K.OBSTACLES_NEAR = 0x400               -- how far from placeTree's start the check lies at most
+K.OBSTACLES_NUDGE = { -10, -20 }        -- the obstacles box, from its place at the end of the top row
+K.ROCKS_AND_WATER_GAP = 4
+-- placeTree's tile test `test dword [edi+ebp*4+LogicLayer], 0x703E25B5`; with Vegetation on rocks
+-- and water these bits stay out of it: rocky, boulders, pebbles, river, ford, marsh.
+K.AOB_TREE_GROUND = "F7 84 AF ? ? ? ? B5 25 3E 70"
+K.TREE_GROUND = { size = 11, logic = 3, mask = 7, loose = 0x80 | 0x20000 | 0x40000 | 0x100000 | 0x200000 | 0x20000000 }
 
 -- The game's check boxes (interface_icons3 pictures 206 tick / 208 cross, + 1 under the
 -- mouse), by image table index.
@@ -506,6 +513,25 @@ K.TOWER_ENGINE = {
   param2 = { 0xF7, { 0xA3 } }, param3 = { 0xFC, { 0xC7, 0x05 } }, queue = 0x106, epilogue = 0x10B,
 }
 K.TOWER_4, K.TOWER_5 = 77, 78            -- the building types a tower engine can stand on
+-- The preview of the same tools with the mouse button up: `cmp esi,ebx / je <see-through> /
+-- imul esi,esi,0x32C`; the solid preview's `push 5` follows at +0x4B, the see-through one's
+-- `push 0x100005` at +0x66.
+K.AOB_TOWER_ENGINE_PREVIEW = "3B F3 74 62 69 F6 2C 03 00 00 0F BF"
+K.TOWER_PREVIEW = { size = 10, solid = { 0x4B, { 0x6A, 0x05, 0x50, 0x53, 0x53 } },
+  clear = { 0x66, { 0x68, 0x05, 0x00, 0x10, 0x00 } }, flags = { 0x3A, { 0xF7, 0x04, 0x85 } } }
+-- The map editor's unit tool: `mov [esp+0x14], <tile flags that refuse a unit>` (sea, rocky,
+-- building, tree, river, moat, ...); a tower engine goes only where a unit could.
+K.AOB_UNIT_MASK = "89 54 24 18 89 7C 24 20 C7 44 24 14 ? ? ? ? 0F 87"
+K.UNIT_MASK = 12
+K.TOWER_ENGINE_UNITS = { [41] = true, [61] = true }   -- mangonel, ballista
+-- The eraser's walk over a tile's units: `imul eax,eax,<unit size> / mov word [eax+state],3 /
+-- movsx eax,word [eax+next on tile] / test eax,eax / jne`; the next unit lies 0x216 after the
+-- state word (both exes).
+K.AOB_UNIT_WALK = "69 C0 ? ? ? ? ? ? ? ? ? ? ? ? ? 0F BF 80 ? ? ? ? 85 C0 75 E6"
+K.UNIT_WALK = { stride = 2, next = 18, nextAfterState = 0x216 }
+-- How many tower engines a building takes (its own big towers go by the game's own rule, one):
+-- the keeps 4 and the stronghold keeps 8, the large gatehouse 4, any other building one.
+K.TOWER_ENGINE_MOST = { [40] = 4, [41] = 4, [42] = 4, [43] = 8, [44] = 8, [45] = 4 }
 -- Keep parts: placeKeep places the keep and its doors, then (`mov eax,[esp+0x3C] / mov ecx,
 -- [esp+0x48] / add ebx,[eax*8+..]`) the campfire area, then (`mov eax,[esp+0x3C] / mov edi,
 -- [eax*8+..]`) the stockpile; both lead on to the same epilogue.
@@ -618,10 +644,11 @@ K.SHIELD_ZERO = { x = 738, y = 511, firstParam = -10, players = 9 }
 -- set by computeBuildingCategoryEntryPointAndDestroyEarlierBuilding(building, player, category),
 -- which placeKeep calls as `push eax / mov ecx, GameState / mov [esp+0x40],eax / call`.
 K.AOB_KEEP_ENTRY_CALL = "50 B9 ? ? ? ? 89 44 24 40 E8"
-K.KEEP_ENTRY = { state = 2, call = 10, first = 0x30DD4, entry = 0x28, dwords = 10, campfire = 8,
+K.KEEP_ENTRY = { state = 2, call = 10, first = 0x30DD4, entry = 0x28, dwords = 10, campfire = 8, stockpile = 1,
   strideAt = { 0x24, { 0x69, 0xC0 } } }
 K.KEEP_TYPES = { [40] = true, [41] = true, [42] = true, [43] = true, [44] = true }
-K.CAMPFIRE_TYPE = 55
+K.CAMPGROUND_TYPE = 55                   -- the keep's campfire area (not the barrier's campfire)
+K.STOCKPILE_TYPE = 10
 -- Building fields from the start of a building (BuildingsState + 0x14 is building 0).
 K.BUILDING = { first = 0x14, type = 0xD2, owner = 0xD6, x = 0xEE, y = 0xF0, size = 0xF8, uid = 0x2A8 }
 K.CREST = { lift = 120, rects = 40, selected = 8 }
@@ -2253,7 +2280,7 @@ end
 -- size in `sizeOf`, the others are measured by their gm picture. Moved buttons are taken off
 -- the user control table, which would put them back the next time the menu loads. Each of
 -- `places` puts one more item somewhere once it can (it answers whether it has).
-local function makeLayout(G, rows, added, sizeOf, places)
+local function makeLayout(G, rows, added, sizeOf, places, finishes)
   local function measure(address)
     local size = sizeOf[address]
     if size ~= nil then return size[1], size[2] end
@@ -2306,6 +2333,7 @@ local function makeLayout(G, rows, added, sizeOf, places)
         x = x + row.widths[i] + gap
       end
     end
+    for _, finish in ipairs(finishes or {}) do finish() end
     return true
   end
 end
@@ -2357,7 +2385,7 @@ local function buildTable(G, O)
     insert(INFO_BEFORE_ITEM, "eraserPanel")
   end
   if O.textureMask then insert(G.firstBlock, "maskButton") end
-  if O.counts or O.obstacles or O.invisibleRocks or O.apple or O.textures or O.waterDecorations
+  if O.counts or O.obstacles or O.rocksAndWater or O.invisibleRocks or O.apple or O.textures or O.waterDecorations
       or O.maxHeight or O.lostRocks or O.textureMask or O.birdButtons or O.animalBin then
     insert(G.firstBlock, "tooltip")
   end
@@ -2385,6 +2413,7 @@ local function buildTable(G, O)
   end
   local felledButtons = 1 + MOST_LOGS + (O.randomMix and 2 or 0)
   if O.obstacles then insert(vegetationEnd, OBSTACLES_BUTTON) end
+  if O.rocksAndWater then insert(vegetationEnd, "rocksAndWater") end
   if O.felled then
     for i = 1, felledButtons do insert(vegetationEnd, "felled" .. i) end
   end
@@ -2461,6 +2490,7 @@ local function buildTable(G, O)
   data.rockLock = core.allocate(4, true)
   data.herdSync = core.allocate(4, true)
   data.nearObstacles = core.allocate(4, true)
+  data.rocksAndWater = core.allocate(4, true)
   data.randomShrub = core.allocate(4, true)
   data.invisibleRocks = core.allocate(4, true)
   data.seed = core.allocate(4, true)
@@ -2613,6 +2643,47 @@ local function buildTable(G, O)
     tooltips[#tooltips + 1] = { item = box, lines = function()
       return { "Trees next to obstacles: " .. (rd8(data.nearObstacles) ~= 0 and "allowed" or "not allowed") }
     end, raise = K.CHECK_BOX_TOOLTIP_RAISE }
+  end
+
+  -- The Vegetation on rocks and water check box: right of the Vegetation menu, below the
+  -- obstacles check box (which moves up and left to make room).
+  local finishes = {}
+  if O.obstacles then
+    local box = added[OBSTACLES_BUTTON]
+    finishes[#finishes + 1] = function()
+      wr32(box + ITEM_X, rd32(box + ITEM_X) + K.OBSTACLES_NUDGE[1])
+      wr32(box + ITEM_Y, rd32(box + ITEM_Y) + K.OBSTACLES_NUDGE[2])
+    end
+  end
+  if O.rocksAndWater then
+    local box = added.rocksAndWater
+    wr32(box + ITEM_TYPE, TYPE_CLICKABLE)
+    wr32(box + ITEM_WIDTH, K.CHECK_BOX_SIZE)
+    wr32(box + ITEM_HEIGHT, K.CHECK_BOX_SIZE)
+    wr32(box + ITEM_ACTION, core.allocateAssembly(templates.flip, { FLAG = data.rocksAndWater }))
+    wr32(box + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+    wr32(box + ITEM_RENDER, core.allocateAssembly(templates.checkBox, {
+      FLAG = data.rocksAndWater, ON_IMAGE = G.buttonImages + K.CHECKED_IMAGE * IMAGE_SIZE,
+      OFF_IMAGE = G.buttonImages + K.UNCHECKED_IMAGE * IMAGE_SIZE,
+      HOVER = G.hover, DRAW_MODE = G.drawMode, ITEM_X = G.itemX, ITEM_Y = G.itemY,
+      TEXTURES = G.textures, RENDER_GM = G.renderGM,
+    }))
+    wr16(box + ITEM_HIDDEN, 1)
+    tooltips[#tooltips + 1] = { item = box, lines = function()
+      return { "Vegetation on rocks and water: " .. (rd8(data.rocksAndWater) ~= 0 and "allowed" or "not allowed") }
+    end, raise = K.CHECK_BOX_TOOLTIP_RAISE }
+    local above = O.obstacles and added[OBSTACLES_BUTTON] or nil
+    local top = button(VEGETATION_TREES[1])
+    finishes[#finishes + 1] = function()
+      if above ~= nil then
+        wr32(box + ITEM_X, rd32(above + ITEM_X))
+        wr32(box + ITEM_Y, rd32(above + ITEM_Y) + K.CHECK_BOX_SIZE + K.ROCKS_AND_WATER_GAP)
+      else
+        wr32(box + ITEM_X, ROW_RIGHT + K.CHECK_BOX_GAP)
+        wr32(box + ITEM_Y, rd32(top + ITEM_Y))
+      end
+      wr16(box + ITEM_HIDDEN, 0)
+    end
   end
 
   -- The Vegetation menu's rows: the trees, the apple tree and the check box on top (the
@@ -2877,7 +2948,7 @@ local function buildTable(G, O)
       end
     end
   end
-  local layout = makeLayout(G, rows, newButtons, sizeOf, places)
+  local layout = makeLayout(G, rows, newButtons, sizeOf, places, finishes)
 
   -- A panel item at the end of a tab: shows its panel (lua) while one of its tools is chosen.
   local function panelItem(into, items, first, last, firstShrub, lastShrub, pad, felledLogs, felledCommand)
@@ -3156,6 +3227,18 @@ local function patchTrees(self, G, O, data)
       FLAG = data.nearObstacles, CHECK = site + K.OBSTACLES_SIZE, PAST_CHECK = past, NO_STACKING = stacking,
       NUMBERS = rd32(tables + K.ERASE_TABLES.numbers), ROCK_BASE = rd32(C.eraseSites()[1] + K.ERASE_ROCK.base),
       REFUSE = (site + rd32(site - 4)) & 0xFFFFFFFF,
+    }))
+  end
+  if O.rocksAndWater then
+    local site = scan(K.AOB_TREE_GROUND, "the tree placement's tile test")
+    if site < G.placeTree or site > G.placeTree + K.OBSTACLES_NEAR then
+      error(MODULE_NAME .. ": the tile test is not in the tree placement")
+    end
+    local mask = rd32(site + K.TREE_GROUND.mask)
+    patchJump(self, site, K.TREE_GROUND.size, core.allocateAssembly(templates.treeGround, {
+      FLAG = data.rocksAndWater, GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR,
+      LOGIC = rd32(site + K.TREE_GROUND.logic), MASK = mask, LOOSE_MASK = mask & ~K.TREE_GROUND.loose,
+      BACK = site + K.TREE_GROUND.size,
     }))
   end
   if O.noStacking then C.patchEraseStacks(self, G) end
@@ -6620,12 +6703,13 @@ function C.keepCrests(G, B, data, at)
     local b = building(id)
     return K.KEEP_TYPES[rd16(b + K.BUILDING.type) & 0xFFFF] ~= nil and rd16(b + K.BUILDING.owner) == player
   end
-  -- The campfire placed together with a keep (placeKeep gives them one uidWhenPlaced).
-  local function campfireOf(keep)
+  -- A part placed together with a keep (placeKeep gives them one uidWhenPlaced): its campfire
+  -- area or its stockpile.
+  local function partOf(keep, kind)
     local uid, owner = rd32(building(keep) + K.BUILDING.uid), rd16(building(keep) + K.BUILDING.owner)
     for id = 1, count() - 1 do
       local b = building(id)
-      if alive(id) and rd16(b + K.BUILDING.type) == K.CAMPFIRE_TYPE and rd32(b + K.BUILDING.uid) == uid
+      if alive(id) and rd16(b + K.BUILDING.type) == kind and rd32(b + K.BUILDING.uid) == uid
           and rd16(b + K.BUILDING.owner) == owner then
         return id
       end
@@ -6637,10 +6721,23 @@ function C.keepCrests(G, B, data, at)
       for d = 0, K.KEEP_ENTRY.dwords - 1 do wr32(entry(player, category) + d * 4, 0) end
     end
   end
+  -- The player's stockpile entry follows the active keep. The game keeps the first stockpile
+  -- ever placed there, and at the start of a match it removes the active keep together with the
+  -- stockpile in that entry: with another keep's stockpile there, the active keep's own stockpile
+  -- stayed and blocked the AI's castle plan, and the eraser took the active keep along with that
+  -- other stockpile.
+  -- A keep placed without its stockpile leaves the entry as it is.
+  local function syncStockpile(keep, player)
+    local stock = partOf(keep, K.STOCKPILE_TYPE)
+    if stock == nil or rd32(entry(player, K.KEEP_ENTRY.stockpile)) == stock then return end
+    for d = 0, K.KEEP_ENTRY.dwords - 1 do wr32(entry(player, K.KEEP_ENTRY.stockpile) + d * 4, 0) end
+    setEntry(gameState, stock, player, K.KEEP_ENTRY.stockpile)
+  end
   local function activate(keep, player)
     setEntry(gameState, keep, player, 0)
-    local fire = campfireOf(keep)
+    local fire = partOf(keep, K.CAMPGROUND_TYPE)
     if fire ~= nil then setEntry(gameState, fire, player, K.KEEP_ENTRY.campfire) end
+    syncStockpile(keep, player)
   end
 
   -- Where renderMap draws a tile on the map surface (as the tree preview works it out).
@@ -6659,7 +6756,7 @@ function C.keepCrests(G, B, data, at)
     return drawX, drawY - lift
   end
 
-  local known, wasEditor, wasDown = {}, false, true
+  local known, knownStock, wasEditor, wasDown = {}, {}, false, true
   local function tick()
     if rd32(R.gameMode) ~= K.MAP_EDITOR then
       wasEditor = false
@@ -6669,7 +6766,11 @@ function C.keepCrests(G, B, data, at)
     -- The active keeps stay as the map maker left them.
     if not wasEditor then
       wasEditor = true
-      for p = 0, K.PLAYERS do known[p] = rd32(entry(p, 0)) end
+      for p = 0, K.PLAYERS do
+        known[p] = rd32(entry(p, 0))
+        if isKeepOf(known[p], p) then syncStockpile(known[p], p) end   -- maps made before this
+        knownStock[p] = rd32(entry(p, K.KEEP_ENTRY.stockpile))
+      end
     else
       for p = 0, K.PLAYERS do
         local now, before = rd32(entry(p, 0)), known[p]
@@ -6685,7 +6786,10 @@ function C.keepCrests(G, B, data, at)
             activate(before, p)                     -- a new keep took over: give it back
           end
         end
-        known[p] = rd32(entry(p, 0))
+        -- a first keep, or a stockpile entry changed under it (a separate stockpile placed first)
+        local active, stock = rd32(entry(p, 0)), rd32(entry(p, K.KEEP_ENTRY.stockpile))
+        if (active ~= known[p] or stock ~= knownStock[p]) and isKeepOf(active, p) then syncStockpile(active, p) end
+        known[p], knownStock[p] = active, rd32(entry(p, K.KEEP_ENTRY.stockpile))
       end
     end
 
@@ -7434,24 +7538,85 @@ end
 -- In the map editor the tower mangonel and ballista can also be put on any tile without a unit
 -- (ground, walls, gates, other towers, the keep): the click sends the game's own spawn command
 -- for the clicked tile instead of refusing. The player's own big towers work as before.
+-- Where a tower engine may go in the map editor, for the tile in rule.tile: 0 nowhere, 1 on
+-- this very tile, 2 by the game's own tower rule (the current player's big towers).
+function C.towerEngineRule(G, site)
+  local T = K.TOWER_ENGINE
+  local R = C.resolvePipette(G)
+  local function operand(field) return readOperand(site, T[field], "the tower engine placement") end
+  local types, owners, size = operand("types"), operand("owners"), operand("buildingSize")
+  local base = types - K.BUILDING.type
+  local player, units = operand("player"), operand("units")
+  local onTile = readOperand(scan(K.AOB_TOWER_ENGINE_PREVIEW, "the tower engine preview"), { -0x0B, { 0x45 } },
+    "the tower engine preview")
+  expectBytes(site + K.TOWER_PREVIEW.flags[1], K.TOWER_PREVIEW.flags[2], "the tower engine placement")
+  local flags = rd32(site + K.TOWER_PREVIEW.flags[1] + #K.TOWER_PREVIEW.flags[2])
+  local mask = rd32(scan(K.AOB_UNIT_MASK, "the unit tool's tile test") + K.UNIT_MASK)
+  local walk = scan(K.AOB_UNIT_WALK, "the units on a tile")   -- the eraser may have patched the middle
+  local stride, nextOnTile = rd32(walk + K.UNIT_WALK.stride), rd32(walk + K.UNIT_WALK.next)
+  local status = nextOnTile - K.UNIT_WALK.nextAfterState
+  local rule = { tile = core.allocate(4, true), answer = core.allocate(4, true) }
+  local function engines(tile)
+    local count, id, guard = 0, rd16(units + tile * 2), 0
+    while id > 0 and guard < 200 do
+      if K.TOWER_ENGINE_UNITS[rd16(status + K.UNIT_TYPE_AFTER_STATE + id * stride) & 0xFFFF] then count = count + 1 end
+      id, guard = rd16(nextOnTile + id * stride), guard + 1
+    end
+    return count
+  end
+  local function decide(tile)
+    if tile < 0 or tile >= K.MAP_TILES or engines(tile) > 0 then return 0 end
+    local b = rd16(onTile + tile * 2)
+    if b > 0 then
+      local at = base + b * size
+      local kind = rd16(at + K.BUILDING.type) & 0xFFFF
+      if (kind == K.TOWER_4 or kind == K.TOWER_5) and rd16(at + K.BUILDING.owner) == rd32(player) then return 2 end
+    end
+    if (rd32(flags + tile * 4) & mask) ~= 0 then return 0 end
+    if b <= 0 then return 1 end
+    local at = base + b * size
+    local most = K.TOWER_ENGINE_MOST[rd16(at + K.BUILDING.type) & 0xFFFF] or 1
+    local x0, y0, side = rd16(at + K.BUILDING.x), rd16(at + K.BUILDING.y), rd8(at + K.BUILDING.size) & 0xFF
+    local count = 0
+    for y = math.max(0, y0 - 1), math.min(K.MAP_SIZE - 1, y0 + side) do
+      for x = math.max(0, x0 - 1), math.min(K.MAP_SIZE - 1, x0 + side) do
+        local t = rd32(R.rows + y * 12) + x
+        if rd16(onTile + t * 2) == b then count = count + engines(t) end
+      end
+    end
+    return count < most and 1 or 0
+  end
+  rule.pad = C.luaPad(function() wr32(rule.answer, decide(rd32(rule.tile))) end, "the tower engine placement")
+  return rule
+end
+
+-- Tower engines anywhere in the map editor where a unit could stand, one to a tile, on the
+-- clicked tile, with up to K.TOWER_ENGINE_MOST on keeps and large gatehouses; the preview is
+-- solid wherever a click would place one.
 function C.patchTowerEngines(self, G)
   local T = K.TOWER_ENGINE
-  local from, sites = 0x400000, {}
-  while #sites < 3 do
-    local ok, found = pcall(core.scanForAOB, K.AOB_TOWER_ENGINE_CLICK, from, K.HERD_SEARCH_END)
-    if not ok or found == nil or found == 0 then break end
-    sites[#sites + 1] = found
-    from = found + 1
+  local function all(pattern)
+    local from, sites = 0x400000, {}
+    while #sites < 3 do
+      local ok, found = pcall(core.scanForAOB, pattern, from, K.HERD_SEARCH_END)
+      if not ok or found == nil or found == 0 then break end
+      sites[#sites + 1] = found
+      from = found + 1
+    end
+    return sites
   end
-  if #sites ~= 2 then error(MODULE_NAME .. ": the tower engine placement is not the one this module knows") end
-  for _, site in ipairs(sites) do
+  local sites, previews = all(K.AOB_TOWER_ENGINE_CLICK), all(K.AOB_TOWER_ENGINE_PREVIEW)
+  if #sites ~= 2 or #previews ~= 2 then
+    error(MODULE_NAME .. ": the tower engine placement is not the one this module knows")
+  end
+  local rule = C.towerEngineRule(G, sites[1])
+  for i, site in ipairs(sites) do
     local function operand(field) return readOperand(site, T[field], "the tower engine placement") end
     expectBytes(site + T.refuse[1] - 2, T.refuse[2], "the tower engine placement")
     expectBytes(site + T.command[1], T.command[2], "the tower engine placement")
     local stub = core.allocateAssembly(templates.towerEngineGround, {
-      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, BUILDING_SIZE = operand("buildingSize"),
-      OWNERS = operand("owners"), TYPES = operand("types"), CURRENT_PLAYER = operand("player"),
-      TOWER_4 = K.TOWER_4, TOWER_5 = K.TOWER_5, UNIT_TILES = operand("units"), HEIGHTS = operand("heights"),
+      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, TILE = rule.tile, ANSWER = rule.answer, RULE = rule.pad,
+      HEIGHTS = operand("heights"),
       PARAM0 = operand("param0"), PARAM1 = operand("param1"), PARAM2 = operand("param2"),
       PARAM3 = operand("param3"), UNIT_TYPE = rd32(site + T.param3[1] + 6),
       COMMAND = rd8(site + T.command[1] + 1) & 0xFF, SYNC = operand("sync"),
@@ -7459,6 +7624,14 @@ function C.patchTowerEngines(self, G)
       TOWER_PATH = site + T.size, REFUSE = site + T.size + rd32(site + 4),
     })
     patchJump(self, site, T.size, stub)
+    local preview, P = previews[i], K.TOWER_PREVIEW
+    expectBytes(preview + P.solid[1], P.solid[2], "the tower engine preview")
+    expectBytes(preview + P.clear[1], P.clear[2], "the tower engine preview")
+    patchJump(self, preview, P.size, core.allocateAssembly(templates.towerEnginePreview, {
+      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, TILE = rule.tile, ANSWER = rule.answer, RULE = rule.pad,
+      BUILDING_SIZE = operand("buildingSize"), OPAQUE = preview + P.solid[1], TRANSPARENT = preview + P.clear[1],
+      BACK = preview + P.size,
+    }))
   end
 end
 
@@ -7698,6 +7871,7 @@ local function enable(self, config)
     shrubs = setting(config, "trees", "shrubs") == true,
     felled = setting(config, "trees", "felled") == true,
     obstacles = setting(config, "trees", "obstacles") == true,
+    rocksAndWater = setting(config, "trees", "rocks_and_water") == true,
     sortedRows = setting(config, "trees", "sorted_rows") == true,
     randomMix = setting(config, "trees", "random_mix") == true,
     textures = setting(config, "textures", "gravel_and_iron") == true,
@@ -7757,7 +7931,8 @@ local function enable(self, config)
     moatRemoval = setting(config, "castle", "moat_removal_keeps_ground") == true,
     undo = self.undo,
   }
-  if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.sortedRows or O.textures
+  if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.rocksAndWater or O.sortedRows
+      or O.textures
       or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
       or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks
       or O.textureMask or O.birdButtons or O.animalBin or O.groupWarning or O.eraserChoice or O.eraseGulls

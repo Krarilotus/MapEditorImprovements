@@ -92,6 +92,14 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.trees.rocks_and_water
+    name: map-editor-improvements-trees-rocks-and-water
+    text: '{{trees_rocks_and_water}}'
+    tooltip: '{{trees_rocks_and_water_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.trees.sorted_rows
     name: map-editor-improvements-trees-sorted-rows
     text: '{{trees_sorted_rows}}'

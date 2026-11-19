@@ -53,6 +53,8 @@ trees_obstacles_tooltip: |
   Adds a check box to the top row of the Vegetation menu. While it is ticked, trees can be
   placed right next to buildings, rocks, walls and other trees, which the game normally keeps
   them away from (shrubs can stand there anyway). Point at it to see whether it is on.
+trees_rocks_and_water: Check box for vegetation on rocks and water
+trees_rocks_and_water_tooltip: A check box on the right of the Vegetation menu, below the one for trees next to obstacles (off at first). Ticked, trees and shrubs can also be placed on marsh, river, ford, rocky, boulder and gravel ground.
 trees_sorted_rows: Tidy the Vegetation menu's rows
 trees_sorted_rows_tooltip: |
   Moves the shrub from the top row to the bottom row and sorts the bottom row's shrubs, so
@@ -219,9 +221,10 @@ castle_several_storage_tooltip: |
   empty granaries or armouries and 32 empty stockpiles).
 castle_tower_engines: Tower mangonels and ballistae anywhere
 castle_tower_engines_tooltip: |
-  The tower mangonel and tower ballista of the army buildings menu can be put wherever no unit
-  stands: on the ground, walls, gates, any tower or the keep, not only on the player's own
-  square and round towers.
+  The tower mangonel and tower ballista of the army buildings menu can be put wherever a unit
+  could be put (the ground, walls, gates, towers, the keep), not only on the player's own square
+  and round towers: on the clicked tile, one to a tile, up to 4 on a keep or large gatehouse and
+  8 on the large stronghold keeps. The preview is solid wherever a click places one.
 castle_keep_parts: Keep without campfire or stockpile
 castle_keep_parts_tooltip: |
   While one of the keeps is chosen, a row above the keeps menu offers it placed in two more
@@ -414,7 +417,7 @@ castle_all_keeps_tooltip: The keeps menu offers the manor house and the strongho
 castle_player_zero: Player 0 shield
 castle_player_zero_tooltip: A white ninth shield in the middle of the player shields chooses player 0, who can own buildings and units on a map too.
 castle_keep_crests: Active keep crests
-castle_keep_crests_tooltip: Every keep shows its owner's shield above it; the player's active keep (where the lord, the starting units and new peasants appear) shows it framed. Click a shield to make that keep active, or click the active one to leave the player without one. A new keep no longer takes over the active keep, and when the active keep is removed another keep of that player takes over. Needs Several keeps.
+castle_keep_crests_tooltip: Every keep shows its owner's shield above it; the player's active keep (where the lord, the starting units and new peasants appear) shows it framed. Click a shield to make that keep active, or click the active one to leave the player without one. A new keep no longer takes over the active keep, and when the active keep is removed another keep of that player takes over. The player's main stockpile always follows the active keep (the game kept the first stockpile ever placed, so with several keeps the AI found its castle spot blocked and used no castle plan). Needs Several keeps.
 castle_keep_crest_tooltip: Keep crest tooltip
 castle_keep_crest_tooltip_tooltip: Hovering over a keep crest shows what it means and what a click on it does. Needs Active keep crests.
 castle_wall_tools: Wall heights and free crenellations
