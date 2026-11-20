@@ -3230,16 +3230,21 @@ local function patchTrees(self, G, O, data)
     }))
   end
   if O.rocksAndWater then
-    local site = scan(K.AOB_TREE_GROUND, "the tree placement's tile test")
-    if site < G.placeTree or site > G.placeTree + K.OBSTACLES_NEAR then
-      error(MODULE_NAME .. ": the tile test is not in the tree placement")
-    end
-    local mask = rd32(site + K.TREE_GROUND.mask)
-    patchJump(self, site, K.TREE_GROUND.size, core.allocateAssembly(templates.treeGround, {
-      FLAG = data.rocksAndWater, GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR,
-      LOGIC = rd32(site + K.TREE_GROUND.logic), MASK = mask, LOOSE_MASK = mask & ~K.TREE_GROUND.loose,
-      BACK = site + K.TREE_GROUND.size,
-    }))
+    -- G.placeTree is a spot inside placeTree past this test, so the test lies within reach on
+    -- either side. A problem here only leaves the check box without effect.
+    local ok, problem = pcall(function()
+      local site = scan(K.AOB_TREE_GROUND, "the tree placement's tile test")
+      if site < G.placeTree - K.OBSTACLES_NEAR or site > G.placeTree + K.OBSTACLES_NEAR then
+        error(MODULE_NAME .. ": the tile test is not in the tree placement")
+      end
+      local mask = rd32(site + K.TREE_GROUND.mask)
+      patchJump(self, site, K.TREE_GROUND.size, core.allocateAssembly(templates.treeGround, {
+        FLAG = data.rocksAndWater, GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR,
+        LOGIC = rd32(site + K.TREE_GROUND.logic), MASK = mask, LOOSE_MASK = mask & ~K.TREE_GROUND.loose,
+        BACK = site + K.TREE_GROUND.size,
+      }))
+    end)
+    if not ok then log(WARNING, tostring(problem) .. "; vegetation stays off rocks and water") end
   end
   if O.noStacking then C.patchEraseStacks(self, G) end
   if O.waterDecorations then C.patchRiverDecorations(self) end
