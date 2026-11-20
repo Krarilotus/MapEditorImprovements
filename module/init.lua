@@ -3215,7 +3215,7 @@ local function patchTrees(self, G, O, data)
   end
   if O.obstacles or O.noStacking then
     local site = scan(K.AOB_OBSTACLES, "the tree placement's obstacle check")
-    local tables = scan(K.AOB_ERASE_TABLES, "the map tables")
+    local tables = C.eraseTables()
     local stacking = core.allocate(4, true)
     wr32(stacking, O.noStacking and 1 or 0)
     expectBytes(site + K.OBSTACLES_REFUSE[1], K.OBSTACLES_REFUSE[2], "the tree placement's tile test")
@@ -3225,11 +3225,13 @@ local function patchTrees(self, G, O, data)
     local past = site + K.OBSTACLES_SIZE + (rd8(site + K.OBSTACLES_JUMP) & 0xFF)
     patchJump(self, site, K.OBSTACLES_SIZE, core.allocateAssembly(templates.nearObstacles, {
       FLAG = data.nearObstacles, CHECK = site + K.OBSTACLES_SIZE, PAST_CHECK = past, NO_STACKING = stacking,
-      NUMBERS = rd32(tables + K.ERASE_TABLES.numbers), ROCK_BASE = rd32(C.eraseSites()[1] + K.ERASE_ROCK.base),
+      NUMBERS = tables.numbers, ROCK_BASE = rd32(C.eraseSites()[1] + K.ERASE_ROCK.base),
       REFUSE = (site + rd32(site - 4)) & 0xFFFFFFFF,
     }))
   end
-  if O.rocksAndWater then
+  -- With the texture mask on, its own hook on the same tile test carries the check box too
+  -- (two hooks on one instruction cannot both find it).
+  if O.rocksAndWater and data.mask == nil then
     -- G.placeTree is a spot inside placeTree past this test, so the test lies within reach on
     -- either side. A problem here only leaves the check box without effect.
     local ok, problem = pcall(function()
@@ -3292,13 +3294,23 @@ function C.eraseSites()
   return sites
 end
 
+-- The eraser's map tables (tile flags, organism numbers), read once: the eraser choice patches
+-- the instruction this pattern ends in, the addresses themselves stay.
+function C.eraseTables()
+  if C.tables == nil then
+    local found = scan(K.AOB_ERASE_TABLES, "the eraser's map tables")
+    C.tables = { flags = rd32(found + K.ERASE_TABLES.flags), numbers = rd32(found + K.ERASE_TABLES.numbers) }
+  end
+  return C.tables
+end
+
 function C.patchEraser(self)
-  local tables = scan(K.AOB_ERASE_TABLES, "the eraser's map tables")
+  local tables = C.eraseTables()
   for _, found in ipairs(C.eraseSites()) do
     local site = found + K.ERASE_ROCK.site
     patchJump(self, site, K.ERASE_ROCK.size, core.allocateAssembly(templates.eraseInvisible, {
-      ROCK_BASE = rd32(found + K.ERASE_ROCK.base), FLAGS = rd32(tables + K.ERASE_TABLES.flags),
-      NUMBERS = rd32(tables + K.ERASE_TABLES.numbers), KEEP_FLAGS = (~K.ROCK_TILE_FLAG) & 0xFFFFFFFF,
+      ROCK_BASE = rd32(found + K.ERASE_ROCK.base), FLAGS = tables.flags,
+      NUMBERS = tables.numbers, KEEP_FLAGS = (~K.ROCK_TILE_FLAG) & 0xFFFFFFFF,
       REMOVE_ROCK = readCallTarget(site, K.ERASE_ROCK.call, "removeRock"), BACK = site + K.ERASE_ROCK.size,
     }))
   end
@@ -5228,9 +5240,11 @@ function C.patchTextureMask(self, G, data)
   local stubs = {}
   local tree = scan(K.AOB_MASK_TREE, "placeTree's tile test")
   local TM = K.MASK_TREE
+  local loose = data.rocksAndWater or core.allocate(4, true)   -- Vegetation on rocks and water
   stubs[#stubs + 1] = { tree, TM.size, C.assemble("treeMask", {
     MASK_CHECK = check, TREE_LEAVE = nextOf(tree, TM.leave), LOGIC = rd32(tree + TM.logic),
-    TEST_MASK = rd32(tree + TM.test), BACK = tree + TM.size,
+    TEST_MASK = rd32(tree + TM.test), BACK = tree + TM.size, FLAG = loose, GAME_MODE = G.gameMode,
+    MAP_EDITOR = K.MAP_EDITOR, LOOSE_MASK = rd32(tree + TM.test) & ~K.TREE_GROUND.loose,
   }) }
   local rock = scan(K.AOB_MASK_ROCK, "placeRock")
   stubs[#stubs + 1] = { rock, K.MASK_ROCK.size, C.assemble("rockMask", {
@@ -5693,6 +5707,7 @@ end
 -- The eraser follows the choice: all three of its loops, in both of its functions (the brush
 -- and the area version), and with All or Animals it takes seagulls too.
 function C.patchEraserChoice(self, G, choice, gulls)
+  pcall(C.eraseTables)                     -- before this patch hides them from the search
   local E = C.eraserWords()
   local D = C.resolveBirds(G)
   local sites = C.eraseSites()

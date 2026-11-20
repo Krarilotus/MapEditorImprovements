@@ -2161,6 +2161,13 @@ pop edx
 pop ecx
 pop eax
 je TREE_LEAVE
+cmp byte [FLAG],0
+je strict_test
+cmp dword [GAME_MODE],MAP_EDITOR
+jne strict_test
+test dword [edi+ebp*4+LOGIC],LOOSE_MASK
+jmp BACK
+strict_test:
 test dword [edi+ebp*4+LOGIC],TEST_MASK
 jmp BACK
 ]]
