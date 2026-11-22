@@ -566,6 +566,16 @@ K.MAP_CENTRE = 200
 K.AOB_KEEP_TABLE_A = "0F BF D0 83 C2 C4 8D 0C 52 C1 E1 05 81 C1 ? ? ? ?"
 K.AOB_KEEP_PREVIEW = "8B 0D ? ? ? ? 8B 15 ? ? ? ? 51 56 50 52 B9 ? ? ? ? E8"
 K.KEEP_TABLES = { a = 14, b = 18, c = 7, call = 21, rows = 3 }
+-- Only buildings placed as several parts turn (placeBuilding's own placers, by building type):
+-- barracks 8/9, engineers' guild 24, tunnellers' guild 25, oil smelter 28, keeps 40-44. The chosen
+-- tool (TriggerPlaceBuilding `mov ecx,[tool] / cmp ecx,0x65 / mov edx,..`) and
+-- convertCommandBuildingTypeToBuildingType (`push ebx / mov ecx,BuildingsState / mov [..],edx /
+-- call`).
+K.ROTATING_TYPES = { [8] = true, [9] = true, [24] = true, [25] = true, [28] = true, [40] = true, [41] = true,
+  [42] = true, [43] = true, [44] = true }
+K.AOB_CHOSEN_TOOL = "8B 0D ? ? ? ? 83 F9 65 8B 15"
+K.AOB_TOOL_TYPE = "53 B9 ? ? ? ? 89 96 ? ? ? ? E8"
+K.TOOL_TYPE = { this = 2, call = 12 }
 K.AOB_PLACE_ROTATION = "83 F8 0F 75 08 89 96 ? ? ? ? EB 0B 99 2B C2 D1 F8 89 86 ? ? ? ?"
 K.PLACE_ROTATION = 7
 K.ROTATIONS = { { "Default" }, { "90\xB0", 2 }, { "180\xB0", 4 }, { "270\xB0", 6 }, { "Location based", "location" } }
@@ -7896,6 +7906,15 @@ function C.buildingRotation(self, G, B, data, head, options)
   local result = rd32(turn + K.KEEP_TURN.result)
   local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
   local placeRotation = R.tileMap + rd32(scan(K.AOB_PLACE_ROTATION, "the placement rotation") + K.PLACE_ROTATION)
+  local chosenTool = rd32(scan(K.AOB_CHOSEN_TOOL, "the chosen building") + 2)
+  local typeSite = scan(K.AOB_TOOL_TYPE, "the building types")
+  local buildings = rd32(typeSite + K.TOOL_TYPE.this)
+  local typeOf = core.exposeCode(readCallTarget(typeSite, K.TOOL_TYPE.call, "the building types"), 2, 1)
+  local function turns()
+    local tool = rd32(chosenTool)
+    if tool <= 0 or tool > 0x200 then return false end
+    return K.ROTATING_TYPES[typeOf(buildings, tool) & 0xFFFF] == true
+  end
   -- the keep's preview: its parts where the chosen orientation puts them
   do
     local KT = K.KEEP_TABLES
@@ -7974,7 +7993,7 @@ function C.buildingRotation(self, G, B, data, head, options)
     local listHeight = open and #K.ROTATIONS * box.option or 0
     C.markRect(rect, box.x, box.y - listHeight, box.width, box.height + listHeight)
     for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, open and 0 or 1) end
-    local o = orientation()
+    local o = turns() and orientation() or rd32(Q.default)   -- other buildings keep their look
     wr32(Q.address, o)
     wr32(Q.wanted, o)
     -- the cursor preview turns with it (placeBuilding sets the same from the orientation)
