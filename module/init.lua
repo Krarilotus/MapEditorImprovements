@@ -555,6 +555,11 @@ K.ORIENTATION = 14
 K.AOB_KEEP_TURN = "68 C8 00 00 00 8D 50 D5 68 C8 00 00 00 51 89 56 28 8D 51 D5 89 4E 34 50 B9 ? ? ? ? 89 46 30 89 56 2C E8 ? ? ? ? A1 ? ? ? ? 25 FE FF 00 00"
 K.KEEP_TURN = { this = 25, call = 35, result = 41 }
 K.MAP_CENTRE = 200
+-- placeBuilding: `cmp eax,0xF / jne / mov [esi+rotation],edx / jmp / cdq / sub eax,edx / sar eax,1 /
+-- mov [esi+rotation],eax`: TileMapState's placement rotation (orientation / 2), which the placement
+-- check - and so the cursor preview with the keep's parts - reads.
+K.AOB_PLACE_ROTATION = "83 F8 0F 75 08 89 96 ? ? ? ? EB 0B 99 2B C2 D1 F8 89 86 ? ? ? ?"
+K.PLACE_ROTATION = 7
 K.ROTATIONS = { { "Default" }, { "90\xB0", 2 }, { "180\xB0", 4 }, { "270\xB0", 6 }, { "Location based", "location" } }
 K.ROTATION_BOX = { x = 12, y = 420, width = 150, height = 22, option = 20 }
 -- The right-click ring's compass (45): `cmp eax,3 / jne / mov edx,[next] / push edx / mov ecx,
@@ -7882,6 +7887,7 @@ function C.buildingRotation(self, G, B, data, head, options)
   local towards = core.exposeCode(readCallTarget(turn, K.KEEP_TURN.call, "the direction"), 5, 1)
   local result = rd32(turn + K.KEEP_TURN.result)
   local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
+  local placeRotation = R.tileMap + rd32(scan(K.AOB_PLACE_ROTATION, "the placement rotation") + K.PLACE_ROTATION)
   if not C.frameHooked then
     local site = scan(K.AOB_FRAME, "the map drawing") + K.FRAME.site
     expectBytes(site, { 0x8B, 0x0D }, "the map drawing")
@@ -7906,6 +7912,7 @@ function C.buildingRotation(self, G, B, data, head, options)
   local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
   local text = core.allocate(64, true)
   local open = false
+  local editorRotation = false
   local rect = C.takeRect(data)            -- clicks on the list do not reach the map
   local function location()
     if rd32(R.flatView) ~= 0 then flatSetup(R.viewport) else mouseSetup(R.viewport) end
@@ -7929,6 +7936,10 @@ function C.buildingRotation(self, G, B, data, head, options)
   end
   local function draw()
     if rd32(R.gameMode) ~= K.MAP_EDITOR then
+      if editorRotation then                 -- the game's own preview again
+        wr32(placeRotation, 0)
+        editorRotation = false
+      end
       wr32(head + ITEM_WIDTH, 0)             -- stays drawn (and so able to come back), never clicked
       for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, 1) end
       open = false
@@ -7942,6 +7953,9 @@ function C.buildingRotation(self, G, B, data, head, options)
     local o = orientation()
     wr32(Q.address, o)
     wr32(Q.wanted, o)
+    -- the cursor preview turns with it (placeBuilding sets the same from the orientation)
+    wr32(placeRotation, (o == 0xF) and 0 or (o // 2))
+    editorRotation = true
     local ox = rd32(B.menu + MENU_X) + rd32(G.cameraX)
     local oy = rd32(B.menu + MENU_Y) + rd32(G.cameraY)
     local white = rd32(G.pixelFormat) == 0x565 and 0xFFFF or 0x7FFF
