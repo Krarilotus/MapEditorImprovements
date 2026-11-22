@@ -997,6 +997,42 @@ mov ecx,UNITS
 jmp BACK
 ]]
 
+-- After the map editor changes the map size (replacing `mov ecx,AFTER_THIS` after the size is
+-- set and the cut-off area cleared): the viewport's tile map, its border tiles and the camera
+-- bounds are worked out again, as loading a map does, so the cut-off tiles are off at once.
+templates.sizeRefresh = [[
+pushad
+cmp dword [GAME_MODE],MAP_EDITOR
+jne size_refresh_done
+mov ecx,VIEWPORT
+call BUILD
+mov ecx,VIEWPORT
+call TWEAK
+mov ecx,VIEWPORT
+call BOUNDS
+size_refresh_done:
+popad
+mov ecx,AFTER_THIS
+jmp BACK
+]]
+
+-- setViewportBasedOnMapSize, replacing `cmp [ecx+0x78],edx / jge / mov [ecx+0x78],edx` (edx/edi:
+-- the lowest and highest camera x, esi/ebx: y): in the map editor one tile more on every side.
+templates.cameraEdge = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne edge_kept
+sub edx,TILE_X
+add edi,TILE_X
+sub esi,TILE_Y
+add ebx,TILE_Y
+edge_kept:
+cmp [ecx+0x78],edx
+jge edge_low_ok
+mov [ecx+0x78],edx
+edge_low_ok:
+jmp BACK
+]]
+
 -- placeKeep's ground painter (thiscall, 6 arguments): in the map editor the ground stays as it is.
 templates.keepGround = [[
 cmp dword [GAME_MODE],MAP_EDITOR

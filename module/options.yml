@@ -1058,6 +1058,22 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.map_settings.size_refresh
+    name: map-editor-improvements-map-settings-size-refresh
+    text: '{{map_settings_size_refresh}}'
+    tooltip: '{{map_settings_size_refresh_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.map_settings.camera_edge
+    name: map-editor-improvements-map-settings-camera-edge
+    text: '{{map_settings_camera_edge}}'
+    tooltip: '{{map_settings_camera_edge_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.menu.compass
     name: map-editor-improvements-menu-compass
     text: '{{menu_compass}}'

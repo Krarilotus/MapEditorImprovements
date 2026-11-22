@@ -102,7 +102,7 @@ local DEFAULTS = {
     wall_tools = true },
   herds = { panel = true, bird_bins = true, animal_bin = true, group_warning = true },
   eraser = { choice = true, seagulls = true },
-  map_settings = { show_locked = true, button = true, menu = true },
+  map_settings = { show_locked = true, button = true, menu = true, size_refresh = true, camera_edge = true },
   heights = { max_height = true, tool_options = true, invert_key_on = true, invert_key = "ctrl" },
 }
 
@@ -573,6 +573,17 @@ K.AOB_UNIT_COLOUR = "51 50 50 B9 ? ? ? ? E8 ? ? ? ? 5F 5E 5D 5B 83 C4 1C C3"
 K.UNIT_COLOUR = { site = 1, size = 7, units = 3 }
 K.UNIT_TABS = { [26] = true, [29] = true }
 K.UNIT_COLOUR_PANEL = { x = 330, gap = 4, label = "Unit display player:" }
+-- Map size changes (47): the size action's tail `mov ecx,TileMapState / call / mov ecx,X /
+-- mov [..],1 / call / push 1 / mov ecx,X / call`, patched at its second `mov ecx`; the map load's
+-- viewport calls `mov ecx,viewport / mov [..],ebp / mov [..],edx / call bounds / mov ecx,viewport /
+-- call build / mov ecx,viewport / call tweak`; the camera clamp in setViewportBasedOnMapSize.
+K.AOB_SIZE_TAIL = "B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? C7 05 ? ? ? ? 01 00 00 00 E8 ? ? ? ? 6A 01 B9 ? ? ? ? E8"
+K.SIZE_TAIL = { site = 10, size = 5 }
+K.AOB_VIEWPORT_LOAD = "B9 ? ? ? ? 89 2D ? ? ? ? 89 15 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8"
+K.VIEWPORT_LOAD = { viewport = 1, bounds = 17, build = 27, tweak = 37 }
+K.AOB_CAMERA_CLAMP = "39 51 78 7D 03 89 51 78 39 79 78 7E 03 89 79 78 39 71 7C"
+K.CAMERA_CLAMP = { size = 8 }
+K.CAMERA_EDGE = { x = 32, y = 16 }       -- one tile, in the viewport's camera units
 K.AOB_KEEP_GROUND = { "6A 02 6A 00 6A 06 03 D3 52 50 55 8B CE E8", "6A 02 6A 00 6A 06 03 CB 51 50 55 8B CE E8" }
 K.KEEP_GROUND_CALL = 13
 K.KEEP_EPILOGUE = { 0x78, { 0x5F, 0x5E, 0x5D, 0x5B, 0x83, 0xC4, 0x1C, 0xC2, 0x1C, 0x00 } }
@@ -6325,6 +6336,7 @@ local function enableMenu(self, O)
   resolveMenu(G)
   resolveDrawing(G)
   resolveCounters(G)
+  C.gameModeOf(G)                          -- the landscape patches test it too
   if O.variants then
     local ok, problem = pcall(resolveRocks, G)
     if not ok then
@@ -8069,6 +8081,36 @@ function C.unitColours(self, G, B, data, panel, crests)
   wr16(panel + ITEM_HIDDEN, 0)
 end
 
+-- The game mode word, from G or found again (the landscape menu's G may not have it).
+function C.gameModeOf(G)
+  if G.gameMode == nil then G.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND) end
+  return G.gameMode
+end
+
+-- 47.1: a smaller map size takes the cut-off tiles away at once (no reload needed).
+function C.patchSizeRefresh(self, G)
+  local load = scan(K.AOB_VIEWPORT_LOAD, "the map load's viewport setup")
+  local V = K.VIEWPORT_LOAD
+  local site = scan(K.AOB_SIZE_TAIL, "the map size change") + K.SIZE_TAIL.site
+  expectBytes(site, { 0xB9 }, "the map size change")
+  patchJump(self, site, K.SIZE_TAIL.size, core.allocateAssembly(templates.sizeRefresh, {
+    GAME_MODE = C.gameModeOf(G), MAP_EDITOR = K.MAP_EDITOR, VIEWPORT = rd32(load + V.viewport),
+    BUILD = readCallTarget(load, V.build, "the viewport's tile map"),
+    TWEAK = readCallTarget(load, V.tweak, "the viewport's border tiles"),
+    BOUNDS = readCallTarget(load, V.bounds, "the camera bounds"),
+    AFTER_THIS = rd32(site + 1), BACK = site + K.SIZE_TAIL.size,
+  }))
+end
+
+-- 47.2: the map editor's camera goes one tile further on every side, so the edge tiles show whole.
+function C.patchCameraEdge(self, G)
+  local site = scan(K.AOB_CAMERA_CLAMP, "the camera bounds")
+  patchJump(self, site, K.CAMERA_CLAMP.size, core.allocateAssembly(templates.cameraEdge, {
+    GAME_MODE = C.gameModeOf(G), MAP_EDITOR = K.MAP_EDITOR, TILE_X = K.CAMERA_EDGE.x, TILE_Y = K.CAMERA_EDGE.y,
+    BACK = site + K.CAMERA_CLAMP.size,
+  }))
+end
+
 -- Keeps leave the ground as it is in the map editor: placeKeep's two calls of the ground painter
 -- (keep tiles: earth and stones 6 around, or thick scrub 3 around on scrub and oasis grass; the
 -- campfire area likewise) do nothing there.
@@ -8435,6 +8477,21 @@ local function enable(self, config)
   if setting(config, "rocks", "random_preview") == true then
     local ok, problem = pcall(enableRandomPreview, self)
     if not ok then log(WARNING, tostring(problem) .. "; the random rotation is left as it is") end
+  end
+  for _, entry in ipairs({ { "size_refresh", C.patchSizeRefresh, "smaller map sizes need a reload" },
+      { "camera_edge", C.patchCameraEdge, "the camera stops short of the map edge" } }) do
+    if setting(config, "map_settings", entry[1]) == true then
+      local ok, problem = pcall(function()
+        local G = self.landscape
+        if G == nil then
+          G = {}
+          resolveMenu(G)
+          resolveDrawing(G)
+        end
+        entry[2](self, G)
+      end)
+      if not ok then log(WARNING, tostring(problem) .. "; " .. entry[3]) end
+    end
   end
   if setting(config, "menu", "compass_turn") == true then
     local ok, problem = pcall(function()

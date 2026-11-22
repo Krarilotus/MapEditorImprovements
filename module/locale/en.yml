@@ -400,6 +400,10 @@ key_tab: 'Tab'
 menu_group: Editor menu
 menu_group_descr: |
   How the editor's menu at the bottom of the screen is drawn.
+map_settings_size_refresh: Smaller map sizes apply at once
+map_settings_size_refresh_tooltip: After the map size is made smaller in the map editor, the cut-off tiles turn black and blocked right away and the camera keeps to the new size, without saving and loading the map again.
+map_settings_camera_edge: Camera reaches the map edge
+map_settings_camera_edge_tooltip: In the map editor the camera can move one tile further on every side, so the outermost tiles of the map show whole.
 menu_compass: Compass in the top left corner
 menu_compass_tooltip: The compass of the right-click ring is always shown in the map editor, below the undo buttons, pointing north as the map is turned.
 menu_compass_turn: Ctrl turns the map the other way
