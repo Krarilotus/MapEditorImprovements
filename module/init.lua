@@ -558,6 +558,14 @@ K.MAP_CENTRE = 200
 -- placeBuilding: `cmp eax,0xF / jne / mov [esi+rotation],edx / jmp / cdq / sub eax,edx / sar eax,1 /
 -- mov [esi+rotation],eax`: TileMapState's placement rotation (orientation / 2), which the placement
 -- check - and so the cursor preview with the keep's parts - reads.
+-- The keep layout tables (3 keep types x 4 orientations): doors etc. 24 bytes a row (the preview's
+-- `movsx edx,ax / add edx,-0x3C / lea ecx,[edx+edx*2] / shl ecx,5 / add ecx,TABLE`), the campfire
+-- area and the stockpile 8 bytes a row (placeKeep's `add ebx,[eax*8+..]` / `mov edi,[eax*8+..]`);
+-- the preview's call `mov ecx,[..] / mov edx,[..] / push ecx / push esi / push eax / push edx /
+-- mov ecx,TileMapState / call setConstructionGFXLayerBasedOnPlacementChecks`.
+K.AOB_KEEP_TABLE_A = "0F BF D0 83 C2 C4 8D 0C 52 C1 E1 05 81 C1 ? ? ? ?"
+K.AOB_KEEP_PREVIEW = "8B 0D ? ? ? ? 8B 15 ? ? ? ? 51 56 50 52 B9 ? ? ? ? E8"
+K.KEEP_TABLES = { a = 14, b = 18, c = 7, call = 21, rows = 3 }
 K.AOB_PLACE_ROTATION = "83 F8 0F 75 08 89 96 ? ? ? ? EB 0B 99 2B C2 D1 F8 89 86 ? ? ? ?"
 K.PLACE_ROTATION = 7
 K.ROTATIONS = { { "Default" }, { "90\xB0", 2 }, { "180\xB0", 4 }, { "270\xB0", 6 }, { "Location based", "location" } }
@@ -7888,6 +7896,22 @@ function C.buildingRotation(self, G, B, data, head, options)
   local result = rd32(turn + K.KEEP_TURN.result)
   local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
   local placeRotation = R.tileMap + rd32(scan(K.AOB_PLACE_ROTATION, "the placement rotation") + K.PLACE_ROTATION)
+  -- the keep's preview: its parts where the chosen orientation puts them
+  do
+    local KT = K.KEEP_TABLES
+    local previewSite = scan(K.AOB_KEEP_PREVIEW, "the building preview") + KT.call
+    local ok, problem = pcall(function()
+      C.patchCall(self, previewSite, core.allocateAssembly(templates.keepPreviewTurn, {
+        GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
+        PREVIEW = readCallTarget(previewSite, 0, "the building preview"),
+        TABLE_A = rd32(scan(K.AOB_KEEP_TABLE_A, "the keep layout") + KT.a),
+        TABLE_B = rd32(scan(K.AOB_KEEP_CAMPFIRE, "the keep's campfire area") + KT.b),
+        TABLE_C = rd32(scan(K.AOB_KEEP_STOCKPILE, "the keep's stockpile") + KT.c),
+        KEEP_ROWS = KT.rows,
+      }))
+    end)
+    if not ok then log(WARNING, tostring(problem) .. "; the keep's preview keeps its first orientation") end
+  end
   if not C.frameHooked then
     local site = scan(K.AOB_FRAME, "the map drawing") + K.FRAME.site
     expectBytes(site, { 0x8B, 0x0D }, "the map drawing")
@@ -8126,7 +8150,10 @@ function C.unitColours(self, G, B, data, panel, crests)
   local stride = rd32(walk + K.UNIT_WALK.stride)
   local first = rd32(walk + K.UNIT_WALK.next) - K.UNIT_WALK.nextAfterState - SEL.state   -- unit 0
   local selectedColour = nil
+  -- In the unit tabs the crests always choose the colour of new units; elsewhere a selection of
+  -- the current player's units (1-8) takes them over.
   local function selecting()
+    if K.UNIT_TABS[rd32(G.activeTab)] then return false end
     local p = rd32(player)
     return p >= 1 and p <= K.PLAYERS and rd32(units + SEL.counts + p * 4) > 0
   end

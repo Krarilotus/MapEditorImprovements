@@ -1067,6 +1067,85 @@ mov eax,[ORIENTATION]
 jmp BACK
 ]]
 
+-- The cursor preview (setConstructionGFXLayerBasedOnPlacementChecks, thiscall, 4 arguments)
+-- reads the keep layout tables (doors / campfire / stockpile, per keep type and orientation)
+-- always at orientation 0. In the map editor with a turn chosen (ROTATION: orientation / 2), the
+-- chosen orientation's rows are swapped into the first slot for the call and swapped back after.
+templates.keepPreviewTurn = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne preview_plain
+cmp dword [ROTATION],0
+je preview_plain
+call preview_swap
+push dword [esp+0x10]
+push dword [esp+0x10]
+push dword [esp+0x10]
+push dword [esp+0x10]
+call PREVIEW
+call preview_swap
+ret 0x10
+preview_plain:
+jmp PREVIEW
+preview_swap:
+pushad
+mov ebx,[ROTATION]
+xor ebp,ebp
+preview_type:
+; table A: 24 bytes a row
+mov eax,ebp
+shl eax,2
+lea esi,[eax+eax*2]
+shl esi,3
+add esi,TABLE_A
+lea edi,[ebx+ebx*2]
+shl edi,3
+add edi,esi
+mov ecx,6
+preview_a:
+mov eax,[esi]
+mov edx,[edi]
+mov [esi],edx
+mov [edi],eax
+add esi,4
+add edi,4
+dec ecx
+jnz preview_a
+; tables B and C: 8 bytes a row
+mov eax,ebp
+shl eax,5
+lea esi,[eax+TABLE_B]
+lea edi,[esi+ebx*8]
+mov ecx,2
+preview_b:
+mov eax,[esi]
+mov edx,[edi]
+mov [esi],edx
+mov [edi],eax
+add esi,4
+add edi,4
+dec ecx
+jnz preview_b
+mov eax,ebp
+shl eax,5
+lea esi,[eax+TABLE_C]
+lea edi,[esi+ebx*8]
+mov ecx,2
+preview_c:
+mov eax,[esi]
+mov edx,[edi]
+mov [esi],edx
+mov [edi],eax
+add esi,4
+add edi,4
+dec ecx
+jnz preview_c
+inc ebp
+cmp ebp,KEEP_ROWS
+jb preview_type
+popad
+ret
+]]
+
 -- placeKeep's ground painter (thiscall, 6 arguments): in the map editor the ground stays as it is.
 templates.keepGround = [[
 cmp dword [GAME_MODE],MAP_EDITOR
