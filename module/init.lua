@@ -599,8 +599,9 @@ K.ALL_CHANGED = 20
 -- ... and before those viewport calls the load clears the tiles' drawn pictures (`push pictures /
 -- push ebx / push 0x27420 / mov ecx,memory / mov [..],edi / call fillMemory_ByteValue`, thiscall,
 -- 3 arguments): tiles the new size leaves out keep none (black), the rest are drawn afresh.
-K.AOB_PICTURE_CLEAR = "68 ? ? ? ? 53 68 20 74 02 00 B9 ? ? ? ? 89 3D ? ? ? ? E8"
-K.PICTURE_CLEAR = { pictures = 1, size = 7, memory = 12, call = 22 }       -- one tile, in the viewport's camera units
+-- The map size word: the size action's `push eax / mov ecx,TileMapState / mov [size],eax`.
+K.AOB_SIZE_WORD = "50 B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? C7 05"
+K.SIZE_WORD = 7       -- one tile, in the viewport's camera units
 K.AOB_KEEP_GROUND = { "6A 02 6A 00 6A 06 03 D3 52 50 55 8B CE E8", "6A 02 6A 00 6A 06 03 CB 51 50 55 8B CE E8" }
 K.KEEP_GROUND_CALL = 13
 K.KEEP_EPILOGUE = { 0x78, { 0x5F, 0x5E, 0x5D, 0x5B, 0x83, 0xC4, 0x1C, 0xC2, 0x1C, 0x00 } }
@@ -8189,7 +8190,7 @@ function C.patchSizeRefresh(self, G)
   local load = scan(K.AOB_VIEWPORT_LOAD, "the map load's viewport setup")
   local V = K.VIEWPORT_LOAD
   local site = scan(K.AOB_SIZE_TAIL, "the map size change") + K.SIZE_TAIL.site
-  local clear = scan(K.AOB_PICTURE_CLEAR, "the tile pictures")
+  local sizeWord = rd32(scan(K.AOB_SIZE_WORD, "the map size") + K.SIZE_WORD)
   expectBytes(site, { 0xB9 }, "the map size change")
   patchJump(self, site, K.SIZE_TAIL.size, core.allocateAssembly(templates.sizeRefresh, {
     GAME_MODE = C.gameModeOf(G), MAP_EDITOR = K.MAP_EDITOR, VIEWPORT = rd32(load + V.viewport),
@@ -8198,8 +8199,27 @@ function C.patchSizeRefresh(self, G)
     BOUNDS = readCallTarget(load, V.bounds, "the camera bounds"),
     TILEMAP = rd32(site - K.SIZE_TAIL.site + 1),
     CHANGED = readCallTarget(scan(K.AOB_ALL_CHANGED, "the map redraw"), K.ALL_CHANGED, "the map redraw"),
-    PICTURES = rd32(clear + K.PICTURE_CLEAR.pictures), PICTURES_SIZE = rd32(clear + K.PICTURE_CLEAR.size),
-    MEMORY = rd32(clear + K.PICTURE_CLEAR.memory), FILL = readCallTarget(clear, K.PICTURE_CLEAR.call, "the memory fill"),
+    PAD = C.luaPad(function()
+      -- every tile the resize marked as border (0x10 / 0x20) is off, whatever the tweak did
+      local R = C.resolvePipette(G)
+      local T, on, flagged = R.tileMap, 0, 0
+      for y = 0, K.MAP_SIZE - 1 do
+        local row = rd32(R.rows + y * 12)
+        for x = 0, K.MAP_SIZE - 1 do
+          local at = R.validTiles + y * K.MAP_SIZE + x
+          if rd8(at) ~= 0 then
+            if (rd32(T + R.logic + (row + x) * 4) & K.MAP_BORDER) ~= 0 then
+              core.writeByte(at, 0)
+              flagged = flagged + 1
+            else
+              on = on + 1
+            end
+          end
+        end
+      end
+      log(INFO, string.format("%s: map size %d: %d tiles on, %d border tiles turned off", MODULE_NAME,
+        rd32(sizeWord), on, flagged))
+    end, "the map size change"),
     AFTER_THIS = rd32(site + 1), BACK = site + K.SIZE_TAIL.size,
   }))
 end
