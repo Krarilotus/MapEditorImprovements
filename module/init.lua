@@ -572,11 +572,15 @@ K.COMPASS_PICTURE = { [0] = 0, [2] = 3, [4] = 2, [6] = 1 }
 K.AOB_UNIT_COLOUR = "51 50 50 B9 ? ? ? ? E8 ? ? ? ? 5F 5E 5D 5B 83 C4 1C C3"
 K.UNIT_COLOUR = { site = 1, size = 7, units = 3 }
 K.UNIT_TABS = { [26] = true, [29] = true }
-K.UNIT_COLOUR_PANEL = { x = 330, gap = 4, label = "Unit display player:", above = 58 }
+K.UNIT_COLOUR_PANEL = { x = 330, gap = 4, label = "Unit display player:", selectedLabel = "Selected units:", above = 58 }
 -- The group spawner (TribesState, VAN 0x523030) the castle's unit tools use: `push ebx / push ebp /
 -- push edi / push edi / mov ecx,UnitsState / call spawnUnit / mov esi,eax / test esi,esi / je`.
 K.AOB_GROUP_COLOUR = "53 55 57 57 B9 ? ? ? ? E8 ? ? ? ? 8B F0 85 F6 74 1E"
 K.GROUP_COLOUR = { site = 2, size = 7, units = 3, sites = 2 }
+-- Selected units (46.2): UnitsState + 0x24 + player * 4 counts each player's selection; a unit
+-- (0x490 bytes, the walk's state word at +0x8C) is alive with state 2, selected by the player in
+-- its word +0xB2 (0: by nobody, so player 0 cannot select), drawn in the colours of +0x80.
+K.SELECTION = { counts = 0x24, state = 0x8C, alive = 2, selectedBy = 0xB2, colour = 0x80 }
 -- Map size changes (47): the size action's tail `mov ecx,TileMapState / call / mov ecx,X /
 -- mov [..],1 / call / push 1 / mov ecx,X / call`, patched at its second `mov ecx`; the map load's
 -- viewport calls `mov ecx,viewport / mov [..],ebp / mov [..],edx / call bounds / mov ecx,viewport /
@@ -591,7 +595,12 @@ K.CAMERA_EDGE = { x = 32, y = 16 }
 -- ... and the load's `push ebx / mov ecx,esi / call toggleFlatView / mov [..],ebx / mov [..],ebx /
 -- call setChangedLayerToThreeAndMapping0x40x40` (every tile drawn afresh).
 K.AOB_ALL_CHANGED = "53 8B CE E8 ? ? ? ? 89 1D ? ? ? ? 89 1D ? ? ? ? E8"
-K.ALL_CHANGED = 20       -- one tile, in the viewport's camera units
+K.ALL_CHANGED = 20
+-- ... and before those viewport calls the load clears the tiles' drawn pictures (`push pictures /
+-- push ebx / push 0x27420 / mov ecx,memory / mov [..],edi / call fillMemory_ByteValue`, thiscall,
+-- 3 arguments): tiles the new size leaves out keep none (black), the rest are drawn afresh.
+K.AOB_PICTURE_CLEAR = "68 ? ? ? ? 53 68 20 74 02 00 B9 ? ? ? ? 89 3D ? ? ? ? E8"
+K.PICTURE_CLEAR = { pictures = 1, size = 7, memory = 12, call = 22 }       -- one tile, in the viewport's camera units
 K.AOB_KEEP_GROUND = { "6A 02 6A 00 6A 06 03 D3 52 50 55 8B CE E8", "6A 02 6A 00 6A 06 03 CB 51 50 55 8B CE E8" }
 K.KEEP_GROUND_CALL = 13
 K.KEEP_EPILOGUE = { 0x78, { 0x5F, 0x5E, 0x5D, 0x5B, 0x83, 0xC4, 0x1C, 0xC2, 0x1C, 0x00 } }
@@ -3846,7 +3855,11 @@ function C.makeTreePreview(G, O, data)
     return drawX, drawY - lift
   end
 
-  return function()
+  local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = R.keyState }), 1, 0)
+  local wasDown, randomEntry = true, false
+  -- Draws the preview; answers "refused" when the tile under the mouse would not take the tree.
+  local function draw()
+    randomEntry = false
     if rd32(R.gameMode) ~= K.MAP_EDITOR or rd32(G.onMap) == 0 then return end
     local command = rd32(G.subtype)
     local treeType = G.plantTypes[command]
@@ -3856,6 +3869,7 @@ function C.makeTreePreview(G, O, data)
     if randomShrub and (exact == nil or exact.command ~= command)
         and command >= SHRUB_COMMANDS[1] and command <= SHRUB_COMMANDS[#SHRUB_COMMANDS] then
       -- the shrub the next random choice picks (as templates.plantType does)
+      randomEntry = true
       local pick = SHRUB_COMMANDS[1] + nextRandom(SHRUB_COMMANDS[#SHRUB_COMMANDS] - SHRUB_COMMANDS[1] + 1)
       if G.plantTypes[pick] ~= nil then treeType = G.plantTypes[pick] end
     end
@@ -3867,6 +3881,7 @@ function C.makeTreePreview(G, O, data)
       if O.growth then stage = math.max(0, math.min(MAX_STAGE, rd32(G.brush) - 1)) end
       local logs = data.felledLogs ~= nil and rd32(data.felledLogs) or 0
       local ours = data.felledCommand ~= nil and rd32(data.felledCommand) == command
+      if ours and (logs == K.RANDOM_FELLED or logs == K.RANDOM_STANDING) then randomEntry = true end
       if ours and logs == K.RANDOM_FELLED then
         -- the log count the next random choice gives (templates.felledTree)
         local felledStage = math.max(stage, K.SMALLEST_FELLED_STAGE)
@@ -3889,15 +3904,15 @@ function C.makeTreePreview(G, O, data)
     local x, y = rd32(R.mouseX), rd32(R.mouseY)
     if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return end
     -- Not where the tree cannot go: placeTree's tests on the tile, and the mask.
-    if rd8(R.validTiles + y * K.MAP_SIZE + x) == 0 then return end
+    if rd8(R.validTiles + y * K.MAP_SIZE + x) == 0 then return "refused" end
     local tile = rd32(R.rows + y * 12) + x
     local logic = rd32(T + R.logic + tile * 4) & 0xFFFFFFFF
     local refused = K.TREE_REFUSED
     if data.rocksAndWater ~= nil and rd8(data.rocksAndWater) ~= 0 then refused = refused & ~K.TREE_GROUND.loose end
-    if logic & refused ~= 0 or rd16(T + R.organism + tile * 2) ~= 0 then return end
+    if logic & refused ~= 0 or rd16(T + R.organism + tile * 2) ~= 0 then return "refused" end
     -- the room around a new tree, unless Trees next to obstacles is ticked
-    if not (data.nearObstacles ~= nil and rd8(data.nearObstacles) ~= 0) and not roomFree(treeType, tile, y) then return end
-    if not C.maskPeek(T, R, tile) then return end
+    if not (data.nearObstacles ~= nil and rd8(data.nearObstacles) ~= 0) and not roomFree(treeType, tile, y) then return "refused" end
+    if not C.maskPeek(T, R, tile) then return "refused" end
     local drawX, drawY = surface(x, y, tile)
     if drawX == nil then return end
     -- Where renderMap puts a tree: tile + (14, 6) - the origin of the tree's gm.
@@ -3915,6 +3930,16 @@ function C.makeTreePreview(G, O, data)
     wr32(G.spritePalette, spritePalette)
     wr32(t + TEXTURES_DIRECT_PALETTE, direct)
     wr32(t + TEXTURES_MODE, mode)
+  end
+  -- A click where the tree cannot go moves a random entry on to its next variant (nothing is
+  -- placed, the preview shows the new one).
+  return function()
+    local result = draw()
+    local down = (asyncKey(K.LEFT_BUTTON) % 0x10000) >= 0x8000
+    if down and not wasDown and result == "refused" and randomEntry then
+      wr32(data.seed, (rd32(data.seed) * K.RANDOM_MULTIPLIER + K.RANDOM_INCREMENT) & 0xFFFFFFFF)
+    end
+    wasDown = down
   end
 end
 
@@ -7610,7 +7635,7 @@ function C.build(G, B, O)
   if added.rotationHead ~= nil then
     local options = {}
     for i = 1, #K.ROTATIONS do options[i] = added["rotation" .. i] end
-    local ok, problem = pcall(C.buildingRotation, C.owner, G, B, added.rotationHead, options)
+    local ok, problem = pcall(C.buildingRotation, C.owner, G, B, data, added.rotationHead, options)
     if not ok then log(WARNING, tostring(problem) .. "; no building rotation") end
   end
   if added.keepCrests ~= nil then
@@ -7847,7 +7872,7 @@ end
 -- and, every frame in the map editor while the castle menu is up, the building orientation it
 -- asks for (Location based: as the keep would turn at the start of a match, from the tile under
 -- the mouse). Outside the editor the frame hook puts the game's own back.
-function C.buildingRotation(self, G, B, head, options)
+function C.buildingRotation(self, G, B, data, head, options)
   local Q = C.rotationState(G)
   local R = C.resolvePipette(G)
   local turn = scan(K.AOB_KEEP_TURN, "the keep's turn at the start of a match")
@@ -7870,6 +7895,7 @@ function C.buildingRotation(self, G, B, head, options)
   local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
   local text = core.allocate(64, true)
   local open = false
+  local rect = C.takeRect(data)            -- clicks on the list do not reach the map
   local function location()
     if rd32(R.flatView) ~= 0 then flatSetup(R.viewport) else mouseSetup(R.viewport) end
     local x, y = rd32(R.mouseX), rd32(R.mouseY)
@@ -7895,9 +7921,12 @@ function C.buildingRotation(self, G, B, head, options)
       wr32(head + ITEM_WIDTH, 0)             -- stays drawn (and so able to come back), never clicked
       for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, 1) end
       open = false
+      C.markRect(rect, 0, 0, 0, 0)
       return
     end
     wr32(head + ITEM_WIDTH, box.width)
+    local listHeight = open and #K.ROTATIONS * box.option or 0
+    C.markRect(rect, box.x, box.y - listHeight, box.width, box.height + listHeight)
     for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, open and 0 or 1) end
     wr32(Q.address, orientation())
     local ox = rd32(B.menu + MENU_X) + rd32(G.cameraX)
@@ -7942,6 +7971,8 @@ function C.buildingRotation(self, G, B, head, options)
     C.luaItem(o, box.x, box.y - (#K.ROTATIONS - i + 1) * box.option, box.width, box.option, function()
       wr32(Q.choice, i - 1)
       open = false
+      log(INFO, string.format("%s: building rotation %s (orientation now %d)", MODULE_NAME,
+        (K.ROTATIONS[i][1]:gsub("\xB0", " degrees")), orientation()))
     end, nil, "the rotation list")
     wr16(o + ITEM_HIDDEN, 1)
   end
@@ -8059,8 +8090,48 @@ function C.unitColours(self, G, B, data, panel, crests)
     C.luaItem(crests[p], x, top + TOOLTIP_PADDING, w, h, function() wr32(colour, p) end, nil, "the unit display player")
     wr16(crests[p] + ITEM_HIDDEN, 1)
   end
+  -- Selected units: the current player's (1-8) selection takes the panel over; a crest then
+  -- recolours them.
+  local units = rd32(site + K.UNIT_COLOUR.units)
+  local walk = scan(K.AOB_UNIT_WALK, "the units")
+  local SEL = K.SELECTION
+  local stride = rd32(walk + K.UNIT_WALK.stride)
+  local first = rd32(walk + K.UNIT_WALK.next) - K.UNIT_WALK.nextAfterState - SEL.state   -- unit 0
+  local selectedColour = nil
+  local function selecting()
+    local p = rd32(player)
+    return p >= 1 and p <= K.PLAYERS and rd32(units + SEL.counts + p * 4) > 0
+  end
+  local function eachSelected(fn)
+    local p = rd32(player)
+    for id = 1, rd32(units) - 1 do
+      local u = first + id * stride
+      if rd16(u + SEL.state) == SEL.alive and rd16(u + SEL.selectedBy) == p then fn(u) end
+    end
+  end
+  for p = 0, K.PLAYERS do
+    wr32(crests[p] + ITEM_ACTION, C.luaPad(function()
+      if selecting() then
+        eachSelected(function(u) wr16(u + SEL.colour, p) end)
+        selectedColour = p
+      else
+        wr32(colour, p)
+      end
+    end, "the unit display player"))
+  end
+  local lastCount = -1
   local function shown()
-    return rd32(R.gameMode) == K.MAP_EDITOR and K.UNIT_TABS[rd32(G.activeTab)] == true
+    if rd32(R.gameMode) ~= K.MAP_EDITOR then return false end
+    if selecting() then
+      local count = rd32(units + SEL.counts + rd32(player) * 4)
+      if count ~= lastCount then          -- a new selection: show the colour its first unit has
+        lastCount, selectedColour = count, nil
+        eachSelected(function(u) if selectedColour == nil then selectedColour = rd16(u + SEL.colour) end end)
+      end
+      return true
+    end
+    lastCount = -1
+    return K.UNIT_TABS[rd32(G.activeTab)] == true
   end
   C.luaItem(panel, 0, 0, 0, 0, nil, function()
     -- a new current player brings the choice along
@@ -8085,6 +8156,7 @@ function C.unitColours(self, G, B, data, panel, crests)
     local mode = rd32(t + TEXTURES_MODE)
     wr32(t + TEXTURES_MODE, MAP_LAYER)
     local chosen = rd32(colour)
+    if selecting() then chosen = selectedColour or -1 end
     for p = 0, K.PLAYERS do
       local sx, sy = ox + rd32(crests[p] + ITEM_X), oy + rd32(crests[p] + ITEM_Y)
       if p == 0 then
@@ -8097,6 +8169,7 @@ function C.unitColours(self, G, B, data, panel, crests)
     wr32(G.pencil + PENCIL_TARGET, target)
     local layer = rd32(G.textLayer)
     wr32(G.textLayer, MAP_LAYER)
+    writeCString(text, selecting() and P.selectedLabel or P.label)
     shadowedText(G.textManager, text, ox + P.x + TOOLTIP_PADDING, oy + top + (height - TOOLTIP_LINE) // 2 + 2,
       ALIGN_LEFT, TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
     wr32(G.textLayer, layer)
@@ -8115,6 +8188,7 @@ function C.patchSizeRefresh(self, G)
   local load = scan(K.AOB_VIEWPORT_LOAD, "the map load's viewport setup")
   local V = K.VIEWPORT_LOAD
   local site = scan(K.AOB_SIZE_TAIL, "the map size change") + K.SIZE_TAIL.site
+  local clear = scan(K.AOB_PICTURE_CLEAR, "the tile pictures")
   expectBytes(site, { 0xB9 }, "the map size change")
   patchJump(self, site, K.SIZE_TAIL.size, core.allocateAssembly(templates.sizeRefresh, {
     GAME_MODE = C.gameModeOf(G), MAP_EDITOR = K.MAP_EDITOR, VIEWPORT = rd32(load + V.viewport),
@@ -8123,6 +8197,8 @@ function C.patchSizeRefresh(self, G)
     BOUNDS = readCallTarget(load, V.bounds, "the camera bounds"),
     TILEMAP = rd32(site - K.SIZE_TAIL.site + 1),
     CHANGED = readCallTarget(scan(K.AOB_ALL_CHANGED, "the map redraw"), K.ALL_CHANGED, "the map redraw"),
+    PICTURES = rd32(clear + K.PICTURE_CLEAR.pictures), PICTURES_SIZE = rd32(clear + K.PICTURE_CLEAR.size),
+    MEMORY = rd32(clear + K.PICTURE_CLEAR.memory), FILL = readCallTarget(clear, K.PICTURE_CLEAR.call, "the memory fill"),
     AFTER_THIS = rd32(site + 1), BACK = site + K.SIZE_TAIL.size,
   }))
 end

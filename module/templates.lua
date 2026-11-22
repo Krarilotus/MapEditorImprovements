@@ -1023,6 +1023,11 @@ mov ecx,VIEWPORT
 call TWEAK
 mov ecx,VIEWPORT
 call BOUNDS
+push PICTURES
+push 0
+push PICTURES_SIZE
+mov ecx,MEMORY
+call FILL
 mov ecx,TILEMAP
 call CHANGED
 size_refresh_done:
