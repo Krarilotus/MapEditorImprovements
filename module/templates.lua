@@ -1017,6 +1017,9 @@ templates.sizeRefresh = [[
 pushad
 cmp dword [GAME_MODE],MAP_EDITOR
 jne size_refresh_done
+push dword [SIZE_WORD]
+mov ecx,TILEMAP
+call BORDERS
 mov ecx,VIEWPORT
 call BUILD
 mov ecx,VIEWPORT
@@ -1046,6 +1049,21 @@ cmp [ecx+0x78],edx
 jge edge_low_ok
 mov [ecx+0x78],edx
 edge_low_ok:
+jmp BACK
+]]
+
+-- TriggerPlaceBuilding's default orientation, replacing `mov eax,[ORIENTATION]`: in the map
+-- editor with the rotation list on, the orientation the list asks for (logged by PAD).
+templates.rotationRead = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne rotation_plain
+cmp dword [ROTATION_ON],0
+je rotation_plain
+call PAD
+mov eax,[WANTED]
+jmp BACK
+rotation_plain:
+mov eax,[ORIENTATION]
 jmp BACK
 ]]
 

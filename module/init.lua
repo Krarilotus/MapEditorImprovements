@@ -601,7 +601,7 @@ K.ALL_CHANGED = 20
 -- 3 arguments): tiles the new size leaves out keep none (black), the rest are drawn afresh.
 -- The map size word: the size action's `push eax / mov ecx,TileMapState / mov [size],eax`.
 K.AOB_SIZE_WORD = "50 B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? C7 05"
-K.SIZE_WORD = 7       -- one tile, in the viewport's camera units
+K.SIZE_WORD = 7                          -- then `call resetHeightAndMapBorders` at +11       -- one tile, in the viewport's camera units
 K.AOB_KEEP_GROUND = { "6A 02 6A 00 6A 06 03 D3 52 50 55 8B CE E8", "6A 02 6A 00 6A 06 03 CB 51 50 55 8B CE E8" }
 K.KEEP_GROUND_CALL = 13
 K.KEEP_EPILOGUE = { 0x78, { 0x5F, 0x5E, 0x5D, 0x5B, 0x83, 0xC4, 0x1C, 0xC2, 0x1C, 0x00 } }
@@ -7863,7 +7863,8 @@ function C.rotationState(G)
   if C.rotation ~= nil then return C.rotation end
   local address = rd32(scan(K.AOB_ORIENTATION, "the building orientation") + K.ORIENTATION)
   local Q = { address = address, on = core.allocate(4, true), default = core.allocate(4, true),
-    choice = core.allocate(4, true) }
+    choice = core.allocate(4, true), wanted = core.allocate(4, true),
+    site = scan(K.AOB_ORIENTATION, "the building orientation") + K.ORIENTATION - 1 }
   wr32(Q.default, rd32(address))
   C.rotation = Q
   return Q
@@ -7891,6 +7892,15 @@ function C.buildingRotation(self, G, B, data, head, options)
     C.frameHooked = true
   end
   wr32(Q.on, 1)
+  -- the click itself takes the list's orientation (whatever else sets the game's word)
+  expectBytes(Q.site, { 0xA1 }, "the building orientation")
+  patchJump(self, Q.site, 5, core.allocateAssembly(templates.rotationRead, {
+    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION_ON = Q.on, WANTED = Q.wanted,
+    ORIENTATION = Q.address, BACK = Q.site + 5,
+    PAD = C.luaPad(function()
+      log(INFO, string.format("%s: placing a building with orientation %d", MODULE_NAME, rd32(Q.wanted)))
+    end, "the rotation log"),
+  }))
   local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
   local colourBox = core.exposeCode(G.colourBox, 6, 1)
   local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
@@ -7929,7 +7939,9 @@ function C.buildingRotation(self, G, B, data, head, options)
     local listHeight = open and #K.ROTATIONS * box.option or 0
     C.markRect(rect, box.x, box.y - listHeight, box.width, box.height + listHeight)
     for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, open and 0 or 1) end
-    wr32(Q.address, orientation())
+    local o = orientation()
+    wr32(Q.address, o)
+    wr32(Q.wanted, o)
     local ox = rd32(B.menu + MENU_X) + rd32(G.cameraX)
     local oy = rd32(B.menu + MENU_Y) + rd32(G.cameraY)
     local white = rd32(G.pixelFormat) == 0x565 and 0xFFFF or 0x7FFF
@@ -8190,14 +8202,19 @@ function C.patchSizeRefresh(self, G)
   local load = scan(K.AOB_VIEWPORT_LOAD, "the map load's viewport setup")
   local V = K.VIEWPORT_LOAD
   local site = scan(K.AOB_SIZE_TAIL, "the map size change") + K.SIZE_TAIL.site
-  local sizeWord = rd32(scan(K.AOB_SIZE_WORD, "the map size") + K.SIZE_WORD)
+  local sizeSite = scan(K.AOB_SIZE_WORD, "the map size")
+  local sizeWord = rd32(sizeSite + K.SIZE_WORD)
   expectBytes(site, { 0xB9 }, "the map size change")
   patchJump(self, site, K.SIZE_TAIL.size, core.allocateAssembly(templates.sizeRefresh, {
     GAME_MODE = C.gameModeOf(G), MAP_EDITOR = K.MAP_EDITOR, VIEWPORT = rd32(load + V.viewport),
     BUILD = readCallTarget(load, V.build, "the viewport's tile map"),
     TWEAK = readCallTarget(load, V.tweak, "the viewport's border tiles"),
     BOUNDS = readCallTarget(load, V.bounds, "the camera bounds"),
-    TILEMAP = rd32(site - K.SIZE_TAIL.site + 1),
+    TILEMAP = rd32(site - K.SIZE_TAIL.site + 1), SIZE_WORD = sizeWord,
+    -- resetHeightAndMapBorders: the size action calls it, then resetAreaBasedOnLogicalLayer
+    -- empties every border tile and clears its flags as well; flagged again, the tiles turn off
+    -- below and are drawn black, as after loading the map.
+    BORDERS = readCallTarget(sizeSite, K.SIZE_WORD + 4, "the map borders"),
     CHANGED = readCallTarget(scan(K.AOB_ALL_CHANGED, "the map redraw"), K.ALL_CHANGED, "the map redraw"),
     PAD = C.luaPad(function()
       -- every tile the resize marked as border (0x10 / 0x20) is off, whatever the tweak did
