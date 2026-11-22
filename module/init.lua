@@ -8037,9 +8037,11 @@ function C.unitColours(self, G, B, data, panel, crests)
   local player = readOperand(click, K.TOWER_ENGINE.player, "the current player")
   local colour = core.allocate(4, true)
   wr32(colour, rd32(player))
+  -- read before the patch below overwrites these bytes
+  local units = rd32(site + K.UNIT_COLOUR.units)
   patchJump(self, site, K.UNIT_COLOUR.size, core.allocateAssembly(templates.unitColour, {
     GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, COLOUR = colour,
-    UNITS = rd32(site + K.UNIT_COLOUR.units), BACK = site + K.UNIT_COLOUR.size,
+    UNITS = units, BACK = site + K.UNIT_COLOUR.size,
   }))
   data.unitColour = colour
   -- the castle's unit tools place their units as a group
@@ -8092,7 +8094,6 @@ function C.unitColours(self, G, B, data, panel, crests)
   end
   -- Selected units: the current player's (1-8) selection takes the panel over; a crest then
   -- recolours them.
-  local units = rd32(site + K.UNIT_COLOUR.units)
   local walk = scan(K.AOB_UNIT_WALK, "the units")
   local SEL = K.SELECTION
   local stride = rd32(walk + K.UNIT_WALK.stride)
