@@ -400,6 +400,10 @@ key_tab: 'Tab'
 menu_group: Editor menu
 menu_group_descr: |
   How the editor's menu at the bottom of the screen is drawn.
+menu_compass: Compass in the top left corner
+menu_compass_tooltip: The compass of the right-click ring is always shown in the map editor, below the undo buttons, pointing north as the map is turned.
+menu_compass_turn: Ctrl turns the map the other way
+menu_compass_turn_tooltip: Holding Ctrl while moving onto the compass of the right-click ring turns the map 90 degrees counter-clockwise instead of clockwise.
 menu_dust_clouds: Dust clouds cannot crash the game
 menu_dust_clouds_tooltip: |
   A dust cloud whose movement data has been lost made the game divide by zero and crash. With
@@ -416,6 +420,12 @@ castle_all_keeps: Manor house and stronghold on every map
 castle_all_keeps_tooltip: The keeps menu offers the manor house and the stronghold on multiplayer maps too.
 castle_player_zero: Player 0 shield
 castle_player_zero_tooltip: A white ninth shield in the middle of the player shields chooses player 0, who can own buildings and units on a map too.
+castle_keep_ground: Keeps leave the ground as it is
+castle_keep_ground_tooltip: A keep placed in the map editor no longer paints earth and stones (or thick scrub) on the ground around itself and its campfire.
+castle_rotation: Building rotation list
+castle_rotation_tooltip: "A Rotation list above the castle menu: Default, 90, 180 and 270 degrees, or Location based (as an AI keep would turn there at the start of a match). The placement preview and the placed buildings follow it, in the map editor only."
+castle_unit_colour: Unit display player
+castle_unit_colour_tooltip: "Above the European and Arabian unit menus: a crest per player 0-8. Units placed in the map editor keep belonging to the current player but are drawn in the chosen player's colours. Choosing another current player picks that player's crest again."
 castle_keep_crests: Active keep crests
 castle_keep_crests_tooltip: Every keep shows its owner's shield above it; the player's active keep (where the lord, the starting units and new peasants appear) shows it framed. Click a shield to make that keep active, or click the active one to leave the player without one. A new keep no longer takes over the active keep, and when the active keep is removed another keep of that player takes over. The player's main stockpile always follows the active keep (the game kept the first stockpile ever placed, so with several keeps the AI found its castle spot blocked and used no castle plan). Needs Several keeps.
 castle_keep_crest_tooltip: Keep crest tooltip
