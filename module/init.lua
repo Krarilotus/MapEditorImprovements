@@ -572,7 +572,11 @@ K.COMPASS_PICTURE = { [0] = 0, [2] = 3, [4] = 2, [6] = 1 }
 K.AOB_UNIT_COLOUR = "51 50 50 B9 ? ? ? ? E8 ? ? ? ? 5F 5E 5D 5B 83 C4 1C C3"
 K.UNIT_COLOUR = { site = 1, size = 7, units = 3 }
 K.UNIT_TABS = { [26] = true, [29] = true }
-K.UNIT_COLOUR_PANEL = { x = 330, gap = 4, label = "Unit display player:" }
+K.UNIT_COLOUR_PANEL = { x = 330, gap = 4, label = "Unit display player:", above = 58 }
+-- The group spawner (TribesState, VAN 0x523030) the castle's unit tools use: `push ebx / push ebp /
+-- push edi / push edi / mov ecx,UnitsState / call spawnUnit / mov esi,eax / test esi,esi / je`.
+K.AOB_GROUP_COLOUR = "53 55 57 57 B9 ? ? ? ? E8 ? ? ? ? 8B F0 85 F6 74 1E"
+K.GROUP_COLOUR = { site = 2, size = 7, units = 3, sites = 2 }
 -- Map size changes (47): the size action's tail `mov ecx,TileMapState / call / mov ecx,X /
 -- mov [..],1 / call / push 1 / mov ecx,X / call`, patched at its second `mov ecx`; the map load's
 -- viewport calls `mov ecx,viewport / mov [..],ebp / mov [..],edx / call bounds / mov ecx,viewport /
@@ -583,7 +587,11 @@ K.AOB_VIEWPORT_LOAD = "B9 ? ? ? ? 89 2D ? ? ? ? 89 15 ? ? ? ? E8 ? ? ? ? B9 ? ? 
 K.VIEWPORT_LOAD = { viewport = 1, bounds = 17, build = 27, tweak = 37 }
 K.AOB_CAMERA_CLAMP = "39 51 78 7D 03 89 51 78 39 79 78 7E 03 89 79 78 39 71 7C"
 K.CAMERA_CLAMP = { size = 8 }
-K.CAMERA_EDGE = { x = 32, y = 16 }       -- one tile, in the viewport's camera units
+K.CAMERA_EDGE = { x = 32, y = 16 }
+-- ... and the load's `push ebx / mov ecx,esi / call toggleFlatView / mov [..],ebx / mov [..],ebx /
+-- call setChangedLayerToThreeAndMapping0x40x40` (every tile drawn afresh).
+K.AOB_ALL_CHANGED = "53 8B CE E8 ? ? ? ? 89 1D ? ? ? ? 89 1D ? ? ? ? E8"
+K.ALL_CHANGED = 20       -- one tile, in the viewport's camera units
 K.AOB_KEEP_GROUND = { "6A 02 6A 00 6A 06 03 D3 52 50 55 8B CE E8", "6A 02 6A 00 6A 06 03 CB 51 50 55 8B CE E8" }
 K.KEEP_GROUND_CALL = 13
 K.KEEP_EPILOGUE = { 0x78, { 0x5F, 0x5E, 0x5D, 0x5B, 0x83, 0xC4, 0x1C, 0xC2, 0x1C, 0x00 } }
@@ -1019,7 +1027,7 @@ K.TREE_REFUSED, K.TREE_FOOT_REFUSED = 0x703E25B5, 0x10100500
 -- push eax / mov ecx,organisms / call / push eax / mov ecx,organisms / call / lea ecx,[esi+esi*2] /
 -- ... / mov eax,[eax*4+room]`): neighbours with these flags (border) end the look.
 K.AOB_TREE_ROOM = "0F BF 44 24 24 55 6A 03 50 B9 ? ? ? ? E8 ? ? ? ? 50 B9 ? ? ? ? E8"
-K.TREE_ROOM = { this = 10, first = 14, second = 25, room = { 0x3A, { 0x8B, 0x04, 0x85 } } }
+K.TREE_ROOM = { this = 10, first = 14, second = 25, room = { 0x3A, { 0x8B, 0x04, 0x85 } }, kinds = 64, most = 64 }
 K.TREE_ROOM_EDGE = 0x10
 -- The variant panels' pictures: the building composed from its tiles, made smaller to fit.
 K.VARIANT_THUMB = { width = 72, height = 84 }
@@ -3762,17 +3770,19 @@ function C.makeTreePreview(G, O, data)
   -- (`push 3 / push type / call; push eax / call; ... mov eax,[eax*4+room]`).
   local roomSite = scan(K.AOB_TREE_ROOM, "the tree's room check")
   local RM = K.TREE_ROOM
-  local kindOf = core.exposeCode(readCallTarget(roomSite, RM.first, "the tree kind"), 3, 1)
-  local kindOf2 = core.exposeCode(readCallTarget(roomSite, RM.second, "the tree kind"), 2, 1)
+  -- RM.first is mapUITreeTypeToLogicalTreeType(command) (one argument; G.plantTypes holds its
+  -- answers), RM.second takes that type and the 3 pushed before it.
+  local kindOf = core.exposeCode(readCallTarget(roomSite, RM.second, "the tree kind"), 3, 1)
   local organisms, roomTable = rd32(roomSite + RM.this), readOperand(roomSite, RM.room, "the tree's room check")
   local tileForBrush = core.exposeCode(R.tileForBrush, 7, 1)
   local out = core.allocate(8, true)
   local rooms = {}
   local function roomFree(treeType, tile, y)
     if rooms[treeType] == nil then
-      rooms[treeType] = rd32(roomTable + kindOf2(organisms, kindOf(organisms, treeType, 3)) * 4)
+      local kind = kindOf(organisms, treeType, 3)
+      rooms[treeType] = (kind >= 0 and kind < K.TREE_ROOM.kinds) and rd32(roomTable + kind * 4) or 0
     end
-    for i = 0, rooms[treeType] - 1 do
+    for i = 0, math.min(rooms[treeType], K.TREE_ROOM.most) - 1 do
       tileForBrush(T, 1, i, out, out + 4, tile, y)
       local near = rd32(out)
       if near < 0 or near >= K.MAP_TILES then break end
@@ -7882,12 +7892,12 @@ function C.buildingRotation(self, G, B, head, options)
   end
   local function draw()
     if rd32(R.gameMode) ~= K.MAP_EDITOR then
-      wr16(head + ITEM_HIDDEN, 1)
+      wr32(head + ITEM_WIDTH, 0)             -- stays drawn (and so able to come back), never clicked
       for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, 1) end
       open = false
       return
     end
-    wr16(head + ITEM_HIDDEN, 0)
+    wr32(head + ITEM_WIDTH, box.width)
     for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, open and 0 or 1) end
     wr32(Q.address, orientation())
     local ox = rd32(B.menu + MENU_X) + rd32(G.cameraX)
@@ -7927,7 +7937,7 @@ function C.buildingRotation(self, G, B, head, options)
     wr32(G.textLayer, layer)
   end
   C.luaItem(head, box.x, box.y, box.width, box.height, function() open = not open end, draw, "the rotation list")
-  wr16(head + ITEM_HIDDEN, 1)
+  wr16(head + ITEM_HIDDEN, 0)              -- a hidden item is not drawn, so it could never show itself
   for i, o in ipairs(options) do
     C.luaItem(o, box.x, box.y - (#K.ROTATIONS - i + 1) * box.option, box.width, box.option, function()
       wr32(Q.choice, i - 1)
@@ -8001,6 +8011,19 @@ function C.unitColours(self, G, B, data, panel, crests)
     UNITS = rd32(site + K.UNIT_COLOUR.units), BACK = site + K.UNIT_COLOUR.size,
   }))
   data.unitColour = colour
+  -- the castle's unit tools place their units as a group
+  local from, groups = 0x400000, 0
+  while groups < K.GROUP_COLOUR.sites do
+    local ok, found = pcall(core.scanForAOB, K.AOB_GROUP_COLOUR, from, K.HERD_SEARCH_END)
+    if not ok or found == nil or found == 0 then break end
+    local at = found + K.GROUP_COLOUR.site
+    patchJump(self, at, K.GROUP_COLOUR.size, core.allocateAssembly(templates.unitColourEdi, {
+      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, COLOUR = colour,
+      UNITS = rd32(at + K.GROUP_COLOUR.units), BACK = at + K.GROUP_COLOUR.size,
+    }))
+    groups, from = groups + 1, found + 1
+  end
+  if groups ~= K.GROUP_COLOUR.sites then log(WARNING, MODULE_NAME .. ": groups of units keep the player's colours") end
   -- The crest pictures, as the keep crests take them from the player shields.
   local crest = {}
   for i = 0, B.count - 1 do
@@ -8028,7 +8051,7 @@ function C.unitColours(self, G, B, data, panel, crests)
   local P = K.UNIT_COLOUR_PANEL
   local width = 2 * TOOLTIP_PADDING + labelWidth + TOOLTIP_PADDING + (K.PLAYERS + 1) * (w + P.gap) - P.gap
   local height = h + 2 * TOOLTIP_PADDING
-  local top = PANEL_BOTTOM - height
+  local top = PANEL_BOTTOM - P.above - height       -- above the building counts
   local rect = C.takeRect(data)
   local lastPlayer = rd32(player)
   for p = 0, K.PLAYERS do
@@ -8057,7 +8080,7 @@ function C.unitColours(self, G, B, data, panel, crests)
     local oy = rd32(B.menu + MENU_Y) + rd32(G.cameraY)
     local target = rd32(G.pencil + PENCIL_TARGET)
     wr32(G.pencil + PENCIL_TARGET, MAP_LAYER)
-    roundedBox(G.pencil, ox + P.x, oy + top, ox + P.x + width, oy + PANEL_BOTTOM, BOX_BLEND)
+    roundedBox(G.pencil, ox + P.x, oy + top, ox + P.x + width, oy + top + height, BOX_BLEND)
     local t = G.textures
     local mode = rd32(t + TEXTURES_MODE)
     wr32(t + TEXTURES_MODE, MAP_LAYER)
@@ -8098,6 +8121,8 @@ function C.patchSizeRefresh(self, G)
     BUILD = readCallTarget(load, V.build, "the viewport's tile map"),
     TWEAK = readCallTarget(load, V.tweak, "the viewport's border tiles"),
     BOUNDS = readCallTarget(load, V.bounds, "the camera bounds"),
+    TILEMAP = rd32(site - K.SIZE_TAIL.site + 1),
+    CHANGED = readCallTarget(scan(K.AOB_ALL_CHANGED, "the map redraw"), K.ALL_CHANGED, "the map redraw"),
     AFTER_THIS = rd32(site + 1), BACK = site + K.SIZE_TAIL.size,
   }))
 end

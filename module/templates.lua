@@ -984,6 +984,19 @@ jmp BACK
 -- PlaceUnit's spawnUnit(player, display player, ...) for a single unit, replacing `push eax /
 -- push eax / mov ecx,UNITS` (eax: the current player): in the map editor the unit is drawn in the
 -- colours of the chosen display player.
+templates.unitColourEdi = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne colour_same
+push dword [COLOUR]
+jmp colour_owner
+colour_same:
+push edi
+colour_owner:
+push edi
+mov ecx,UNITS
+jmp BACK
+]]
+
 templates.unitColour = [[
 cmp dword [GAME_MODE],MAP_EDITOR
 jne colour_same
@@ -1010,6 +1023,8 @@ mov ecx,VIEWPORT
 call TWEAK
 mov ecx,VIEWPORT
 call BOUNDS
+mov ecx,TILEMAP
+call CHANGED
 size_refresh_done:
 popad
 mov ecx,AFTER_THIS
