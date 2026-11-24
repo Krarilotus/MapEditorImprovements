@@ -282,7 +282,7 @@ function C.buildingRotation(self, G, B, data, head, options)
   -- the keep's preview: its parts where the chosen orientation puts them
   do
     local KT = K.KEEP_TABLES
-    local previewSite = scan(K.AOB_KEEP_PREVIEW, "the building preview") + KT.call
+    local previewSite = scan(K.AOB_KEEP_PREVIEW_CALL, "the building preview") + KT.call
     local ok, problem = pcall(function()
       C.patchCall(self, previewSite, core.allocateAssembly(templates.keepPreviewTurn, {
         GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
