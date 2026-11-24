@@ -479,6 +479,30 @@ options:
     contents:
       type: boolean
       value: true
+  - url: map-editor-improvements.castle.keep_ground
+    name: map-editor-improvements-castle-keep-ground
+    text: '{{castle_keep_ground}}'
+    tooltip: '{{castle_keep_ground_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.castle.rotation
+    name: map-editor-improvements-castle-rotation
+    text: '{{castle_rotation}}'
+    tooltip: '{{castle_rotation_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.castle.unit_colour
+    name: map-editor-improvements-castle-unit-colour
+    text: '{{castle_unit_colour}}'
+    tooltip: '{{castle_unit_colour_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
   - url: map-editor-improvements.castle.keep_crests
     name: map-editor-improvements-castle-keep-crests
     text: '{{castle_keep_crests}}'
@@ -1030,6 +1054,38 @@ options:
     name: map-editor-improvements-menu-always-update
     text: '{{menu_always_update}}'
     tooltip: '{{menu_always_update_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.map_settings.size_refresh
+    name: map-editor-improvements-map-settings-size-refresh
+    text: '{{map_settings_size_refresh}}'
+    tooltip: '{{map_settings_size_refresh_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.map_settings.camera_edge
+    name: map-editor-improvements-map-settings-camera-edge
+    text: '{{map_settings_camera_edge}}'
+    tooltip: '{{map_settings_camera_edge_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.menu.compass
+    name: map-editor-improvements-menu-compass
+    text: '{{menu_compass}}'
+    tooltip: '{{menu_compass_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: true
+  - url: map-editor-improvements.menu.compass_turn
+    name: map-editor-improvements-menu-compass-turn
+    text: '{{menu_compass_turn}}'
+    tooltip: '{{menu_compass_turn_tooltip}}'
     display: Switch
     contents:
       type: boolean

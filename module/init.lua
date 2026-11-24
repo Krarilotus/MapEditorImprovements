@@ -82,7 +82,7 @@ local MODULE_FOLDERS = { "ucp/modules/map-editor-improvements/" }   -- UCP maps 
 
 local DEFAULTS = {
   counts = { enabled = true, shown = true },
-  menu = { always_update = true, dust_clouds = true },
+  menu = { always_update = true, dust_clouds = true, compass = true, compass_turn = true },
   trees = { growth_from_brush = true, apple = true, shrubs = true, felled = true, random_mix = true, preview = true,
     obstacles = true, sorted_rows = true, no_shrub_stacking = true, spread_order = true, spread_outlines = true,
     rocks_and_water = true },
@@ -98,11 +98,11 @@ local DEFAULTS = {
     barrier = true, several_keeps = true, several_storage_and_recruitment = true, tower_engines_anywhere = true,
     keep_parts = true, damaged_walls = true, hover_text_left = true, moat_kinds = true, moat_on_marsh = true,
     moat_removal_keeps_ground = true, variant_panels = true, ruined_cathedral = true, all_players = true,
-    all_keeps = true, player_zero = true, keep_crests = true, keep_crest_tooltip = true,
+    all_keeps = true, player_zero = true, keep_crests = true, keep_crest_tooltip = true, keep_ground = true, rotation = true, unit_colour = true,
     wall_tools = true },
   herds = { panel = true, bird_bins = true, animal_bin = true, group_warning = true },
   eraser = { choice = true, seagulls = true },
-  map_settings = { show_locked = true, button = true, menu = true },
+  map_settings = { show_locked = true, button = true, menu = true, size_refresh = true, camera_edge = true },
   heights = { max_height = true, tool_options = true, invert_key_on = true, invert_key = "ctrl" },
 }
 
@@ -421,7 +421,7 @@ K.AOB_BUILDING_SPRITES = "E8 ? ? ? ? 8B 04 85 ? ? ? ? 89 86 ? ? ? ? 0F BF C3 50 
 K.BUILDING_SPRITES = { gms = 8, sprite = 0x1B }
 K.TUNNEL_SIZE = 3
 -- Panels moved left of the screen's middle.
-K.PANEL_SHIFT = { [11] = -50, [12] = -100, [13] = -50, [15] = -100, [30] = -100, [33] = -100 }
+K.PANEL_SHIFT = { [11] = -150, [12] = -100, [13] = -50, [15] = -100, [30] = -100, [33] = -100 }
 -- Buildings with variants. Placement gives setupBuildingData the variant (placement id - the
 -- group's first), which keeps a value from its group's table at building +0x29C (BuildingsState
 -- + id * stride + 0x2B0): `mov ecx,[esp+0x30] / mov edx,[ecx*4+GARDENS] / mov [edi+esi+0x2B0],
@@ -524,6 +524,10 @@ K.TOWER_PREVIEW = { size = 10, solid = { 0x4B, { 0x6A, 0x05, 0x50, 0x53, 0x53 } 
 K.AOB_UNIT_MASK = "89 54 24 18 89 7C 24 20 C7 44 24 14 ? ? ? ? 0F 87"
 K.UNIT_MASK = 12
 K.TOWER_ENGINE_UNITS = { [41] = true, [61] = true }   -- mangonel, ballista
+-- ClickPlaceSiegeTent's building test: `movsx eax,word [edx*2+buildings on tiles] / test eax,eax /
+-- pop ebp / je / imul eax,eax,0x32C / cmp byte [eax+has engine],0 / jne <refuse>`.
+K.AOB_ENGINE_BUSY = "0F BF 04 55 ? ? ? ? 85 C0 5D 74 13 69 C0 2C 03 00 00 80 B8 ? ? ? ? 00 0F 85"
+K.ENGINE_BUSY = { site = 0x13, size = 13, field = 2, jump = 9 }
 -- The eraser's walk over a tile's units: `imul eax,eax,<unit size> / mov word [eax+state],3 /
 -- movsx eax,word [eax+next on tile] / test eax,eax / jne`; the next unit lies 0x216 after the
 -- state word (both exes).
@@ -538,6 +542,91 @@ K.TOWER_ENGINE_MOST = { [40] = 4, [41] = 4, [42] = 4, [43] = 8, [44] = 8, [45] =
 K.AOB_KEEP_CAMPFIRE = "8B 44 24 3C 8B 4C 24 48 03 1C C5 ? ? ? ? 03 3C C5"
 K.AOB_KEEP_STOCKPILE = "8B 44 24 3C 8B 3C C5 ? ? ? ? 8B 1C C5 ? ? ? ? 03 7C 24 24"
 K.KEEP_CAMPFIRE_SIZE, K.KEEP_STOCKPILE_SIZE = 8, 11
+-- placeKeep's ground painter calls (keep tiles, campfire area): `push 2 / push 0 / push 6 / add
+-- reg,ebx / push reg / push eax / push ebp / mov ecx,esi / call paint` (thiscall, 6 arguments).
+-- Building rotation (44.2). The game's building orientation (TriggerPlaceBuilding: `cmp ecx,0x92 /
+-- mov eax,0x51 / je / mov eax,[orientation]`), which the placement command, the placement
+-- preview and the AI's AIV placement read; values 0, 2, 4, 6 (0xF: default). The keep's turn at
+-- the start of a match (setKeepOffsetAndOrientation): the direction from the keep to (200, 200)
+-- (`push 200 / ... / mov ecx,direction / ... / call / mov eax,[direction result] / and eax,0xFFFE`),
+-- 2 and 6 swapped.
+K.AOB_ORIENTATION = "81 F9 92 00 00 00 B8 51 00 00 00 74 05 A1 ? ? ? ?"
+K.ORIENTATION = 14
+K.AOB_KEEP_TURN = "68 C8 00 00 00 8D 50 D5 68 C8 00 00 00 51 89 56 28 8D 51 D5 89 4E 34 50 B9 ? ? ? ? 89 46 30 89 56 2C E8 ? ? ? ? A1 ? ? ? ? 25 FE FF 00 00"
+K.KEEP_TURN = { this = 25, call = 35, result = 41 }
+K.MAP_CENTRE = 200
+-- placeBuilding: `cmp eax,0xF / jne / mov [esi+rotation],edx / jmp / cdq / sub eax,edx / sar eax,1 /
+-- mov [esi+rotation],eax`: TileMapState's placement rotation (orientation / 2), which the placement
+-- check - and so the cursor preview with the keep's parts - reads.
+-- The keep layout tables (3 keep types x 4 orientations): doors etc. 24 bytes a row (the preview's
+-- `movsx edx,ax / add edx,-0x3C / lea ecx,[edx+edx*2] / shl ecx,5 / add ecx,TABLE`), the campfire
+-- area and the stockpile 8 bytes a row (placeKeep's `add ebx,[eax*8+..]` / `mov edi,[eax*8+..]`);
+-- the preview's call `mov ecx,[..] / mov edx,[..] / push ecx / push esi / push eax / push edx /
+-- mov ecx,TileMapState / call setConstructionGFXLayerBasedOnPlacementChecks`.
+K.AOB_KEEP_TABLE_A = "0F BF D0 83 C2 C4 8D 0C 52 C1 E1 05 81 C1 ? ? ? ?"
+K.AOB_KEEP_PREVIEW = "8B 0D ? ? ? ? 8B 15 ? ? ? ? 51 56 50 52 B9 ? ? ? ? E8"
+K.KEEP_TABLES = { a = 14, b = 18, c = 7, call = 21, rows = 3 }
+-- Only buildings placed as several parts turn (placeBuilding's own placers, by building type):
+-- barracks 8/9, engineers' guild 24, tunnellers' guild 25, oil smelter 28, keeps 40-44. The chosen
+-- tool (TriggerPlaceBuilding `mov ecx,[tool] / cmp ecx,0x65 / mov edx,..`) and
+-- convertCommandBuildingTypeToBuildingType (`push ebx / mov ecx,BuildingsState / mov [..],edx /
+-- call`).
+K.ROTATING_TYPES = { [8] = true, [9] = true, [24] = true, [25] = true, [28] = true, [40] = true, [41] = true,
+  [42] = true, [43] = true, [44] = true }
+K.AOB_CHOSEN_TOOL = "8B 0D ? ? ? ? 83 F9 65 8B 15"
+K.AOB_TOOL_TYPE = "53 B9 ? ? ? ? 89 96 ? ? ? ? E8"
+K.TOOL_TYPE = { this = 2, call = 12 }
+K.AOB_PLACE_ROTATION = "83 F8 0F 75 08 89 96 ? ? ? ? EB 0B 99 2B C2 D1 F8 89 86 ? ? ? ?"
+K.PLACE_ROTATION = 7
+K.ROTATIONS = { { "Default" }, { "90\xB0", 2 }, { "180\xB0", 4 }, { "270\xB0", 6 }, { "Location based", "location" } }
+K.ROTATION_BOX = { x = 12, y = 420, width = 150, height = 22, option = 20 }
+-- The right-click ring's compass (45): `cmp eax,3 / jne / mov edx,[next] / push edx / mov ecx,
+-- TileMapState / call setMapRotation` (in a match) and the same with eax (map editor); it draws
+-- its picture with `add ecx,[..] / add edi,0x26 / push ecx / push edi / push 0x10 / mov ecx,
+-- textures / call renderGM`, picture 0x26 + 0, 3, 2, 1 for the orientations 0, 2, 4, 6.
+K.AOB_COMPASS_TURN = { { "83 F8 03 75 23 8B 15 ? ? ? ? 52 B9 ? ? ? ? E8", "compassTurnEdx", 6 },
+  { "83 F8 03 75 12 A1 ? ? ? ? 50 B9 ? ? ? ? E8", "compassTurnEax", 5 } }
+K.COMPASS_TURN_SITE = 5
+K.AOB_COMPASS_DRAW = "03 0D ? ? ? ? 83 C7 26 51 57 6A 10 B9 ? ? ? ? E8"
+K.COMPASS_DRAW = { first = 8, gm = 12 }
+K.COMPASS_PICTURE = { [0] = 0, [2] = 3, [4] = 2, [6] = 1 }
+-- Unit display player (46.1): PlaceUnit's single unit `push ecx / push eax / push eax / mov ecx,
+-- UnitsState / call spawnUnit / pop edi ...`; the panel shows in the castle tabs 26 and 29.
+K.AOB_UNIT_COLOUR = "51 50 50 B9 ? ? ? ? E8 ? ? ? ? 5F 5E 5D 5B 83 C4 1C C3"
+K.UNIT_COLOUR = { site = 1, size = 7, units = 3 }
+K.UNIT_TABS = { [26] = true, [29] = true }
+K.UNIT_COLOUR_PANEL = { x = 330, gap = 4, label = "Unit display player:", selectedLabel = "Selected units:", above = 58 }
+-- The group spawner (TribesState, VAN 0x523030) the castle's unit tools use: `push ebx / push ebp /
+-- push edi / push edi / mov ecx,UnitsState / call spawnUnit / mov esi,eax / test esi,esi / je`.
+K.AOB_GROUP_COLOUR = "53 55 57 57 B9 ? ? ? ? E8 ? ? ? ? 8B F0 85 F6 74 1E"
+K.GROUP_COLOUR = { site = 2, size = 7, units = 3, sites = 2 }
+-- Selected units (46.2): UnitsState + 0x24 + player * 4 counts each player's selection; a unit
+-- (0x490 bytes, the walk's state word at +0x8C) is alive with state 2, selected by the player in
+-- its word +0xB2 (0: by nobody, so player 0 cannot select), drawn in the colours of +0x80.
+K.SELECTION = { counts = 0x24, state = 0x8C, alive = 2, selectedBy = 0xB2, colour = 0x80 }
+-- Map size changes (47): the size action's tail `mov ecx,TileMapState / call / mov ecx,X /
+-- mov [..],1 / call / push 1 / mov ecx,X / call`, patched at its second `mov ecx`; the map load's
+-- viewport calls `mov ecx,viewport / mov [..],ebp / mov [..],edx / call bounds / mov ecx,viewport /
+-- call build / mov ecx,viewport / call tweak`; the camera clamp in setViewportBasedOnMapSize.
+K.AOB_SIZE_TAIL = "B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? C7 05 ? ? ? ? 01 00 00 00 E8 ? ? ? ? 6A 01 B9 ? ? ? ? E8"
+K.SIZE_TAIL = { site = 10, size = 5 }
+K.AOB_VIEWPORT_LOAD = "B9 ? ? ? ? 89 2D ? ? ? ? 89 15 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8"
+K.VIEWPORT_LOAD = { viewport = 1, bounds = 17, build = 27, tweak = 37 }
+K.AOB_CAMERA_CLAMP = "39 51 78 7D 03 89 51 78 39 79 78 7E 03 89 79 78 39 71 7C"
+K.CAMERA_CLAMP = { size = 8 }
+K.CAMERA_EDGE = { x = 32, y = 16 }
+-- ... and the load's `push ebx / mov ecx,esi / call toggleFlatView / mov [..],ebx / mov [..],ebx /
+-- call setChangedLayerToThreeAndMapping0x40x40` (every tile drawn afresh).
+K.AOB_ALL_CHANGED = "53 8B CE E8 ? ? ? ? 89 1D ? ? ? ? 89 1D ? ? ? ? E8"
+K.ALL_CHANGED = 20
+-- ... and before those viewport calls the load clears the tiles' drawn pictures (`push pictures /
+-- push ebx / push 0x27420 / mov ecx,memory / mov [..],edi / call fillMemory_ByteValue`, thiscall,
+-- 3 arguments): tiles the new size leaves out keep none (black), the rest are drawn afresh.
+-- The map size word: the size action's `push eax / mov ecx,TileMapState / mov [size],eax`.
+K.AOB_SIZE_WORD = "50 B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? C7 05"
+K.SIZE_WORD = 7                          -- then `call resetHeightAndMapBorders` at +11       -- one tile, in the viewport's camera units
+K.AOB_KEEP_GROUND = { "6A 02 6A 00 6A 06 03 D3 52 50 55 8B CE E8", "6A 02 6A 00 6A 06 03 CB 51 50 55 8B CE E8" }
+K.KEEP_GROUND_CALL = 13
 K.KEEP_EPILOGUE = { 0x78, { 0x5F, 0x5E, 0x5D, 0x5B, 0x83, 0xC4, 0x1C, 0xC2, 0x1C, 0x00 } }
 K.KEEPS = { 60, 61, 62 }
 K.KEEP_ONLY, K.KEEP_NO_STOCKPILE = 1, 3   -- the keep panel's choices
@@ -938,7 +1027,7 @@ K.MASK_ROCK = { size = 5 }
 -- The mask button: at the top left of the menu's panel, right of the category buttons (menu
 -- coordinates; the category buttons sit at user controls 137..182, 460).
 K.MASK_BUTTON = { x = 240, y = 455 }
-K.HEIGHT_PANEL = { gap = 14, slider = 112, rangeSlider = 150, sliderHeight = 10, dropdown = 6, optionHeight = 20,
+K.HEIGHT_PANEL = { gap = 14, slider = 112, rangeSlider = 256, sliderHeight = 10, dropdown = 6, optionHeight = 20,
   rowGap = 4 }
 -- The height range of raise, lower and equalize (the game's: 8 .. 128 for raise and lower, 8 ..
 -- 156 for equalize), Snap to range, Invert and the ignore boxes.
@@ -967,6 +1056,12 @@ K.FRAME = { site = 21, size = 6, operand = 23 }
 K.PLANT_TOOLS = 512                      -- the tree preview's table of tools, a byte each
 -- placeTree turns a tile down with these flags (and with a plant on it).
 K.TREE_REFUSED, K.TREE_FOOT_REFUSED = 0x703E25B5, 0x10100500
+-- placeTree's room check (its tree-type argument `movsx eax,word [esp+0x24] / push ebp / push 3 /
+-- push eax / mov ecx,organisms / call / push eax / mov ecx,organisms / call / lea ecx,[esi+esi*2] /
+-- ... / mov eax,[eax*4+room]`): neighbours with these flags (border) end the look.
+K.AOB_TREE_ROOM = "0F BF 44 24 24 55 6A 03 50 B9 ? ? ? ? E8 ? ? ? ? 50 B9 ? ? ? ? E8"
+K.TREE_ROOM = { this = 10, first = 14, second = 25, room = { 0x3A, { 0x8B, 0x04, 0x85 } }, kinds = 64, most = 64 }
+K.TREE_ROOM_EDGE = 0x10
 -- The variant panels' pictures: the building composed from its tiles, made smaller to fit.
 K.VARIANT_THUMB = { width = 72, height = 84 }
 K.LOST_ROCKS_LABEL = "Remove lost rocks"
@@ -2368,6 +2463,7 @@ local function buildTable(G, O)
     insert(MAP_CLICK_ITEM, "undo")
     insert(MAP_CLICK_ITEM, "redo")
   end
+  if O.compass then insert(MAP_CLICK_ITEM, "compass") end
   if O.counts then insert(INFO_BEFORE_ITEM, "info") end
   if O.treePreview then insert(INFO_BEFORE_ITEM, "treePreview") end
   local pipetteItems = { "pipetteTick", "pipette", "pipettePanel" }
@@ -3085,6 +3181,10 @@ local function buildTable(G, O)
   end
 
   if O.undo then C.undoButtons(G, added, guarded, O.undo) end
+  if added.compass ~= nil then
+    local ok, problem = pcall(C.compassItem, G, added.compass, O.undo)
+    if not ok then log(WARNING, tostring(problem) .. "; no compass") end
+  end
   if O.treePreview then
     local into = added.treePreview
     wr32(into + ITEM_TYPE, TYPE_CLICKABLE)    -- no size, so never under the mouse
@@ -3699,6 +3799,40 @@ function C.makeTreePreview(G, O, data)
   local blank = {}
   for i = 1, G.treeSize do blank[i] = 0 end
   local cache = {}
+  -- placeTree's room check: how many brush tiles around a new tree of a type must be free
+  -- (`push 3 / push type / call; push eax / call; ... mov eax,[eax*4+room]`).
+  local roomSite = scan(K.AOB_TREE_ROOM, "the tree's room check")
+  local RM = K.TREE_ROOM
+  -- RM.first is mapUITreeTypeToLogicalTreeType(command) (one argument; G.plantTypes holds its
+  -- answers), RM.second takes that type and the 3 pushed before it.
+  local kindOf = core.exposeCode(readCallTarget(roomSite, RM.second, "the tree kind"), 3, 1)
+  local organisms, roomTable = rd32(roomSite + RM.this), readOperand(roomSite, RM.room, "the tree's room check")
+  local tileForBrush = core.exposeCode(R.tileForBrush, 7, 1)
+  local out = core.allocate(8, true)
+  local rooms = {}
+  local function roomFree(treeType, tile, y)
+    if rooms[treeType] == nil then
+      local kind = kindOf(organisms, treeType, 3)
+      rooms[treeType] = (kind >= 0 and kind < K.TREE_ROOM.kinds) and rd32(roomTable + kind * 4) or 0
+    end
+    for i = 0, math.min(rooms[treeType], K.TREE_ROOM.most) - 1 do
+      tileForBrush(T, 1, i, out, out + 4, tile, y)
+      local near = rd32(out)
+      if near < 0 or near >= K.MAP_TILES then break end
+      local logic = rd32(T + R.logic + near * 4) & 0xFFFFFFFF
+      if logic & K.TREE_ROOM_EDGE ~= 0 then break end          -- placeTree stops looking here
+      if logic & K.TREE_FOOT_REFUSED ~= 0 or logic & K.ROCKY ~= 0 or rd16(T + R.organism + near * 2) ~= 0 then
+        return false
+      end
+    end
+    return true
+  end
+  -- The value the next random choice gets (the seed is only read, the placing moves it on).
+  local function nextRandom(range)
+    if range <= 0 then return 0 end
+    local n = (rd32(data.seed) * K.RANDOM_MULTIPLIER + K.RANDOM_INCREMENT) & 0xFFFFFFFF
+    return (n >> 16) % range
+  end
 
   -- The picture a new tree of this type and stage starts with, as createTree gets it: the type's
   -- own update function, run once on a free tree slot (put back as it was afterwards).
@@ -3745,23 +3879,46 @@ function C.makeTreePreview(G, O, data)
     return drawX, drawY - lift
   end
 
-  return function()
+  local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = R.keyState }), 1, 0)
+  local wasDown, randomEntry = true, false
+  -- Draws the preview; answers "refused" when the tile under the mouse would not take the tree.
+  local function draw()
+    randomEntry = false
     if rd32(R.gameMode) ~= K.MAP_EDITOR or rd32(G.onMap) == 0 then return end
     local command = rd32(G.subtype)
     local treeType = G.plantTypes[command]
     if treeType == nil then return end
-    local gm, shown, palette = rd16(G.typeGm + treeType * 4), nil, SHRUB_PALETTES[treeType] or 0
     local exact = data.treePreview
+    local randomShrub = data.randomShrub ~= nil and rd8(data.randomShrub) ~= 0
+    if randomShrub and (exact == nil or exact.command ~= command)
+        and command >= SHRUB_COMMANDS[1] and command <= SHRUB_COMMANDS[#SHRUB_COMMANDS] then
+      -- the shrub the next random choice picks (as templates.plantType does)
+      randomEntry = true
+      local pick = SHRUB_COMMANDS[1] + nextRandom(SHRUB_COMMANDS[#SHRUB_COMMANDS] - SHRUB_COMMANDS[1] + 1)
+      if G.plantTypes[pick] ~= nil then treeType = G.plantTypes[pick] end
+    end
+    local gm, shown, palette = rd16(G.typeGm + treeType * 4), nil, SHRUB_PALETTES[treeType] or 0
     if exact ~= nil and exact.command == command then
       shown = exact.picture
     else
       local stage = PLACED_STAGE
       if O.growth then stage = math.max(0, math.min(MAX_STAGE, rd32(G.brush) - 1)) end
       local logs = data.felledLogs ~= nil and rd32(data.felledLogs) or 0
-      if logs > 0 and logs < K.RANDOM_STANDING and data.felledCommand ~= nil and rd32(data.felledCommand) == command then
+      local ours = data.felledCommand ~= nil and rd32(data.felledCommand) == command
+      if ours and (logs == K.RANDOM_FELLED or logs == K.RANDOM_STANDING) then randomEntry = true end
+      if ours and logs == K.RANDOM_FELLED then
+        -- the log count the next random choice gives (templates.felledTree)
+        local felledStage = math.max(stage, K.SMALLEST_FELLED_STAGE)
+        local most = rd32(G.logs + (treeType * STAGES + (stage == 0 and K.SMALLEST_FELLED_STAGE or stage)) * 4)
+        if most <= 0 then return end
+        shown, palette = FELLED_PICTURE_BASE[math.min(felledStage, 4)] - (nextRandom(most) + 1), FELLED_PALETTE
+      elseif logs > 0 and logs < K.RANDOM_STANDING and ours then
         local felledStage = math.max(stage, K.SMALLEST_FELLED_STAGE)
         shown, palette = FELLED_PICTURE_BASE[math.min(felledStage, 4)] - logs, FELLED_PALETTE
       else
+        if ours and logs == K.RANDOM_STANDING and stage <= K.MOST_RANDOM_STAGE then
+          stage = nextRandom(stage + 1)               -- the stage the next random choice gives
+        end
         shown = picture(treeType, stage)
       end
     end
@@ -3771,13 +3928,15 @@ function C.makeTreePreview(G, O, data)
     local x, y = rd32(R.mouseX), rd32(R.mouseY)
     if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return end
     -- Not where the tree cannot go: placeTree's tests on the tile, and the mask.
-    if rd8(R.validTiles + y * K.MAP_SIZE + x) == 0 then return end
+    if rd8(R.validTiles + y * K.MAP_SIZE + x) == 0 then return "refused" end
     local tile = rd32(R.rows + y * 12) + x
     local logic = rd32(T + R.logic + tile * 4) & 0xFFFFFFFF
-    if logic & K.TREE_REFUSED ~= 0 or logic & K.TREE_FOOT_REFUSED ~= 0 or rd16(T + R.organism + tile * 2) ~= 0 then
-      return
-    end
-    if not C.maskPeek(T, R, tile) then return end
+    local refused = K.TREE_REFUSED
+    if data.rocksAndWater ~= nil and rd8(data.rocksAndWater) ~= 0 then refused = refused & ~K.TREE_GROUND.loose end
+    if logic & refused ~= 0 or rd16(T + R.organism + tile * 2) ~= 0 then return "refused" end
+    -- the room around a new tree, unless Trees next to obstacles is ticked
+    if not (data.nearObstacles ~= nil and rd8(data.nearObstacles) ~= 0) and not roomFree(treeType, tile, y) then return "refused" end
+    if not C.maskPeek(T, R, tile) then return "refused" end
     local drawX, drawY = surface(x, y, tile)
     if drawX == nil then return end
     -- Where renderMap puts a tree: tile + (14, 6) - the origin of the tree's gm.
@@ -3795,6 +3954,16 @@ function C.makeTreePreview(G, O, data)
     wr32(G.spritePalette, spritePalette)
     wr32(t + TEXTURES_DIRECT_PALETTE, direct)
     wr32(t + TEXTURES_MODE, mode)
+  end
+  -- A click where the tree cannot go moves a random entry on to its next variant (nothing is
+  -- placed, the preview shows the new one).
+  return function()
+    local result = draw()
+    local down = (asyncKey(K.LEFT_BUTTON) % 0x10000) >= 0x8000
+    if down and not wasDown and result == "refused" and randomEntry then
+      wr32(data.seed, (rd32(data.seed) * K.RANDOM_MULTIPLIER + K.RANDOM_INCREMENT) & 0xFFFFFFFF)
+    end
+    wasDown = down
   end
 end
 
@@ -4451,7 +4620,7 @@ end
 
 -- The items the heights menu gets, in the order they are inserted at the end of its tab.
 K.HEIGHT_PANEL_ITEMS = { "heightReset", "heightBreak", "heightWater", "heightFarmland", "heightSnap", "heightInvert",
-  "heightRange", "heightStrength", "heightMode" }
+  "heightRange", "heightStrength", "heightMode", "heightRangeReset" }
 function C.heightItems(O)
   local list = {}
   if O.maxHeight then list[#list + 1] = "maxHeight" end
@@ -4654,9 +4823,11 @@ function C.makeHeightPanel(G, data, H, items, leftHeld)
     if ranged then
       local row = { checks[5] }
       if tool == K.EQUALIZE_TOOL then row[#row + 1] = checks[6] end
-      row[#row + 1] = { item = items.range, slider = "range" }
       row[#row + 1] = { item = items.strength, slider = "strength" }
       rows[#rows + 1] = row
+      -- the range slider (a pixel per height) and its Reset button on a row of their own
+      rows[#rows + 1] = { { item = items.range, slider = "range" },
+        { item = items.rangeReset, button = true, label = "Reset" } }
     end
     rows[#rows + 1] = { { item = items.mode, list = true } }
     local modeWidth = 0
@@ -4672,6 +4843,8 @@ function C.makeHeightPanel(G, data, H, items, leftHeld)
         elseif element.slider == "range" then
           element.label, element.track = rangeLabel, P.rangeSlider
           element.width = width("Height range 255 - 255") + TOOLTIP_PADDING + P.rangeSlider
+        elseif element.button then
+          element.width = width(element.label) + 2 * TOOLTIP_PADDING
         elseif element.slider == "strength" then
           element.label, element.track = string.format("Strength %d", strength), P.slider
           element.width = width("Strength 16") + TOOLTIP_PADDING + P.slider
@@ -4737,6 +4910,8 @@ function C.makeHeightPanel(G, data, H, items, leftHeld)
           local headX = offsetX + element.x + width(listLabel) + TOOLTIP_PADDING
           element.headX = headX
           frame(headX, offsetY + row.y + 3, offsetX + element.x + element.width, offsetY + row.y + box - 3)
+        elseif element.button then
+          frame(offsetX + element.x, offsetY + row.y + 3, offsetX + element.x + element.width, offsetY + row.y + box - 3)
         elseif element.track ~= nil then
           local l = offsetX + rd32(address + ITEM_X)
           local middle = offsetY + row.y + box // 2
@@ -4795,6 +4970,8 @@ function C.makeHeightPanel(G, data, H, items, leftHeld)
           write(listLabel, offsetX + element.x, textY)
           write(modeName(rd32(H.mode)), element.headX + TOOLTIP_PADDING, textY)
           write("v", offsetX + element.x + element.width - TOOLTIP_PADDING - width("v"), textY)
+        elseif element.button then
+          write(element.label, offsetX + element.x + TOOLTIP_PADDING, textY)
         else
           write(element.label, offsetX + element.x, textY)
         end
@@ -4841,6 +5018,7 @@ function C.heightsMenu(M)
     local items = {
       reset = added.heightReset, breakRocks = added.heightBreak, mode = added.heightMode,
       strength = added.heightStrength, water = added.heightWater, farmland = added.heightFarmland,
+      rangeReset = added.heightRangeReset,
       snap = added.heightSnap, invert = added.heightInvert, range = added.heightRange, options = {},
     }
     for i = 1, #K.ROCK_MODES do items.options[i] = added["heightOption" .. i] end
@@ -4883,6 +5061,10 @@ function C.heightsMenu(M)
       C.applyStrength(H)
       H.drag = "strength"
     end, "the strength slider")
+    button(items.rangeReset, function()
+      wr32(H.rangeMin, K.HEIGHT_RANGE_DEFAULT[1])
+      wr32(H.rangeMax, K.HEIGHT_RANGE_DEFAULT[2])
+    end, "the height range Reset button")
     button(items.range, function()
       local value = C.heightPanelValueAt(items.range, 0, 0xFF)
       local low, high = rd32(H.rangeMin), rd32(H.rangeMax)
@@ -5308,6 +5490,11 @@ function C.patchFrame(self, G, data)
   expectBytes(site, { 0x8B, 0x0D }, "the map drawing")
   local plants = core.allocate(K.PLANT_TOOLS, true)
   local pad = C.assemble("alwaysYes", {})
+  -- the building rotation's words (spare ones if the game's orientation cannot be found)
+  local okRotation, rotation = pcall(C.rotationState, G)
+  if not okRotation then
+    rotation = { on = core.allocate(4, true), default = core.allocate(4, true), address = core.allocate(4, true) }
+  end
   data.groupOn = core.allocate(4, true)
   local groupPad = pad
   if data.groupWarning ~= nil then
@@ -5327,7 +5514,9 @@ function C.patchFrame(self, G, data)
     PLANT_TOOLS = K.PLANT_TOOLS, PLANTS = plants, PAD = pad, OPERAND = rd32(site + 2), BACK = site + K.FRAME.size,
     GROUP_ON = data.groupOn, FIRST_GROUP = G.firstGroup, GROUP_SLOTS = G.groupSlots, GROUP_SIZE = G.groupSize,
     GROUP_COUNT = data.groupCount or data.groupOn, GROUP_MARGIN = K.GROUP_MARGIN, GROUP_PAD = groupPad,
+    ROTATION_ON = rotation.on, ROTATION_DEFAULT = rotation.default, ORIENTATION = rotation.address,
   }))
+  C.frameHooked = true
   -- The menu's own drawing of the preview is no longer needed.
   if data.treePreviewItem ~= nil then wr32(data.treePreviewItem + ITEM_RENDER_TYPE, RENDER_NONE) end
 end
@@ -6159,7 +6348,7 @@ function C.settingsMenu(self, G, S, draw, open)
   end, "the map size slider"))
   wr32(at.sliderTick + ITEM_RENDER_TYPE, RENDER_NONE)
   C.luaItem(at.balanced, L.balanced.x, L.balanced.y, L.balanced.width, h, function() flip(S.balanced) end,
-    function() draw.button("Balanced", false, rd32(S.balanced) ~= 0) end, "the Balanced box")
+    function() draw.button("Balanced", false, rd32(S.balanced) == 0) end, "the Balanced box")   -- 0: balanced
   C.luaItem(at.koth, L.koth.x, L.koth.y, L.koth.width, h, function() flip(S.koth) end,
     function() draw.button("King of the Hill", false, rd32(S.koth) ~= 0) end, "the King of the Hill box")
   C.luaItem(at.lock, L.lock.x, L.lock.y, L.lock.width, h,
@@ -6206,6 +6395,7 @@ local function enableMenu(self, O)
   resolveMenu(G)
   resolveDrawing(G)
   resolveCounters(G)
+  C.gameModeOf(G)                          -- the landscape patches test it too
   if O.variants then
     local ok, problem = pcall(resolveRocks, G)
     if not ok then
@@ -7124,10 +7314,19 @@ function C.build(G, B, O)
   -- (switching the active keep calls the game's keep entry, which destroys the old keep unless
   -- several keeps are allowed)
   if O.keepCrests and O.severalKeeps then insert(0, "keepCrests") end
+  if O.rotation then
+    for i = 1, #K.ROTATIONS do insert(0, "rotation" .. i) end
+    insert(0, "rotationHead")                -- after the options: drawn on top of them
+  end
   if O.ruinedCathedral then insert(0, "ruinWatch") end
   if O.undo then
     insert(0, "undo")
     insert(0, "redo")
+  end
+  if O.compass then insert(0, "compass") end
+  if O.unitColour then
+    for p = 0, K.PLAYERS do insert(0, "unitColour" .. p) end
+    insert(0, "unitColourPanel")
   end
   if O.buildingCounts then insert(B.firstBlock, "counts") end
   local shieldGroup, shieldEnd
@@ -7159,8 +7358,13 @@ function C.build(G, B, O)
   local function lookup(tab, command) return B.buttons[tab][command].image end
   if O.towerRuins then
     local row = {}
+    -- Each ruin's own picture, made small like the variant panels' (the tower's button
+    -- picture if that cannot be made).
+    local okThumbs, thumb = pcall(C.buildingPictures, G, B)
+    if not okThumbs then log(WARNING, tostring(thumb) .. "; the tower ruins show the towers' pictures") end
     for i, ruin in ipairs(K.TOWER_RUINS) do
       row[i] = { command = ruin, image = lookup(K.TAB_TOWERS, K.FIRST_TOWER + i - 1), label = K.RUIN_LABEL }
+      if okThumbs then row[i].compose = function() return thumb(ruin) end end
     end
     panels[#panels + 1] = { tab = K.TAB_TOWERS, rows = { row }, shift = K.PANEL_SHIFT[K.TAB_TOWERS] }
   end
@@ -7442,6 +7646,22 @@ function C.build(G, B, O)
       added.wallSliderReset)
     if not ok then log(WARNING, tostring(problem) .. "; no wall height slider") end
   end
+  if added.compass ~= nil then
+    local ok, problem = pcall(C.compassItem, G, added.compass, O.undo)
+    if not ok then log(WARNING, tostring(problem) .. "; no compass") end
+  end
+  if added.unitColourPanel ~= nil then
+    local crests = {}
+    for p = 0, K.PLAYERS do crests[p] = added["unitColour" .. p] end
+    local ok, problem = pcall(C.unitColours, C.owner, G, B, data, added.unitColourPanel, crests)
+    if not ok then log(WARNING, tostring(problem) .. "; no unit display player") end
+  end
+  if added.rotationHead ~= nil then
+    local options = {}
+    for i = 1, #K.ROTATIONS do options[i] = added["rotation" .. i] end
+    local ok, problem = pcall(C.buildingRotation, C.owner, G, B, data, added.rotationHead, options)
+    if not ok then log(WARNING, tostring(problem) .. "; no building rotation") end
+  end
   if added.keepCrests ~= nil then
     data.crestTooltip = O.crestTooltip
     local ok, problem = pcall(C.keepCrests, G, B, data, added.keepCrests)
@@ -7630,6 +7850,12 @@ function C.patchTowerEngines(self, G)
     error(MODULE_NAME .. ": the tower engine placement is not the one this module knows")
   end
   local rule = C.towerEngineRule(G, sites[1])
+  local busy = scan(K.AOB_ENGINE_BUSY, "the tower engine spawn command") + K.ENGINE_BUSY.site
+  local EB = K.ENGINE_BUSY
+  patchJump(self, busy, EB.size, core.allocateAssembly(templates.towerEngineBusy, {
+    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, HAS_ENGINE = rd32(busy + EB.field),
+    BUSY = busy + EB.size + rd32(busy + EB.jump), BACK = busy + EB.size,
+  }))
   for i, site in ipairs(sites) do
     local function operand(field) return readOperand(site, T[field], "the tower engine placement") end
     expectBytes(site + T.refuse[1] - 2, T.refuse[2], "the tower engine placement")
@@ -7652,6 +7878,449 @@ function C.patchTowerEngines(self, G)
       BUILDING_SIZE = operand("buildingSize"), OPAQUE = preview + P.solid[1], TRANSPARENT = preview + P.clear[1],
       BACK = preview + P.size,
     }))
+  end
+end
+
+-- The building orientation and the words the frame hook reads to put it back outside the editor.
+function C.rotationState(G)
+  if C.rotation ~= nil then return C.rotation end
+  local address = rd32(scan(K.AOB_ORIENTATION, "the building orientation") + K.ORIENTATION)
+  local Q = { address = address, on = core.allocate(4, true), default = core.allocate(4, true),
+    choice = core.allocate(4, true), wanted = core.allocate(4, true),
+    site = scan(K.AOB_ORIENTATION, "the building orientation") + K.ORIENTATION - 1 }
+  wr32(Q.default, rd32(address))
+  C.rotation = Q
+  return Q
+end
+
+-- The rotation list in the castle menu (head: the box showing the choice, options: one item each)
+-- and, every frame in the map editor while the castle menu is up, the building orientation it
+-- asks for (Location based: as the keep would turn at the start of a match, from the tile under
+-- the mouse). Outside the editor the frame hook puts the game's own back.
+function C.buildingRotation(self, G, B, data, head, options)
+  local Q = C.rotationState(G)
+  local R = C.resolvePipette(G)
+  local turn = scan(K.AOB_KEEP_TURN, "the keep's turn at the start of a match")
+  local direction = rd32(turn + K.KEEP_TURN.this)
+  local towards = core.exposeCode(readCallTarget(turn, K.KEEP_TURN.call, "the direction"), 5, 1)
+  local result = rd32(turn + K.KEEP_TURN.result)
+  local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
+  local placeRotation = R.tileMap + rd32(scan(K.AOB_PLACE_ROTATION, "the placement rotation") + K.PLACE_ROTATION)
+  local chosenTool = rd32(scan(K.AOB_CHOSEN_TOOL, "the chosen building") + 2)
+  local typeSite = scan(K.AOB_TOOL_TYPE, "the building types")
+  local buildings = rd32(typeSite + K.TOOL_TYPE.this)
+  local typeOf = core.exposeCode(readCallTarget(typeSite, K.TOOL_TYPE.call, "the building types"), 2, 1)
+  local function turns()
+    local tool = rd32(chosenTool)
+    if tool <= 0 or tool > 0x200 then return false end
+    return K.ROTATING_TYPES[typeOf(buildings, tool) & 0xFFFF] == true
+  end
+  -- the keep's preview: its parts where the chosen orientation puts them
+  do
+    local KT = K.KEEP_TABLES
+    local previewSite = scan(K.AOB_KEEP_PREVIEW, "the building preview") + KT.call
+    local ok, problem = pcall(function()
+      C.patchCall(self, previewSite, core.allocateAssembly(templates.keepPreviewTurn, {
+        GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
+        PREVIEW = readCallTarget(previewSite, 0, "the building preview"),
+        TABLE_A = rd32(scan(K.AOB_KEEP_TABLE_A, "the keep layout") + KT.a),
+        TABLE_B = rd32(scan(K.AOB_KEEP_CAMPFIRE, "the keep's campfire area") + KT.b),
+        TABLE_C = rd32(scan(K.AOB_KEEP_STOCKPILE, "the keep's stockpile") + KT.c),
+        KEEP_ROWS = KT.rows,
+      }))
+    end)
+    if not ok then log(WARNING, tostring(problem) .. "; the keep's preview keeps its first orientation") end
+  end
+  if not C.frameHooked then
+    local site = scan(K.AOB_FRAME, "the map drawing") + K.FRAME.site
+    expectBytes(site, { 0x8B, 0x0D }, "the map drawing")
+    patchJump(self, site, K.FRAME.size, core.allocateAssembly(templates.rotationFrame, {
+      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION_ON = Q.on, ROTATION_DEFAULT = Q.default,
+      ORIENTATION = Q.address, OPERAND = rd32(site + 2), BACK = site + K.FRAME.size,
+    }))
+    C.frameHooked = true
+  end
+  wr32(Q.on, 1)
+  -- the click itself takes the list's orientation (whatever else sets the game's word)
+  expectBytes(Q.site, { 0xA1 }, "the building orientation")
+  patchJump(self, Q.site, 5, core.allocateAssembly(templates.rotationRead, {
+    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION_ON = Q.on, WANTED = Q.wanted,
+    ORIENTATION = Q.address, BACK = Q.site + 5,
+    PAD = C.luaPad(function()
+      log(INFO, string.format("%s: placing a building with orientation %d", MODULE_NAME, rd32(Q.wanted)))
+    end, "the rotation log"),
+  }))
+  local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
+  local colourBox = core.exposeCode(G.colourBox, 6, 1)
+  local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
+  local text = core.allocate(64, true)
+  local open = false
+  local editorRotation = false
+  local rect = C.takeRect(data)            -- clicks on the list do not reach the map
+  local function location()
+    if rd32(R.flatView) ~= 0 then flatSetup(R.viewport) else mouseSetup(R.viewport) end
+    local x, y = rd32(R.mouseX), rd32(R.mouseY)
+    if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return nil end
+    towards(direction, x, y, K.MAP_CENTRE, K.MAP_CENTRE)
+    local o = rd32(result) & 0xFFFE
+    if o == 6 then o = 2 elseif o == 2 then o = 6 end
+    return o
+  end
+  local function orientation()
+    local entry = K.ROTATIONS[rd32(Q.choice) + 1]
+    if entry == nil or entry[2] == nil then return rd32(Q.default) end
+    if entry[2] == "location" then return location() or rd32(Q.default) end
+    return entry[2]
+  end
+  local box = K.ROTATION_BOX
+  local function write(str, x, y)
+    writeCString(text, str)
+    shadowedText(G.textManager, text, x, y, ALIGN_LEFT, TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
+  end
+  local function draw()
+    if rd32(R.gameMode) ~= K.MAP_EDITOR then
+      if editorRotation then                 -- the game's own preview again
+        wr32(placeRotation, 0)
+        editorRotation = false
+      end
+      wr32(head + ITEM_WIDTH, 0)             -- stays drawn (and so able to come back), never clicked
+      for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, 1) end
+      open = false
+      C.markRect(rect, 0, 0, 0, 0)
+      return
+    end
+    wr32(head + ITEM_WIDTH, box.width)
+    local listHeight = open and #K.ROTATIONS * box.option or 0
+    C.markRect(rect, box.x, box.y - listHeight, box.width, box.height + listHeight)
+    for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, open and 0 or 1) end
+    local o = turns() and orientation() or rd32(Q.default)   -- other buildings keep their look
+    wr32(Q.address, o)
+    wr32(Q.wanted, o)
+    -- the cursor preview turns with it (placeBuilding sets the same from the orientation)
+    wr32(placeRotation, (o == 0xF) and 0 or (o // 2))
+    editorRotation = true
+    local ox = rd32(B.menu + MENU_X) + rd32(G.cameraX)
+    local oy = rd32(B.menu + MENU_Y) + rd32(G.cameraY)
+    local white = rd32(G.pixelFormat) == 0x565 and 0xFFFF or 0x7FFF
+    local function frame(l, t, r, b)
+      colourBox(G.pencil, l, t, r, t + 1, white)
+      colourBox(G.pencil, l, b - 1, r, b, white)
+      colourBox(G.pencil, l, t, l + 1, b, white)
+      colourBox(G.pencil, r - 1, t, r, b, white)
+    end
+    local target = rd32(G.pencil + PENCIL_TARGET)
+    wr32(G.pencil + PENCIL_TARGET, MAP_LAYER)
+    local l, t = ox + box.x, oy + box.y
+    roundedBox(G.pencil, l, t, l + box.width, t + box.height, BOX_BLEND)
+    frame(l, t, l + box.width, t + box.height)
+    local listTop = t - #K.ROTATIONS * box.option
+    if open then
+      roundedBox(G.pencil, l, listTop, l + box.width, t, BOX_BLEND)
+      for i, o in ipairs(options) do
+        local ot = listTop + (i - 1) * box.option
+        if rd16(o + ITEM_HOVERED) ~= 0 then roundedBox(G.pencil, l, ot, l + box.width, ot + box.option, BOX_BLEND) end
+        if i == rd32(Q.choice) + 1 then frame(l, ot, l + box.width, ot + box.option) end
+      end
+    end
+    wr32(G.pencil + PENCIL_TARGET, target)
+    local layer = rd32(G.textLayer)
+    wr32(G.textLayer, MAP_LAYER)
+    local entry = K.ROTATIONS[rd32(Q.choice) + 1] or K.ROTATIONS[1]
+    write("Rotation: " .. entry[1], l + TOOLTIP_PADDING, t + (box.height - TOOLTIP_LINE) // 2 + 2)
+    write("v", l + box.width - TOOLTIP_PADDING - 6, t + (box.height - TOOLTIP_LINE) // 2 + 2)
+    if open then
+      for i, option in ipairs(K.ROTATIONS) do
+        write(option[1], l + TOOLTIP_PADDING, listTop + (i - 1) * box.option + (box.option - TOOLTIP_LINE) // 2 + 2)
+      end
+    end
+    wr32(G.textLayer, layer)
+  end
+  C.luaItem(head, box.x, box.y, box.width, box.height, function() open = not open end, draw, "the rotation list")
+  wr16(head + ITEM_HIDDEN, 0)              -- a hidden item is not drawn, so it could never show itself
+  for i, o in ipairs(options) do
+    C.luaItem(o, box.x, box.y - (#K.ROTATIONS - i + 1) * box.option, box.width, box.option, function()
+      wr32(Q.choice, i - 1)
+      open = false
+      log(INFO, string.format("%s: building rotation %s (orientation now %d)", MODULE_NAME,
+        (K.ROTATIONS[i][1]:gsub("\xB0", " degrees")), orientation()))
+    end, nil, "the rotation list")
+    wr16(o + ITEM_HIDDEN, 1)
+  end
+end
+
+-- Ctrl + the compass of the right-click ring turns the map counter-clockwise.
+function C.patchCompassTurn(self, G)
+  local R = C.resolvePipette(G)
+  local current = R.tileMap + K.TILE_MAP.orientation
+  local setRotation = nil
+  for _, entry in ipairs(K.AOB_COMPASS_TURN) do
+    local site = scan(entry[1], "the compass of the right-click ring") + K.COMPASS_TURN_SITE
+    local target = readCallTarget(site, entry[3] + 6, "setMapRotation")
+    if setRotation ~= nil and target ~= setRotation then
+      error(MODULE_NAME .. ": the compass does not turn the map the way this module knows")
+    end
+    setRotation = target
+    patchJump(self, site, entry[3], core.allocateAssembly(templates[entry[2]], {
+      IMPORT = R.keyState, NEXT = rd32(site + entry[3] - 4), CURRENT = current, BACK = site + entry[3],
+    }))
+  end
+end
+
+-- The compass of the right-click ring, always shown in the map editor below the undo buttons
+-- (at the undo buttons' place without them): an item drawn every frame, never under the mouse.
+function C.compassItem(G, at, undo)
+  local R = C.resolvePipette(G)
+  local renderGM = core.exposeCode(G.renderGM, 5, 1)
+  local site = scan(K.AOB_COMPASS_DRAW, "the compass picture")
+  local first, gm = rd8(site + K.COMPASS_DRAW.first) & 0xFF, rd8(site + K.COMPASS_DRAW.gm) & 0xFF
+  local orientation = R.tileMap + K.TILE_MAP.orientation
+  wr32(at + ITEM_TYPE, TYPE_CLICKABLE)
+  wr32(at + ITEM_WIDTH, 0)
+  wr32(at + ITEM_HEIGHT, 0)
+  wr32(at + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+  wr32(at + ITEM_TEXT, 0)
+  wr16(at + ITEM_CONTROL, -1)
+  wr16(at + ITEM_HIDDEN, 0)
+  wr32(at + ITEM_RENDER, C.luaPad(function()
+    if rd32(R.gameMode) ~= K.MAP_EDITOR then return end
+    local index = K.COMPASS_PICTURE[rd32(orientation)]
+    if index == nil then return end
+    local top = K.UNDO_BUTTONS.top
+    if undo ~= nil and undo.pictures ~= nil then
+      top = top + math.max(undo.pictures.undo.height, undo.pictures.redo.height) + K.UNDO_BUTTONS.gap
+    end
+    local t = G.textures
+    local mode = rd32(t + TEXTURES_MODE)
+    wr32(t + TEXTURES_MODE, MAP_LAYER)
+    renderGM(t, gm, first + index, K.UNDO_BUTTONS.left + rd32(G.cameraX), top + rd32(G.cameraY))
+    wr32(t + TEXTURES_MODE, mode)
+  end, "the compass"))
+end
+
+-- The unit display player (46.1): a panel above the castle menu's unit tabs with a crest per
+-- player 0..8; new units placed in the map editor are drawn in the chosen player's colours. It
+-- follows the current player whenever that changes.
+function C.unitColours(self, G, B, data, panel, crests)
+  local R = C.resolvePipette(G)
+  local site = scan(K.AOB_UNIT_COLOUR, "the unit placement") + K.UNIT_COLOUR.site
+  local click = scan(K.AOB_TOWER_ENGINE_CLICK, "the current player")
+  local player = readOperand(click, K.TOWER_ENGINE.player, "the current player")
+  local colour = core.allocate(4, true)
+  wr32(colour, rd32(player))
+  -- read before the patch below overwrites these bytes
+  local units = rd32(site + K.UNIT_COLOUR.units)
+  patchJump(self, site, K.UNIT_COLOUR.size, core.allocateAssembly(templates.unitColour, {
+    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, COLOUR = colour,
+    UNITS = units, BACK = site + K.UNIT_COLOUR.size,
+  }))
+  data.unitColour = colour
+  -- the castle's unit tools place their units as a group
+  local from, groups = 0x400000, 0
+  while groups < K.GROUP_COLOUR.sites do
+    local ok, found = pcall(core.scanForAOB, K.AOB_GROUP_COLOUR, from, K.HERD_SEARCH_END)
+    if not ok or found == nil or found == 0 then break end
+    local at = found + K.GROUP_COLOUR.site
+    patchJump(self, at, K.GROUP_COLOUR.size, core.allocateAssembly(templates.unitColourEdi, {
+      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, COLOUR = colour,
+      UNITS = rd32(at + K.GROUP_COLOUR.units), BACK = at + K.GROUP_COLOUR.size,
+    }))
+    groups, from = groups + 1, found + 1
+  end
+  if groups ~= K.GROUP_COLOUR.sites then log(WARNING, MODULE_NAME .. ": groups of units keep the player's colours") end
+  -- The crest pictures, as the keep crests take them from the player shields.
+  local crest = {}
+  for i = 0, B.count - 1 do
+    local p = -9 - rd32(item(B.table, i, ITEM_PARAM))
+    if p >= 1 and p <= K.PLAYERS and crest[p] == nil
+        and (rd32(item(B.table, i, ITEM_TYPE)) & TYPE_GROUP_MEMBER_MASK) == TYPE_GROUP_MEMBER
+        and rd32(item(B.table, i, ITEM_RENDER_TYPE)) == RENDER_IMAGE then
+      local image = G.buttonImages + (rd32(item(B.table, i, ITEM_IMAGE)) & IMAGE_INDEX_MASK) * IMAGE_SIZE
+      crest[p] = { gm = rd32(image), picture = rd32(image + 4) }
+    end
+  end
+  local zero = buttonPictures("shield0")
+  local w, h = zero.width, zero.height
+  local renderGM = core.exposeCode(G.renderGM, 5, 1)
+  local blit = core.exposeCode(G.blit or core.allocateAssembly(templates.blit, {
+    PENCIL = G.pencil, SETUP_SURFACE = G.setupSurface, SETUP_PENCIL = G.setupPencil,
+    SCRATCH = core.allocate(32, true), PIXEL_FORMAT = G.pixelFormat,
+  }), 3, 0)
+  local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
+  local textWidth = core.exposeCode(G.textWidth, 4, 1)
+  local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
+  local text = core.allocate(64, true)
+  writeCString(text, K.UNIT_COLOUR_PANEL.label)
+  local labelWidth = textWidth(G.textManager, text, #K.UNIT_COLOUR_PANEL.label, TOOLTIP_FONT)
+  local P = K.UNIT_COLOUR_PANEL
+  local width = 2 * TOOLTIP_PADDING + labelWidth + TOOLTIP_PADDING + (K.PLAYERS + 1) * (w + P.gap) - P.gap
+  local height = h + 2 * TOOLTIP_PADDING
+  local top = PANEL_BOTTOM - P.above - height       -- above the building counts
+  local rect = C.takeRect(data)
+  local lastPlayer = rd32(player)
+  for p = 0, K.PLAYERS do
+    local x = P.x + 2 * TOOLTIP_PADDING + labelWidth + p * (w + P.gap)
+    C.luaItem(crests[p], x, top + TOOLTIP_PADDING, w, h, function() wr32(colour, p) end, nil, "the unit display player")
+    wr16(crests[p] + ITEM_HIDDEN, 1)
+  end
+  -- Selected units: the current player's (1-8) selection takes the panel over; a crest then
+  -- recolours them.
+  local walk = scan(K.AOB_UNIT_WALK, "the units")
+  local SEL = K.SELECTION
+  local stride = rd32(walk + K.UNIT_WALK.stride)
+  local first = rd32(walk + K.UNIT_WALK.next) - K.UNIT_WALK.nextAfterState - SEL.state   -- unit 0
+  local selectedColour = nil
+  -- In the unit tabs the crests always choose the colour of new units; elsewhere a selection of
+  -- the current player's units (1-8) takes them over.
+  local function selecting()
+    if K.UNIT_TABS[rd32(G.activeTab)] then return false end
+    local p = rd32(player)
+    return p >= 1 and p <= K.PLAYERS and rd32(units + SEL.counts + p * 4) > 0
+  end
+  local function eachSelected(fn)
+    local p = rd32(player)
+    for id = 1, rd32(units) - 1 do
+      local u = first + id * stride
+      if rd16(u + SEL.state) == SEL.alive and rd16(u + SEL.selectedBy) == p then fn(u) end
+    end
+  end
+  for p = 0, K.PLAYERS do
+    wr32(crests[p] + ITEM_ACTION, C.luaPad(function()
+      if selecting() then
+        eachSelected(function(u) wr16(u + SEL.colour, p) end)
+        selectedColour = p
+      else
+        wr32(colour, p)
+      end
+    end, "the unit display player"))
+  end
+  local lastCount = -1
+  local function shown()
+    if rd32(R.gameMode) ~= K.MAP_EDITOR then return false end
+    if selecting() then
+      local count = rd32(units + SEL.counts + rd32(player) * 4)
+      if count ~= lastCount then          -- a new selection: show the colour its first unit has
+        lastCount, selectedColour = count, nil
+        eachSelected(function(u) if selectedColour == nil then selectedColour = rd16(u + SEL.colour) end end)
+      end
+      return true
+    end
+    lastCount = -1
+    return K.UNIT_TABS[rd32(G.activeTab)] == true
+  end
+  C.luaItem(panel, 0, 0, 0, 0, nil, function()
+    -- a new current player brings the choice along
+    local now = rd32(player)
+    if now ~= lastPlayer then
+      lastPlayer = now
+      wr32(colour, now)
+    end
+    if not shown() then
+      C.markRect(rect, 0, 0, 0, 0)
+      for p = 0, K.PLAYERS do wr16(crests[p] + ITEM_HIDDEN, 1) end
+      return
+    end
+    for p = 0, K.PLAYERS do wr16(crests[p] + ITEM_HIDDEN, 0) end
+    C.markRect(rect, P.x, top, width, height)
+    local ox = rd32(B.menu + MENU_X) + rd32(G.cameraX)
+    local oy = rd32(B.menu + MENU_Y) + rd32(G.cameraY)
+    local target = rd32(G.pencil + PENCIL_TARGET)
+    wr32(G.pencil + PENCIL_TARGET, MAP_LAYER)
+    roundedBox(G.pencil, ox + P.x, oy + top, ox + P.x + width, oy + top + height, BOX_BLEND)
+    local t = G.textures
+    local mode = rd32(t + TEXTURES_MODE)
+    wr32(t + TEXTURES_MODE, MAP_LAYER)
+    local chosen = rd32(colour)
+    if selecting() then chosen = selectedColour or -1 end
+    for p = 0, K.PLAYERS do
+      local sx, sy = ox + rd32(crests[p] + ITEM_X), oy + rd32(crests[p] + ITEM_Y)
+      if p == 0 then
+        blit(chosen == 0 and zero.chosen or zero.normal, sx, sy)
+      elseif crest[p] ~= nil then
+        renderGM(t, crest[p].gm, crest[p].picture + (chosen == p and K.CREST.selected or 0), sx, sy)
+      end
+    end
+    wr32(t + TEXTURES_MODE, mode)
+    wr32(G.pencil + PENCIL_TARGET, target)
+    local layer = rd32(G.textLayer)
+    wr32(G.textLayer, MAP_LAYER)
+    writeCString(text, selecting() and P.selectedLabel or P.label)
+    shadowedText(G.textManager, text, ox + P.x + TOOLTIP_PADDING, oy + top + (height - TOOLTIP_LINE) // 2 + 2,
+      ALIGN_LEFT, TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
+    wr32(G.textLayer, layer)
+  end, "the unit display player")
+  wr16(panel + ITEM_HIDDEN, 0)
+end
+
+-- The game mode word, from G or found again (the landscape menu's G may not have it).
+function C.gameModeOf(G)
+  if G.gameMode == nil then G.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND) end
+  return G.gameMode
+end
+
+-- 47.1: a smaller map size takes the cut-off tiles away at once (no reload needed).
+function C.patchSizeRefresh(self, G)
+  local load = scan(K.AOB_VIEWPORT_LOAD, "the map load's viewport setup")
+  local V = K.VIEWPORT_LOAD
+  local site = scan(K.AOB_SIZE_TAIL, "the map size change") + K.SIZE_TAIL.site
+  local sizeSite = scan(K.AOB_SIZE_WORD, "the map size")
+  local sizeWord = rd32(sizeSite + K.SIZE_WORD)
+  expectBytes(site, { 0xB9 }, "the map size change")
+  patchJump(self, site, K.SIZE_TAIL.size, core.allocateAssembly(templates.sizeRefresh, {
+    GAME_MODE = C.gameModeOf(G), MAP_EDITOR = K.MAP_EDITOR, VIEWPORT = rd32(load + V.viewport),
+    BUILD = readCallTarget(load, V.build, "the viewport's tile map"),
+    TWEAK = readCallTarget(load, V.tweak, "the viewport's border tiles"),
+    BOUNDS = readCallTarget(load, V.bounds, "the camera bounds"),
+    TILEMAP = rd32(site - K.SIZE_TAIL.site + 1), SIZE_WORD = sizeWord,
+    -- resetHeightAndMapBorders: the size action calls it, then resetAreaBasedOnLogicalLayer
+    -- empties every border tile and clears its flags as well; flagged again, the tiles turn off
+    -- below and are drawn black, as after loading the map.
+    BORDERS = readCallTarget(sizeSite, K.SIZE_WORD + 4, "the map borders"),
+    CHANGED = readCallTarget(scan(K.AOB_ALL_CHANGED, "the map redraw"), K.ALL_CHANGED, "the map redraw"),
+    PAD = C.luaPad(function()
+      -- every tile the resize marked as border (0x10 / 0x20) is off, whatever the tweak did
+      local R = C.resolvePipette(G)
+      local T, on, flagged = R.tileMap, 0, 0
+      for y = 0, K.MAP_SIZE - 1 do
+        local row = rd32(R.rows + y * 12)
+        for x = 0, K.MAP_SIZE - 1 do
+          local at = R.validTiles + y * K.MAP_SIZE + x
+          if rd8(at) ~= 0 then
+            if (rd32(T + R.logic + (row + x) * 4) & K.MAP_BORDER) ~= 0 then
+              core.writeByte(at, 0)
+              flagged = flagged + 1
+            else
+              on = on + 1
+            end
+          end
+        end
+      end
+      log(INFO, string.format("%s: map size %d: %d tiles on, %d border tiles turned off", MODULE_NAME,
+        rd32(sizeWord), on, flagged))
+    end, "the map size change"),
+    AFTER_THIS = rd32(site + 1), BACK = site + K.SIZE_TAIL.size,
+  }))
+end
+
+-- 47.2: the map editor's camera goes one tile further on every side, so the edge tiles show whole.
+function C.patchCameraEdge(self, G)
+  local site = scan(K.AOB_CAMERA_CLAMP, "the camera bounds")
+  patchJump(self, site, K.CAMERA_CLAMP.size, core.allocateAssembly(templates.cameraEdge, {
+    GAME_MODE = C.gameModeOf(G), MAP_EDITOR = K.MAP_EDITOR, TILE_X = K.CAMERA_EDGE.x, TILE_Y = K.CAMERA_EDGE.y,
+    BACK = site + K.CAMERA_CLAMP.size,
+  }))
+end
+
+-- Keeps leave the ground as it is in the map editor: placeKeep's two calls of the ground painter
+-- (keep tiles: earth and stones 6 around, or thick scrub 3 around on scrub and oasis grass; the
+-- campfire area likewise) do nothing there.
+function C.patchKeepGround(self, G)
+  local stub = core.allocateAssembly(templates.keepGround, {
+    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR,
+    PAINT = readCallTarget(scan(K.AOB_KEEP_GROUND[1], "the keep's ground painting"), K.KEEP_GROUND_CALL, "the ground painter"),
+  })
+  for _, pattern in ipairs(K.AOB_KEEP_GROUND) do
+    local site = scan(pattern, "the keep's ground painting") + K.KEEP_GROUND_CALL
+    C.patchCall(self, site, stub)
   end
 end
 
@@ -7819,6 +8488,7 @@ function C.enable(self, O)
   if O.buildingCounts or O.towerRuins or O.armyExtras or O.statues or O.barrier or O.keepParts or O.damagedWalls
       or O.undo or O.moatKinds or O.ruinedCathedral then
     local newTable
+    C.owner = self                         -- for patches made while the table is built
     newTable, data = C.build(G, B, O)
     core.writeCodeInteger(B.site + 1, newTable)
     local construct = core.exposeCode(B.constructor, 2, 1)
@@ -7839,6 +8509,7 @@ function C.enable(self, O)
   try(O.looseBuildings, C.patchEmptyStorage, "any number of empty storage buildings", G)
   try(O.towerEngines, C.patchTowerEngines, "tower engines anywhere", G)
   try(O.keepParts, C.patchKeepParts, "the keep choices", G, data)
+  try(O.keepGround, C.patchKeepGround, "keeps leaving the ground as it is", G)
   try(O.damagedWalls, C.patchDamagedWalls, "damaged walls", G, data)
   try(O.wallTools, C.patchWallTools, "wall tools", G, data)
   try(O.allPlayers, C.patchAllPlayers, "all player shields")
@@ -7917,6 +8588,7 @@ local function enable(self, config)
     eraseGulls = setting(config, "eraser", "seagulls") == true,
     spreadOrder = setting(config, "trees", "spread_order") == true,
     spreadOutlines = setting(config, "trees", "spread_outlines") == true,
+    compass = setting(config, "menu", "compass") == true,
     undo = self.undo,
   }
   if setting(config, "pipette", "enabled") == true then
@@ -7938,6 +8610,10 @@ local function enable(self, config)
     looseBuildings = setting(config, "castle", "several_storage_and_recruitment") == true,
     towerEngines = setting(config, "castle", "tower_engines_anywhere") == true,
     keepParts = setting(config, "castle", "keep_parts") == true,
+    keepGround = setting(config, "castle", "keep_ground") == true,
+    rotation = setting(config, "castle", "rotation") == true,
+    unitColour = setting(config, "castle", "unit_colour") == true,
+    compass = setting(config, "menu", "compass") == true,
     damagedWalls = setting(config, "castle", "damaged_walls") == true,
     allPlayers = setting(config, "castle", "all_players") == true,
     allKeeps = setting(config, "castle", "all_keeps") == true,
@@ -7956,7 +8632,7 @@ local function enable(self, config)
       or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
       or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks
       or O.textureMask or O.birdButtons or O.animalBin or O.groupWarning or O.eraserChoice or O.eraseGulls
-      or O.spreadOrder or O.spreadOutlines then
+      or O.spreadOrder or O.spreadOutlines or O.compass then
     local ok, problem = pcall(enableMenu, self, O)
     if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
   end
@@ -7980,7 +8656,8 @@ local function enable(self, config)
   if castle.buildingCounts or castle.towerRuins or castle.armyExtras or castle.statues or castle.barrier
       or castle.severalKeeps or castle.looseBuildings or castle.towerEngines or castle.keepParts
       or castle.damagedWalls or castle.hoverTextLeft or castle.undo or castle.moatKinds or castle.moatOnMarsh
-      or castle.moatRemoval or castle.ruinedCathedral or castle.allPlayers or castle.allKeeps or castle.playerZero or castle.keepCrests or castle.wallTools then
+      or castle.moatRemoval or castle.ruinedCathedral or castle.allPlayers or castle.allKeeps or castle.playerZero or castle.keepCrests or castle.wallTools
+      or castle.keepGround or castle.rotation or castle.compass or castle.unitColour then
     local ok, problem = pcall(C.enable, self, castle)
     if not ok then log(WARNING, tostring(problem) .. "; the build menu is left as it is") end
   end
@@ -7999,6 +8676,33 @@ local function enable(self, config)
   if setting(config, "rocks", "random_preview") == true then
     local ok, problem = pcall(enableRandomPreview, self)
     if not ok then log(WARNING, tostring(problem) .. "; the random rotation is left as it is") end
+  end
+  for _, entry in ipairs({ { "size_refresh", C.patchSizeRefresh, "smaller map sizes need a reload" },
+      { "camera_edge", C.patchCameraEdge, "the camera stops short of the map edge" } }) do
+    if setting(config, "map_settings", entry[1]) == true then
+      local ok, problem = pcall(function()
+        local G = self.landscape
+        if G == nil then
+          G = {}
+          resolveMenu(G)
+          resolveDrawing(G)
+        end
+        entry[2](self, G)
+      end)
+      if not ok then log(WARNING, tostring(problem) .. "; " .. entry[3]) end
+    end
+  end
+  if setting(config, "menu", "compass_turn") == true then
+    local ok, problem = pcall(function()
+      local G = self.landscape
+      if G == nil then
+        G = {}
+        resolveMenu(G)
+        resolveDrawing(G)
+      end
+      C.patchCompassTurn(self, G)
+    end)
+    if not ok then log(WARNING, tostring(problem) .. "; the compass turns the map one way only") end
   end
   if setting(config, "menu", "dust_clouds") == true then
     local ok, problem = pcall(C.patchDustClouds, self)

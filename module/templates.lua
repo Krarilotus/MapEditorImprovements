@@ -866,6 +866,18 @@ refuse:
 jmp REFUSE
 ]]
 
+-- ClickPlaceSiegeTent (the spawn command), replacing `cmp byte [eax+HAS_ENGINE],0 / jne BUSY`
+-- (eax: the building on the target tile): the game refuses a building that already has a tower
+-- engine; in the map editor the placement rule has already decided, so several may go on one.
+templates.towerEngineBusy = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+je free_building
+cmp byte [eax+HAS_ENGINE],0
+jne BUSY
+free_building:
+jmp BACK
+]]
+
 -- The tower engine preview with the mouse button up, replacing `cmp esi,ebx / je TRANSPARENT /
 -- imul esi,esi,BUILDING_SIZE`: in the map editor the same lua rule as the click picks the
 -- solid preview (OPAQUE), the see-through one, or the game's own tower tests.
@@ -912,6 +924,237 @@ jmp ACTION
 ]]
 
 -- placeKeep, before a later part of the keep (lua appends the replaced instructions): in the map
+-- The same frame spot when templates.frameHook is not there: outside the map editor the
+-- building orientation goes back to the game's own (the AI's building placement reads it too).
+templates.rotationFrame = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+je rotation_frame_done
+cmp dword [ROTATION_ON],0
+je rotation_frame_done
+push eax
+mov eax,[ROTATION_DEFAULT]
+mov [ORIENTATION],eax
+pop eax
+rotation_frame_done:
+mov ecx,[OPERAND]
+jmp BACK
+]]
+
+-- The right-click ring's compass, replacing `mov REG,[NEXT]` before setMapRotation(NEXT): with
+-- Ctrl held the map turns the other way (2 * CURRENT - NEXT, orientations 0, 2, 4, 6).
+templates.compassTurnEdx = [[
+push eax
+push ecx
+push 0x11
+call dword [IMPORT]
+mov edx,[NEXT]
+test ax,0x8000
+je compass_kept
+mov eax,[CURRENT]
+add eax,eax
+sub eax,edx
+and eax,7
+mov edx,eax
+compass_kept:
+pop ecx
+pop eax
+jmp BACK
+]]
+
+templates.compassTurnEax = [[
+push ecx
+push edx
+push 0x11
+call dword [IMPORT]
+mov ecx,eax
+mov eax,[NEXT]
+test cx,0x8000
+je compass_kept
+mov edx,[CURRENT]
+add edx,edx
+sub edx,eax
+and edx,7
+mov eax,edx
+compass_kept:
+pop edx
+pop ecx
+jmp BACK
+]]
+
+-- PlaceUnit's spawnUnit(player, display player, ...) for a single unit, replacing `push eax /
+-- push eax / mov ecx,UNITS` (eax: the current player): in the map editor the unit is drawn in the
+-- colours of the chosen display player.
+templates.unitColourEdi = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne colour_same
+push dword [COLOUR]
+jmp colour_owner
+colour_same:
+push edi
+colour_owner:
+push edi
+mov ecx,UNITS
+jmp BACK
+]]
+
+templates.unitColour = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne colour_same
+push dword [COLOUR]
+jmp colour_owner
+colour_same:
+push eax
+colour_owner:
+push eax
+mov ecx,UNITS
+jmp BACK
+]]
+
+-- After the map editor changes the map size (replacing `mov ecx,AFTER_THIS` after the size is
+-- set and the cut-off area cleared): the viewport's tile map, its border tiles and the camera
+-- bounds are worked out again, as loading a map does, so the cut-off tiles are off at once.
+templates.sizeRefresh = [[
+pushad
+cmp dword [GAME_MODE],MAP_EDITOR
+jne size_refresh_done
+push dword [SIZE_WORD]
+mov ecx,TILEMAP
+call BORDERS
+mov ecx,VIEWPORT
+call BUILD
+mov ecx,VIEWPORT
+call TWEAK
+mov ecx,VIEWPORT
+call BOUNDS
+call PAD
+mov ecx,TILEMAP
+call CHANGED
+size_refresh_done:
+popad
+mov ecx,AFTER_THIS
+jmp BACK
+]]
+
+-- setViewportBasedOnMapSize, replacing `cmp [ecx+0x78],edx / jge / mov [ecx+0x78],edx` (edx/edi:
+-- the lowest and highest camera x, esi/ebx: y): in the map editor one tile more on every side.
+templates.cameraEdge = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne edge_kept
+sub edx,TILE_X
+add edi,TILE_X
+sub esi,TILE_Y
+add ebx,TILE_Y
+edge_kept:
+cmp [ecx+0x78],edx
+jge edge_low_ok
+mov [ecx+0x78],edx
+edge_low_ok:
+jmp BACK
+]]
+
+-- TriggerPlaceBuilding's default orientation, replacing `mov eax,[ORIENTATION]`: in the map
+-- editor with the rotation list on, the orientation the list asks for (logged by PAD).
+templates.rotationRead = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne rotation_plain
+cmp dword [ROTATION_ON],0
+je rotation_plain
+call PAD
+mov eax,[WANTED]
+jmp BACK
+rotation_plain:
+mov eax,[ORIENTATION]
+jmp BACK
+]]
+
+-- The cursor preview (setConstructionGFXLayerBasedOnPlacementChecks, thiscall, 4 arguments)
+-- reads the keep layout tables (doors / campfire / stockpile, per keep type and orientation)
+-- always at orientation 0. In the map editor with a turn chosen (ROTATION: orientation / 2), the
+-- chosen orientation's rows are swapped into the first slot for the call and swapped back after.
+templates.keepPreviewTurn = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne preview_plain
+cmp dword [ROTATION],0
+je preview_plain
+call preview_swap
+push dword [esp+0x10]
+push dword [esp+0x10]
+push dword [esp+0x10]
+push dword [esp+0x10]
+call PREVIEW
+call preview_swap
+ret 0x10
+preview_plain:
+jmp PREVIEW
+preview_swap:
+pushad
+mov ebx,[ROTATION]
+xor ebp,ebp
+preview_type:
+; table A: 24 bytes a row
+mov eax,ebp
+shl eax,2
+lea esi,[eax+eax*2]
+shl esi,3
+add esi,TABLE_A
+lea edi,[ebx+ebx*2]
+shl edi,3
+add edi,esi
+mov ecx,6
+preview_a:
+mov eax,[esi]
+mov edx,[edi]
+mov [esi],edx
+mov [edi],eax
+add esi,4
+add edi,4
+dec ecx
+jnz preview_a
+; tables B and C: 8 bytes a row
+mov eax,ebp
+shl eax,5
+lea esi,[eax+TABLE_B]
+lea edi,[esi+ebx*8]
+mov ecx,2
+preview_b:
+mov eax,[esi]
+mov edx,[edi]
+mov [esi],edx
+mov [edi],eax
+add esi,4
+add edi,4
+dec ecx
+jnz preview_b
+mov eax,ebp
+shl eax,5
+lea esi,[eax+TABLE_C]
+lea edi,[esi+ebx*8]
+mov ecx,2
+preview_c:
+mov eax,[esi]
+mov edx,[edi]
+mov [esi],edx
+mov [edi],eax
+add esi,4
+add edi,4
+dec ecx
+jnz preview_c
+inc ebp
+cmp ebp,KEEP_ROWS
+jb preview_type
+popad
+ret
+]]
+
+-- placeKeep's ground painter (thiscall, 6 arguments): in the map editor the ground stays as it is.
+templates.keepGround = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne paint
+ret 0x18
+paint:
+jmp PAINT
+]]
+
 -- editor, with one of the keep choices that leave that part out, go straight to the end.
 templates.keepPart = [[
 cmp dword [GAME_MODE],MAP_EDITOR
@@ -2048,6 +2291,11 @@ templates.frameHook = [[
 pushad
 cmp dword [GAME_MODE],MAP_EDITOR
 je frame_editor
+cmp dword [ROTATION_ON],0
+je frame_rotation_kept
+mov eax,[ROTATION_DEFAULT]
+mov [ORIENTATION],eax
+frame_rotation_kept:
 mov dword [RANGE_MIN],DEFAULT_MIN
 mov dword [RANGE_MAX],DEFAULT_MAX
 mov dword [SNAP],1
