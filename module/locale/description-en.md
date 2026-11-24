@@ -1,7 +1,7 @@
 # Map Editor Improvements
 
 **Author(s)**: Monsterfish, Heroesflorian
-**Version**: 1.0.73
+**Version**: 1.0.65
 
 Makes the map editor show more about the map you are working on and adds tools the editor
 lacks: tree growth stages, apple trees, more shrubs, felled trees, gravel and iron, rock
@@ -329,6 +329,22 @@ while the mouse is on the map, for example a hotkey picks another tool or the co
 as you place animals, the menu keeps showing the old state until you move the mouse back
 onto it. With this setting the menu is redrawn all the time in the map editor. It does not
 change anything outside the map editor.
+
+## Resource grid
+
+Draws over the map the grid the AI uses when it looks for places for its quarries, iron mines,
+pitch rigs and woodcutters: blocks of 5 x 5 tiles. A patch of stone inside one block is worth
+more to the AI than the same patch spread over four. It also draws the four lines where the AI's
+castle layout turns with the keep's position, and in every block the tiles an AI iron mine would
+cover.
+
+- **Alt + G** shows or hides it in the map editor. Another Alt + key can be chosen in the
+  settings.
+- By default it only shows in the flattened view (space bar), where the lines lie exactly on the
+  ground, and it is hidden in the V view.
+- **Allow the overlay during games** lets you check the lines in a test game.
+- The colours of the grid, the boundaries and the mine footprint can be changed.
+- Nothing is saved into the map.
 
 ## Good to know
 

@@ -923,9 +923,7 @@ mov dword [FLAG],VALUE
 jmp ACTION
 ]]
 
--- placeKeep, before a later part of the keep (lua appends the replaced instructions): in the map
--- The same frame spot when templates.frameHook is not there: outside the map editor the
--- building orientation goes back to the game's own (the AI's building placement reads it too).
+-- Restore the game's orientation outside the editor for AI building placement.
 templates.rotationFrame = [[
 cmp dword [GAME_MODE],MAP_EDITOR
 je rotation_frame_done
@@ -936,8 +934,7 @@ mov eax,[ROTATION_DEFAULT]
 mov [ORIENTATION],eax
 pop eax
 rotation_frame_done:
-mov ecx,[OPERAND]
-jmp BACK
+ret
 ]]
 
 -- The right-click ring's compass, replacing `mov REG,[NEXT]` before setMapRotation(NEXT): with
@@ -2283,19 +2280,13 @@ mov eax,1
 ret
 ]]
 
--- After the map is drawn (the instruction after renderMap's call and the floater pass: `mov
--- ecx,[OPERAND]`), every frame on the game screen: in the map editor the tree preview while a
--- plant tool is chosen (PLANTS: a byte per tool); outside it the height tool settings go back to
--- their defaults.
+-- After the map is drawn (called from the map drawing's patch site, editor/frame.lua), every
+-- frame on the game screen: in the map editor the tree preview while a plant tool is chosen
+-- (PLANTS: a byte per tool); outside it the height tool settings go back to their defaults.
 templates.frameHook = [[
 pushad
 cmp dword [GAME_MODE],MAP_EDITOR
 je frame_editor
-cmp dword [ROTATION_ON],0
-je frame_rotation_kept
-mov eax,[ROTATION_DEFAULT]
-mov [ORIENTATION],eax
-frame_rotation_kept:
 mov dword [RANGE_MIN],DEFAULT_MIN
 mov dword [RANGE_MAX],DEFAULT_MAX
 mov dword [SNAP],1
@@ -2332,8 +2323,7 @@ je frame_done
 call PAD
 frame_done:
 popad
-mov ecx,[OPERAND]
-jmp BACK
+ret
 ]]
 
 -- Every-frame item of the heights menu: PAD while COUNT is not 0 (a whole rock to move) or the

@@ -1,0 +1,393 @@
+counts_group: Kartenzähler
+counts_group_descr: |-
+  Zeigt im Landschaftseditor an, wie viele Tiere, Bäume und Felsen sich auf der Karte befinden und wie nah sie an den Spiellimits liegen.
+counts_enabled: Kartenzähler anzeigen
+counts_enabled_tooltip: |-
+  Zeige mit der Maus auf die Schaltflächen Tiere, Vegetation oder Felsen, um einen Hinweis mit der aktuellen Anzahl und dem Spiellimit zu sehen, z. B. „Bäume und Sträucher: 812/1999“. Der Hinweis für Tiere zeigt außerdem Herden und Gruppen, die ein eigenes Limit haben.
+  Im Menü Tiere zeigen die Schaltflächen für Hirsche, Kamele, Hasen und Löwen jeweils ihre Anzahl; im Menü Vegetation zeigt jede Baum- und Strauch-Schaltfläche die jeweilige Anzahl.
+  Eine rote „i“-Schaltfläche über der Schlüssel-Schaltfläche schaltet dies während der Arbeit ein und aus.
+counts_shown: Zahlen beim Öffnen des Editors anzeigen
+counts_shown_tooltip: |-
+  Aus: Die Zahlen sind anfangs ausgeblendet und lassen sich über die „i“-Schaltfläche einblenden.
+trees_group: Bäume und Sträucher
+trees_group_descr: |-
+  Mehr Auswahl beim Platzieren von Vegetation im Landschaftseditor.
+trees_growth: Pinselgröße bestimmt Wachstumsstufe des Baums
+trees_growth_tooltip: |-
+  Bäume werden in der Wachstumsstufe der Pinselgröße platziert: Pinsel 1 setzt die kleinsten Bäume, Pinsel 4 ausgewachsene (was der Editor sonst immer setzt), Pinsel 5 ausgewachsene Bäume, die Holzfäller eine Weile in Ruhe lassen, Pinsel 6 und 7 abgestorbene Bäume (7 zerfällt schneller). Sträucher sind davon nicht betroffen.
+trees_apple: Apfelbaum-Schaltfläche
+trees_apple_tooltip: |-
+  Fügt dem Vegetationsmenü einen Apfelbaum hinzu. Das Bild ist images/apple.png (samt apple_hover.png und apple_selected.png) im Modulordner; ersetze sie zum Anpassen.
+trees_shrubs: Mehr Sträucher
+trees_shrubs_tooltip: |-
+  Ist der Strauch mit vier weiteren Farben gewählt, bietet eine Leiste über dem Vegetationsmenü alle fünf Farben an.
+trees_felled: Gefällte Bäume
+trees_felled_tooltip: |-
+  Ist ein Baum gewählt, zeigt eine Leiste über dem Vegetationsmenü diesen Baum stehend (zuerst) und gefällt mit jeder möglichen Anzahl Stämme (9 bis 1 bei ausgewachsenen Bäumen; die kleinsten Bäume liegen mit 1 Stamm). Klicke einen an, um gefällte Bäume zu setzen; klicke auf den stehenden Baum, erneut auf den gefällten oder auf den Baum im Menü, um wieder stehende Bäume zu setzen.
+trees_random_mix: Zufällige Mischungen in den Baumleisten
+trees_random_mix_tooltip: |-
+  Fügt den Leisten über dem Vegetationsmenü mit „?“ markierte Schaltflächen hinzu:
+  - Zufälliger Baum (zuerst in der Leiste gefällter Bäume): Bäume jeder Wachstumsstufe von der kleinsten bis zur Pinselstufe zufällig gemischt. Nicht für die kleinsten oder abgestorbene Bäume.
+  - Zufälliger gefällter Baum (zuletzt in der Leiste gefällter Bäume): gefällte Bäume mit zufälliger Stammanzahl.
+  - Zufälliger Strauch (zuletzt in der Strauchleiste): die fünf Strauchfarben zufällig gemischt.
+  Erneut klicken oder eine andere Schaltfläche wählen beendet die Mischung.
+trees_obstacles: Kontrollkästchen für Bäume neben Hindernissen
+trees_obstacles_tooltip: |-
+  Fügt der oberen Reihe des Vegetationsmenüs ein Kontrollkästchen hinzu. Ist es angehakt, lassen sich Bäume direkt neben Gebäuden, Felsen, Mauern und anderen Bäumen platzieren, wovon das Spiel sie sonst fernhält (Sträucher dürfen dort ohnehin stehen). Zeige darauf, um den Zustand zu sehen.
+trees_rocks_and_water: Kontrollkästchen für Vegetation auf Felsen und Wasser
+trees_rocks_and_water_tooltip: |-
+  Ein Kontrollkästchen rechts im Vegetationsmenü, unter dem für Bäume neben Hindernissen (anfangs aus). Angehakt lassen sich Bäume und Sträucher auch auf Sumpf, Fluss, Furt, Felsen, Geröll und Kies platzieren.
+trees_sorted_rows: Reihen des Vegetationsmenüs ordnen
+trees_sorted_rows_tooltip: |-
+  Verschiebt den Strauch aus der oberen Reihe nach unten und sortiert die Sträucher der unteren Reihe, sodass oben die Bäume (samt Apfelbaum und Kontrollkästchen) und unten alle Sträucher stehen.
+trees_preview: Baumvorschau
+trees_preview_tooltip: |-
+  Ist ein Baum oder Strauch gewählt, wird er auf dem Feld unter dem Mauszeiger so angezeigt, wie ihn das Spiel zeichnet – in der Wachstumsstufe des Pinsels oder gefällt mit der gewählten Stammzahl. Nicht im herausgezoomten Zustand.
+trees_no_stacking: Keine gestapelten Sträucher
+trees_no_stacking_tooltip: |-
+  Auf einem Feld, auf dem bereits ein Baum oder Strauch steht, kann kein weiterer platziert werden. Manche Sträucher (der aus der oberen Reihe und die vier mit ihm sortierten) stapelten sich bisher unsichtbar und belegten dauerhaft Plätze des Baumlimits. Der Radierer entfernt nun auch alle gestapelten Sträucher auf einem Feld, sodass alte Stapel bereinigt werden können.
+textures_group: Bodentexturen
+textures_group_descr: |-
+  Das Texturenmenü des Landschaftseditors.
+textures_gravel_and_iron: Kies und Eisen im Texturenmenü
+textures_gravel_and_iron_tooltip: |-
+  Fügt Kies in der oberen Reihe und Eisen in der unteren Reihe hinzu und verteilt beide Reihen gleichmäßig. Das Kiesbild ist images/gravel.png (mit gravel_hover.png und gravel_selected.png).
+textures_no_heights_iron: Eisen nur im Texturenmenü
+textures_no_heights_iron_tooltip: |-
+  Entfernt die Eisen-Schaltfläche aus dem Höhenmenü, da das Texturenmenü nun eine eigene besitzt.
+textures_mask: Masken-Schaltfläche
+textures_mask_tooltip: |-
+  Fügt oben links im Menü des Landschaftseditors eine Masken-Schaltfläche (halb ausgefülltes Quadrat) hinzu. Ist sie aktiv, verändern die Naturwerkzeuge (Höhen, Texturen, Wasser, Bäume und Sträucher, Felsen und Pipette) nur Felder mit derselben Textur wie das zuerst angeklickte Feld; beim Loslassen der Maustaste wählt der nächste Klick die Zieltextur neu.
+textures_mask_by_type: Maske fasst Wasservarianten zusammen
+textures_mask_by_type_tooltip: |-
+  Die Maske lässt nur Felder mit exakt derselben Textur durch (Gras, Gestrüpp, dichtes Gestrüpp, Steine, Strand … bleiben getrennt). Mit dieser Option zählen Varianten desselben Gewässers zusammen: alles Meer samt Rändern und Tiefen, aller Fluss samt Gischt, Wellen und Wasserfallrändern, alle Furtfelder. Meer, Fluss und Furt bleiben getrennt.
+water_group: Wasser
+water_group_descr: |-
+  Das Wassermenü des Landschaftseditors.
+water_decorations: Gischt und kleine Wellen
+water_decorations_tooltip: |-
+  Bringt zwei Flussdekorationen aus dem Editor des ersten Stronghold zurück, die Crusader weiterhin unterstützt, aber ohne Schaltflächen: Gischt (weißes Wasser und Gischt wie unter einem Wasserfall, auf jedem Flussfeld unter dem Pinsel) und Kleine Wellen (auf dem einzelnen Flussfeld unter der Maus). Beide passen nur auf Flussfelder und werden mit der Karte gespeichert.
+water_foam_on_sea: Gischt auch auf dem Meer
+water_foam_on_sea_tooltip: |-
+  Gischt lässt sich auch auf Meeresfeldern setzen, die dadurch zu Fluss mit Gischt werden (bei aktiver Gischt-Option).
+rocks_group: Felsen
+rocks_group_descr: |-
+  Das Felsenmenü des Landschaftseditors.
+rocks_signpost: Wegweiser im Felsenmenü von Gefechtskarten
+rocks_signpost_tooltip: |-
+  Gefechtskarten erhalten dasselbe Felsenmenü wie Szenariokarten, einschließlich der Wegweiser-Schaltfläche.
+rocks_random_preview: Zufällige Drehung in der Vorschau sichtbar
+rocks_random_preview_tooltip: |-
+  Bei gewählter Zufallsdrehung dreht das Spiel den Felsen so schnell, dass die Vorschau unter der Maus nicht folgen kann. Mit dieser Option dreht er sich stattdessen einmal pro Sekunde und zeigt genau den Felsen, den du gleich setzt.
+rocks_variants: Leiste für Felsenvarianten
+rocks_variants_tooltip: |-
+  Eine Leiste über dem Felsenmenü zeigt die vier Varianten der gewählten Felsengröße in ihrer aktuellen Drehung. Klicke eine an, um nur diese Variante zu setzen; ein weiterer Klick darauf oder auf eine Schaltfläche des Felsenmenüs kehrt zum automatischen Wechsel zurück.
+rocks_extra_rock: Zusätzlicher kleiner Felsen
+rocks_extra_rock_tooltip: |-
+  Bei den kleinsten Felsen bietet die Variantenleiste eine fünfte Variante: einen kleinen Felsen, der im Spiel vorhanden ist, vom Editor aber nie gesetzt wird. Er wird wie jeder andere Felsen in der Karte gespeichert.
+rocks_invisible: Kontrollkästchen für unsichtbare Felsen
+rocks_invisible_tooltip: |-
+  Fügt rechts neben den Felsen-Schaltflächen ein Kontrollkästchen hinzu. Ist es angehakt, ist jeder gesetzte Felsen sofort ein „unsichtbarer Felsen“, ohne zuerst 4000 Felsen setzen zu müssen: Die Felder sind belegt (unbebaubar und unpassierbar), aber es wird kein Felsen gezeichnet, sodass der frühere Untergrund sichtbar bleibt (der „2k-Steine-Trick“). Abhaken für normale Felsen.
+rocks_erase_invisible: Radierer entfernt unsichtbare Felsen
+rocks_erase_invisible_tooltip: |-
+  Der Landschaftsradierer (und Werkzeuge, die Felsen damit entfernen) gibt auch Felder unsichtbarer Felsen frei, genau wie bei normalen Felsen. Ohne diese Option bräuchte jedes Feld den Strauch-Trick: einen Hindernisse ignorierenden Strauch darauf setzen und diesen wieder radieren.
+rocks_remove_lost: Schaltfläche „Verlorene Felsen entfernen“
+rocks_remove_lost_tooltip: |-
+  Fügt unten rechts im Felsenmenü eine Schaltfläche „Verlorene Felsen entfernen“ hinzu. Ein vom Heben-/Senken-Werkzeug beschädigter Felsen, dessen Felder anschließend alle mit Sträuchern überdeckt wurden, bleibt ohne Felder in der Felsenliste der Karte: unsichtbar, nicht radierbar und dauerhaft einen der 4000 Felsenplätze belegend. Die Schaltfläche löscht alle solchen Einträge aus der Liste; Felder bleiben unverändert.
+heights_group: Höhen
+heights_group_descr: |-
+  Die Höhenwerkzeuge des Landschaftseditors.
+heights_max_height: Schaltfläche „Maximale Höhe“
+heights_max_height_tooltip: |-
+  Bringt das Werkzeug „Maximale Höhe“ aus dem ersten Stronghold rechts neben „Minimale Höhe“ im Höhenmenü zurück: Es hebt das Gelände unter dem Pinsel auf Höhe 156. Crusader besitzt das Werkzeug und die Schaltflächenbilder weiterhin; nur der Knopf fehlte.
+heights_tool_options: Optionen für Höhenwerkzeuge
+heights_tool_options_tooltip: |-
+  Ist ein Höhenwerkzeug gewählt, bietet ein Feld über dem Höhenmenü (von unten nach oben):
+  - Bodentexturen zurücksetzen (anfangs aus): ob Höhenwerkzeuge den Boden wie im Original auf die Grundtextur (und Plateaus auf Erde) zurücksetzen. Aus verändert nur die Höhe.
+  - Felsenfelder aufbrechen (anfangs aus): ob Heben, Senken, Angleichen, Hügel und Berg berührte Felsen wie im Original aufbrechen (die Felder werden unsichtbar und begehbar, der Felsen bleibt). Aus bleiben Felsen ganz.
+  - Wasser ignorieren und Ackerland ignorieren (anfangs aus): Höhenwerkzeuge lassen Meer-, Fluss-, Furt-, Sumpf- und Burggrabenfelder bzw. Gestrüpp, dichtes Gestrüpp und Oasengras unverändert.
+  - Für Heben, Senken und Angleichen: An Bereich anpassen (anfangs an), Umkehren (nur Angleichen), Höhenbereich (anfangs 8 bis 156; beide Enden ziehbar) und Stärke. Bei „An Bereich anpassen“ werden Felder außerhalb in den Bereich gezogen wie im Spiel; aus bleiben sie unverändert. „Umkehren“ raut Gelände beim Angleichen auf, statt es zu glätten.
+  - Felsenhöhen ändern (anfangs Ganzer Felsen): was Höhenwerkzeuge mit berührten Felsen tun. „Nur Feld“ bewegt nur Felder unter dem Pinsel; „Ganzer Felsen“ bewegt alle Felder des Felsens gemeinsam; „Felsen löschen“ entfernt den Felsen wie zuvor „Minimale Höhe“.
+  Bereich, An Bereich anpassen, Umkehren und die Ignorieren-Kästchen kehren beim Verlassen des Karteneditors auf ihre Standardwerte zurück.
+heights_invert_key_on: Taste halten zum Umkehren von Angleichen
+heights_invert_key_on_tooltip: |-
+  Wird diese Taste bei gewähltem Angleichen-Werkzeug gehalten, raut es den Boden auf (wie bei angehaktem „Umkehren“); beim Loslassen glättet es wieder.
+heights_invert_key: Taste zum Umkehren von Angleichen
+heights_invert_key_tooltip: |-
+  Die Taste, die zum Umkehren des Angleichen-Werkzeugs gedrückt gehalten wird.
+castle_group: Burgmodus
+castle_group_descr: |-
+  Das Baumenü im Burgmodus des Karteneditors.
+castle_building_counts: Gebäudezähler über der Minikarte
+castle_building_counts_tooltip: |-
+  Zeigt über der Minikarte, wie viele Gebäude die Karte im Vergleich zum Spiellimit enthält (jedes Gebäude zählt, einschließlich Bergfrieden, Landschaftsgebäuden und Gebäudeteilen), wie viele Spielergebäude alle Spieler zusammen besitzen und wie viele der aktuelle Spieler besitzt. Spielergebäude sind jene, die ein Gegner zerstören kann.
+castle_tower_ruins: Turmruinen
+castle_tower_ruins_tooltip: |-
+  Ist das Türme-Menü geöffnet, bietet eine Leiste darüber die Ruinen der fünf Türme an.
+castle_tunnel_and_tents: Tunneleingang und Belagerungszelte
+castle_tunnel_and_tents_tooltip: |-
+  Im Menü Militärgebäude: Ist die Tunnelgräbergilde gewählt, bietet eine Leiste darüber einen Tunneleingang; ist die Baumeistergilde gewählt, die sechs Belagerungszelte.
+castle_statues: Statue und Schreine
+castle_statues_tooltip: |-
+  Fügt die ungenutzte 2×2-Statue, den 2×2-Schrein und den 1×1-Schrein hinzu: am Ende der Varianten von Statue und Schrein (siehe „Gebäudevarianten“) oder, wenn diese deaktiviert sind, in einer Leiste über dem Menü „Gute Dinge“.
+castle_barrier: Barriere im Ruinen-Menü
+castle_barrier_tooltip: |-
+  Fügt unten rechts im freien Feld des Ruinen-Menüs eine Barriere-Schaltfläche hinzu: eine 1×1-Barriere, die wieder gelöscht werden kann.
+castle_several_keeps: Mehrere Bergfriede pro Spieler
+castle_several_keeps_tooltip: |-
+  Das Platzieren eines Bergfrieds entfernt nicht mehr den früheren Bergfried des Spielers (und dessen Lagerfeuer). Der neueste Bergfried ist der aktive des Spielers; die anderen bleiben als Gebäude stehen.
+castle_several_storage: Mehrere Lager- und Rekrutierungsgebäude
+castle_several_storage_tooltip: |-
+  Kasernen, Söldnerlager, Gilden und andere Gebäude, von denen ein Spieler sonst nur eines hat, werden beim Bau eines weiteren nicht mehr entfernt, und weitere Vorratslager, Kornspeicher und Waffenkammern müssen das erste nicht mehr berühren. Beliebig viele davon dürfen zudem leer bleiben (das Spiel erlaubt sonst nur 8 leere Kornspeicher/Waffenkammern und 32 leere Vorratslager).
+castle_tower_engines: Turmmangen und Turmballisten überall
+castle_tower_engines_tooltip: |-
+  Turmmange und Turmballiste aus dem Militärbaumenü können überall dort platziert werden, wo eine Einheit stehen darf (Boden, Mauern, Tore, Türme, Bergfried), nicht nur auf eigenen Quadrat- und Rundtürmen: auf dem angeklickten Feld, eine pro Feld, bis zu 4 auf Bergfried oder großem Torhaus und 8 auf den großen Festungs-Bergfrieden. Die Vorschau ist überall massiv, wo ein Klick ein Gerät setzt.
+castle_keep_parts: Bergfried ohne Lagerfeuer oder Vorratslager
+castle_keep_parts_tooltip: |-
+  Ist ein Bergfried gewählt, bietet eine Leiste über dem Bergfried-Menü zwei weitere Formen: „Nur Bergfried“ (Bergfried und Eingang ohne Lagerfeuerplatz und Vorratslager) und „Ohne Vorratslager“ (Bergfried, Eingang und Lagerfeuerplatz). Ein Klick auf einen Bergfried im Menü setzt wieder den vollständigen Bergfried.
+  Vorschau und Platzprüfung berücksichtigen jeweils nur diese Teile.
+castle_hover_text: Gebäudenamen weiter links
+castle_hover_text_tooltip: |-
+  Der Name des Gebäudes unter dem Mauszeiger („Bergfried von Spieler 1“) rückt 100 Pixel nach links und überschneidet sich nicht mehr mit dem Gebäudezähler über der Minikarte.
+castle_damaged_walls: Beschädigte Mauern und Treppen
+castle_damaged_walls_tooltip: |-
+  Sind Treppe, niedriger Wall, hoher Wall oder Zinnen gewählt, bietet eine Leiste über dem Burgbaumenü die Variante „Beschädigt“: Die platzierten Mauern erhalten die Krone einer beschädigten Mauer bei gleicher Höhe. Ein Klick auf die Mauer im Menü setzt wieder unbeschädigte Mauern.
+castle_variant_panels: Gebäudevarianten
+castle_variant_panels_tooltip: |-
+  Sind Garten, Statue, Schrein oder Latrine gewählt, zeigt eine Leiste über dem Menü alle Varianten; eine dort gewählte Variante bleibt aktiv, statt jede Sekunde zur nächsten zu wechseln. Dasselbe gilt für Hütten über dem Stadtmenü. Ein Klick auf das Gebäude im Menü kehrt zum normalen Verhalten zurück. Auch die Pipette übernimmt die exakte Variante.
+castle_ruined_cathedral: Zerstörte Kathedrale
+castle_ruined_cathedral_tooltip: |-
+  Ist die Kathedrale gewählt, bietet eine Leiste über dem Stadtmenü sie als „Ruine“: Die platzierte Kathedrale erhält die zerstörte Grafik, die das Spiel sonst nur in einer historischen Mission zeigt. Im Spiel bleibt sie dennoch eine vollständig funktionierende Kathedrale. Ein Klick im Menü setzt wieder intakte Kathedralen; die Pipette erkennt zerstörte Kathedralen ebenfalls. Erfordert die originale tile_churches.gm1 des Spiels (ältere Kopien enthalten keine Ruine, dann bleiben Kathedralen ganz).
+castle_moat_kinds: Gegrabener, geplanter und dauerhafter Burggraben
+castle_moat_kinds_tooltip: |-
+  Ist der Burggraben im Torhaus-Menü gewählt, bietet eine Leiste darüber drei Arten: Gegraben (Standard des Editors), Geplant (zum Ausheben markiert wie im Spiel) und Dauerhaft (gegrabener Burggraben, den im Spiel niemand zuschütten oder löschen kann). Ein Klick im Menü kehrt zum gegrabenen Burggraben zurück.
+castle_moat_on_marsh: Burggraben auf Sumpf
+castle_moat_on_marsh_tooltip: |-
+  Im Karteneditor kann Burggraben wieder auf Sumpf gesetzt werden. Der Sumpf bleibt darunter erhalten und erscheint wieder, wenn der Graben zugeschüttet wird.
+castle_moat_removal_keeps_ground: Graben entfernen behält den Boden
+castle_moat_removal_keeps_ground_tooltip: |-
+  „Burggraben entfernen“ ändert nur noch Felder mit gegrabenem oder geplantem Burggraben: Der Graben verschwindet (gegrabener Graben erhält wieder normale Geländehöhe) und die Bodentextur bleibt unberührt. Ohne diese Option wird jedes Feld unter dem Pinsel zu einfacher Erde.
+herds_group: Herden
+herds_group_descr: |-
+  Die Tiere im Landschaftseditor.
+herds_panel: Herden-Leiste
+herds_panel_tooltip: |-
+  Sind Hirsch, Löwe, Hase oder Kamel gewählt, zeigt eine Leiste über dem Tiere-Menü, wie viele Tiere eine Herde erhält (fester plus zufälliger Anteil) und welches Gruppenverhalten sie nutzt. Mit dem Kontrollkästchen richtet sich die Herdengröße nach dem Pinsel: 2 × Pinselgröße − 1 Tiere (1 bis 13), ohne Zufallsanteil.
+brushes_group: Pinsel
+brushes_group_descr: |-
+  Die Pinsel des Landschaftseditors.
+brushes_full_shape: Pinsel mit vollständiger Form
+brushes_full_shape_tooltip: |-
+  Die spielinternen Pinsel zählen das Feld unter dem Mauszeiger doppelt und lassen dafür das obere linke Eckfeld aus – sowohl in der Vorschau als auch beim Platzieren. Mit dieser Option haben sie ihre vollständige Form (nur im Karteneditor; sonstige Spielnutzung bleibt unberührt).
+undo_group: Rückgängig und Wiederherstellen
+undo_group_descr: |-
+  Schaltflächen für Rückgängig und Wiederherstellen oben links im Karteneditor.
+undo_enabled: Rückgängig und Wiederherstellen
+undo_enabled_tooltip: |-
+  Zwei Pfeilschaltflächen oben links im Karteneditor: Die linke macht die letzte Kartenänderung rückgängig (Platzieren, Entfernen, Malen, Höhen), die rechte stellt sie wieder her – bis zu 20 Schritte. Eine Schaltfläche ist ausgegraut, wenn nichts vorliegt. Jeder Klick ist ein Schritt, ebenso ein gedrückt gehaltener Pinselstrich. Klicks ohne Änderung (z. B. ohne gewähltes Werkzeug) erzeugen keinen Schritt. Das Laden einer anderen Karte beginnt den Verlauf neu.
+pipette_group: Pipette
+pipette_group_descr: |-
+  Eine Pipette in der linken Spalte des Landschaftseditors über der Pinselgröße: übernimmt Höhen und/oder Texturen eines Felds und überträgt sie auf Felder unter dem Pinsel.
+pipette_enabled: Pipette
+pipette_enabled_tooltip: |-
+  Fügt die Pipetten-Schaltfläche über der Pinselgröße hinzu (Pinselgröße, Lineal und Radierer rücken etwas nach unten).
+  Bei Auswahl erscheint eine Leiste über dem Menü – Höhen, Texturen, Objekte, Alle – und darüber der aktuelle Inhalt der Pipette. Klicke ein Feld zum Aufnehmen (die Pipette zeigt ein einzelnes Feld), dann klicke oder ziehe zum Übertragen auf die Felder unter dem Pinsel. Höhen lassen den Boden unberührt, Texturen die Höhen. Objekte übernimmt Gebäude, Mauer, Baum oder Felsen eines Felds: Gebäude und Mauern werden wie über ihr eigenes Menü für denselben Spieler gesetzt (dessen Wappen wird gewählt), Bäume (gleiche Art und Stufe oder gefällt mit gleicher Stammzahl) und Felsen (gleiche Art und Drehung) wie mit den jeweiligen Werkzeugen samt Ziehen. Alle nimmt zusätzlich einen Baum oder 1×1-Felsen auf und setzt ihn auf jedes Feld unter dem Pinsel. Erneutes Klicken auf die Pipette oder eine ihrer Arten leert sie.
+  Höhen werden nicht auf Meer, Strand, Sumpf, Burggraben, Felsen, Mauern oder Gebäude übertragen; Texturen nicht auf Felsen, Mauern oder Gebäude. Klippenfelsen an steilen Kanten werden entfernt und entstehen dort neu, wo Kanten steil bleiben. Rückgängig funktioniert auch für Pipettenstriche.
+pipette_select_key_on: Pipetten-Taste
+pipette_select_key_on_tooltip: |-
+  Eine Taste, die die Pipette auswählt (und leert). Erneutes Drücken bei gewählter Pipette schaltet zur nächsten Art weiter: Höhen, Texturen, Objekte, Alle.
+pipette_select_key: Taste für die Pipette
+pipette_select_key_tooltip: |-
+  Die Taste, mit der im Karteneditor die Pipette gewählt wird. Ihre gewohnte Funktion bleibt dabei erhalten.
+pipette_read_key_on: Halten zum Aufnehmen eines Felds
+pipette_read_key_on_tooltip: |-
+  Solange diese Taste gedrückt bleibt, nimmt eine bereits gefüllte Pipette wieder ein neues Feld auf (das alte bleibt bis zum Klick erhalten). Beim Loslassen überträgt sie wieder – sofern sie etwas enthält.
+pipette_read_key: Taste zum Aufnehmen eines Felds
+pipette_read_key_tooltip: |-
+  Die Taste, die gedrückt gehalten wird, um ein Feld mit bereits gefüllter Pipette neu aufzunehmen.
+pipette_any_tile_key_on: Halten zum Übertragen auf jedes Feld
+pipette_any_tile_key_on_tooltip: |-
+  Experimentell: Solange diese Taste gehalten wird, überträgt die Pipette Höhen und Texturen auf jedes Feld unter dem Pinsel, einschließlich Meer, Sumpf, Felsen (die bleiben), Mauern und Gebäude (niemals den Kartenrand). Ändert nicht, wo Objekte platziert werden dürfen.
+pipette_any_tile_key: Taste zum Übertragen auf jedes Feld
+pipette_any_tile_key_tooltip: |-
+  Die Taste, mit der die Pipette ignoriert, was sich auf einem Feld befindet.
+key_letter_a: A
+key_letter_b: B
+key_letter_c: C
+key_letter_d: D
+key_letter_e: E
+key_letter_f: F
+key_letter_g: G
+key_letter_h: H
+key_letter_i: I
+key_letter_j: J
+key_letter_k: K
+key_letter_l: L
+key_letter_m: M
+key_letter_n: N
+key_letter_o: O
+key_letter_p: P
+key_letter_q: Q
+key_letter_r: R
+key_letter_s: S
+key_letter_t: T
+key_letter_u: U
+key_letter_v: V
+key_letter_w: W
+key_letter_x: X
+key_letter_y: Y
+key_letter_z: Z
+key_digit_0: '0'
+key_digit_1: '1'
+key_digit_2: '2'
+key_digit_3: '3'
+key_digit_4: '4'
+key_digit_5: '5'
+key_digit_6: '6'
+key_digit_7: '7'
+key_digit_8: '8'
+key_digit_9: '9'
+key_f1: F1
+key_f2: F2
+key_f3: F3
+key_f4: F4
+key_f5: F5
+key_f6: F6
+key_f7: F7
+key_f8: F8
+key_f9: F9
+key_f10: F10
+key_f11: F11
+key_f12: F12
+key_ctrl: Strg
+key_shift: Umschalt
+key_alt: Alt
+key_space: Leertaste
+key_tab: Tab
+menu_group: Editormenü
+menu_group_descr: |-
+  Wie das Menü des Editors am unteren Bildschirmrand gezeichnet wird.
+menu_dust_clouds: Staubwolken können das Spiel nicht zum Absturz bringen
+menu_dust_clouds_tooltip: |-
+  Eine Staubwolke mit verlorenen Bewegungsdaten führte zu einer Division durch null und ließ das Spiel abstürzen. Mit dieser Option bleibt eine solche Wolke stattdessen einfach stehen.
+menu_always_update: Menü immer aktuell halten
+menu_always_update_tooltip: |-
+  Das Spiel zeichnet das Menü nur neu, solange die Maus darüber liegt. Änderungen von außerhalb, etwa durch eine Taste zur Werkzeugwahl oder aktualisierte Zähler beim Platzieren von Tieren, erscheinen sonst erst beim Zurückbewegen der Maus. Mit dieser Option wird das Menü im Karteneditor laufend neu gezeichnet.
+castle_all_players: Alle acht Spielerwappen auf jeder Karte
+castle_all_players_tooltip: |-
+  Die Wappen neben der Minikarte zeigen auf jedem Kartentyp alle acht Spieler, nicht nur auf Mehrspielerkarten.
+castle_all_keeps: Herrenhaus und Festung auf jeder Karte
+castle_all_keeps_tooltip: |-
+  Das Bergfried-Menü bietet Herrenhaus und Festung auch auf Mehrspielerkarten an.
+castle_player_zero: Wappen für Spieler 0
+castle_player_zero_tooltip: |-
+  Ein weißes neuntes Wappen in der Mitte der Spielerwappen wählt Spieler 0, der ebenfalls Gebäude und Einheiten auf einer Karte besitzen kann.
+castle_keep_crests: Aktive Bergfried-Wappen
+castle_keep_crests_tooltip: |-
+  Jeder Bergfried zeigt das Wappen seines Besitzers über sich; der aktive Bergfried des Spielers (an dem Lord, Starteinheiten und neue Bauern erscheinen) zeigt es eingerahmt. Ein Klick auf ein Wappen macht diesen Bergfried aktiv, ein Klick auf den aktiven lässt den Spieler ohne aktiven Bergfried. Ein neuer Bergfried übernimmt nicht mehr automatisch die aktive Rolle; wird der aktive entfernt, übernimmt ein anderer Bergfried des Spielers. Das Haupt-Vorratslager folgt stets dem aktiven Bergfried (das Spiel behielt sonst das allererste Vorratslager, wodurch die KI bei mehreren Bergfrieden ihren Bauplatz blockiert fand und keinen Burgplan baute). Erfordert „Mehrere Bergfriede pro Spieler“.
+castle_keep_crest_tooltip: Hinweis auf Bergfried-Wappen
+castle_keep_crest_tooltip_tooltip: |-
+  Überfahren eines Bergfried-Wappens mit der Maus erklärt seine Bedeutung und die Wirkung eines Klicks. Erfordert „Aktive Bergfried-Wappen“.
+castle_wall_tools: Mauerhöhen und freie Zinnen
+castle_wall_tools_tooltip: |-
+  Zinnen können frei stehen. Ihre Leiste bietet Niedrig, Hoch, Niedrig beschädigt und Hoch beschädigt. Ein Regler über dem Mauermenü stellt die Höhe hoher Mauern, niedriger Mauern und Zinnen (0–255) sowie die Steilheit von Treppen (0–16) einzeln ein; „Zurücksetzen“ daneben stellt den üblichen Wert für die gewählte Art wieder her, und beim Verlassen des Karteneditors werden alle zurückgesetzt.
+trees_spread_order: Bäume nach Ausbreitungsboden ordnen
+trees_spread_order_tooltip: |-
+  Im Vegetationsmenü stehen zuerst die Bäume, die sich auf fruchtbarem Boden ausbreiten (Oasengras, dichtes und dünnes Gestrüpp), danach der Baum für unfruchtbaren Boden (Erde, steinige Erde, Dünen): der dritte und vierte Baum tauschen den Platz.
+trees_spread_outlines: Rahmen für Ausbreitungsboden
+trees_spread_outlines_tooltip: |-
+  Ein dünner grüner Rahmen um die Bäume, die sich auf fruchtbarem Boden ausbreiten, und ein dünner beiger Rahmen um den Baum für unfruchtbaren Boden. Der Apfelbaum breitet sich nicht aus und erhält keinen Rahmen.
+herds_bird_bins: Schaltflächen „Alle Krähen / Möwen löschen“
+herds_bird_bins_tooltip: |-
+  Rote Papierkorb-Schaltflächen rechts neben der Krähen- und der Möwen-Schaltfläche im Tiere-Menü: Ein Klick entfernt alle Krähen (die Bäume bleiben) oder alle Möwen von der Karte.
+herds_animal_bin: Schaltfläche „Alle Tiere löschen“
+herds_animal_bin_tooltip: |-
+  Eine rote Papierkorb-Schaltfläche rechts im Tiere-Menü, die wie Alt + E alle Tiere von der Karte entfernt. Krähen und Möwen bleiben.
+herds_group_warning: Warnung für Herden und Gruppen
+herds_group_warning_tooltip: |-
+  Wenn weniger als 200 Herden und Gruppen noch erstellt werden können, zeigt eine Zeile am oberen Bildschirmrand an, wie viele noch frei sind – wie die spielinterne Zeile für Einheiten.
+eraser_choice: Auswahlleiste für den Radierer
+eraser_choice_tooltip: |-
+  Ist der Radierer gewählt, bestimmt eine Leiste über dem Menü, was er entfernt: Alles (wie bisher), Tiere (auch Krähen und Möwen), Einheiten, Gebäude (mit Bergfrieden, Ruinen und Mauern), Vegetation oder Felsen (auch unsichtbare Felsen).
+eraser_seagulls: Radierer entfernt Möwen
+eraser_seagulls_tooltip: |-
+  Der Radierer entfernt auch Möwen, die über den radierten Feldern fliegen (bei „Alles“ oder „Tiere“).
+map_settings_show_locked: Kontrollkästchen „Gesperrte Karten anzeigen“
+map_settings_show_locked_tooltip: |-
+  Ein Kontrollkästchen „Gesperrte Karten anzeigen“ im Laden-Dialog des Editors. Angehakt werden auch gesperrte Karten aufgelistet; die Liste aktualisiert sich sofort.
+map_settings_button: Schaltfläche „Karteneinstellungen“
+map_settings_button_tooltip: |-
+  Eine Schaltfläche „Karteneinstellungen“ im Kartenmenü, rechts neben Ausgeglichen/Unausgeglichen und Invasion/Wirtschaft. Sie öffnet das Menü von Alt + ,.
+map_settings_menu: Größeres Menü „Karteneinstellungen“
+map_settings_menu_tooltip: |-
+  Das Menü von Alt + , erhält einen Titel, Einzelspieler und Mehrspieler, die vier Einzelspieler-Kartentypen (Belagerung, Invasion, Wirtschaft, Freies Bauen), die vier Kartengrößen plus Benutzerdefiniert und einen Regler für die Kartengröße (10 bis 400; die Größe wird beim Loslassen übernommen), Ausgeglichen, König des Hügels, Karte sperren und eine Zurück-Schaltfläche.
+eraser_group: Radierer
+eraser_group_descr: |-
+  Was der Radierer des Landschaftseditors entfernt.
+map_settings_group: Karteneinstellungen
+map_settings_group_descr: |-
+  Die Einstellungen der Karte: Kartentyp, Größe, Sperre und die zugehörigen Menüs.
+qol: Komfortfunktionen
+grid_group: Ressourcenraster
+grid_key: Rasterkürzel (Alt+Taste)
+grid_outside_editor: Raster auch im Spiel erlauben
+grid_flattened_only: Nur in flacher Ansicht zeigen
+grid_hide_in_v_view: In der V-Ansicht ausblenden
+grid_colour: Rasterfarbe
+grid_rotation_group: Burgausrichtung
+grid_rotation_lines: Grenzen der Burgdrehung zeigen
+grid_rotation_colour: Grenzfarbe
+grid_mine_group: Grundfläche der Eisenmine
+grid_mine_boxes: Grundfläche der Eisenmine zeigen
+grid_mine_colour: Grundflächenfarbe
+grid_mine_size: Breite der Grundfläche (Felder)
+grid_key_letter_g: Alt + G
+grid_key_letter_a: Alt + A
+grid_key_letter_b: Alt + B
+grid_key_letter_f: Alt + F
+grid_key_letter_i: Alt + I
+grid_key_letter_j: Alt + J
+grid_key_letter_l: Alt + L
+grid_key_letter_m: Alt + M
+grid_key_letter_n: Alt + N
+grid_key_letter_o: Alt + O
+grid_key_letter_p: Alt + P
+grid_key_letter_s: Alt + S
+grid_key_letter_w: Alt + W
+grid_key_letter_y: Alt + Y
+grid_key_letter_z: Alt + Z
+grid_key_f1: Alt + F1
+grid_key_f2: Alt + F2
+grid_key_f3: Alt + F3
+grid_key_f4: Alt + F4
+grid_key_f5: Alt + F5
+grid_key_f6: Alt + F6
+grid_key_f7: Alt + F7
+grid_key_f8: Alt + F8
+grid_key_f9: Alt + F9
+grid_key_numpad_multiply: Alt + Ziffernblock *
+grid_key_numpad_add: Alt + Ziffernblock +
+grid_key_numpad_subtract: Alt + Ziffernblock -
+grid_key_numpad_decimal: Alt + Ziffernblock .
+grid_key_numpad_divide: Alt + Ziffernblock /
+grid_key_insert: Alt + Einfügen
+grid_key_delete_key: Alt + Entf
+grid_key_home: Alt + Pos1
+grid_key_end_key: Alt + Ende
+grid_key_page_up: Alt + Bild hoch
+grid_key_page_down: Alt + Bild runter
+grid_key_caps_lock: Alt + Feststelltaste
+grid_colour_white: Weiß
+grid_colour_yellow: Gelb
+grid_colour_cyan: Cyan
+grid_colour_green: Grün
+grid_colour_magenta: Magenta
+grid_colour_orange: Orange
+grid_colour_red: Rot
+grid_colour_black: Schwarz
+map_editor: Karteneditor
+grid_enabled: Ressourcenraster-Overlay
+grid_enabled_tooltip: 'Ermöglicht es, das Ressourcenraster über der Karte einzublenden. Aus: Das Raster
+  und sein Kürzel stehen nicht zur Verfügung.'
+grid_group_descr: Zeichnet das 5×5-Ressourcenraster der KI, die Grenzen der Burgdrehung und die Grundfläche
+  der Eisenmine über die Karte. Alt plus die gewählte Taste blendet es im Karteneditor ein oder aus.
