@@ -48,6 +48,7 @@ local AOB_GAME_MODE = layout.AOB_GAME_MODE
 local GAME_MODE_OPERAND = layout.GAME_MODE_OPERAND
 local memory = require("editor.memory")
 local scan = memory.scan
+local scanUnique = memory.scanUnique
 local readOperand = memory.readOperand
 local readCallTarget = memory.readCallTarget
 local bytesOf = memory.bytesOf
@@ -117,7 +118,9 @@ function C.resolve(G)
   B.toolbar = B.buttons[K.TAB_TOWERS][K.FIRST_TOWER].action
 
   G.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
-  B.buildings = rd32(scan(K.AOB_BUILDING_TYPE, "the building list") + K.BUILDING_TYPE.this)
+  local buildingTable = scanUnique(K.AOB_BUILDING_TABLE, "the building table setup")
+  B.buildings = rd32(buildingTable + K.BUILDING_TABLE.state)
+  B.typeOfCommand = readCallTarget(buildingTable, K.BUILDING_TABLE.convert, "the building types")
   B.currentPlayer = rd32(scan(K.AOB_CURRENT_PLAYER, "the current player") + 1)
   local loop = scan(K.AOB_PLAYER_LOOP, "the building list walk")
   B.firstState = B.buildings + rd32(loop + 2)

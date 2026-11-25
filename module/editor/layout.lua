@@ -326,8 +326,8 @@ K.BUILD_NEEDED = {
 -- The building list and convertCommandBuildingTypeToBuildingType, from the building table setup:
 -- `mov [esi+..],ecx / push ebx / mov ecx, BuildingsState / call convert.. / mov edx,[eax*4+..]`.
 -- BuildingsState + 8 is the list's size.
-K.AOB_BUILDING_TYPE = "89 8E ? ? ? ? 53 B9 ? ? ? ? E8 ? ? ? ? 8B 14 85"
-K.BUILDING_TYPE = { this = 8, call = 12 }
+K.AOB_BUILDING_TABLE = "89 8E ? ? ? ? 53 B9 ? ? ? ? E8 ? ? ? ? 8B 14 85"
+K.BUILDING_TABLE = { state = 8, convert = 12 }
 K.MAX_BUILDINGS = 8
 -- The list's capacity: a walk over every slot, `mov esi, <first state> / ... / add esi,
 -- <building size> / inc edi / cmp esi, <past the last>`.

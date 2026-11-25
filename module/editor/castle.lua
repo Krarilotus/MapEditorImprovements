@@ -271,8 +271,7 @@ function C.buildingRotation(self, G, B, data, head, options)
   local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
   local placeRotation = R.tileMap + rd32(scan(K.AOB_PLACE_ROTATION, "the placement rotation") + K.PLACE_ROTATION)
   local chosenTool = rd32(scan(K.AOB_CHOSEN_TOOL, "the chosen building") + 2)
-  local typeOf = core.exposeCode(readCallTarget(scan(K.AOB_BUILDING_TYPE, "the building types"),
-    K.BUILDING_TYPE.call, "the building types"), 2, 1)
+  local typeOf = core.exposeCode(B.typeOfCommand, 2, 1)
   local function turns()
     local tool = rd32(chosenTool)
     if tool <= 0 or tool > 0x200 then return false end
