@@ -8730,7 +8730,15 @@ C.enableReal = enable
 -- can then be told apart from other modules' code.
 function C.enableLogged(self, config)
   local pieces = {}
-  local originals = { allocateAssembly = core.allocateAssembly, allocateCode = core.allocateCode }
+  local originals = { allocateAssembly = core.allocateAssembly, allocateCode = core.allocateCode,
+    allocate = core.allocate }
+  core.allocate = function(size, ...)
+    local address = originals.allocate(size, ...)
+    local info = debug.getinfo(2, "l")
+    pieces[#pieces + 1] = { address, size or 0, string.format("data %d bytes (line %d)", size or 0,
+      info and info.currentline or -1) }
+    return address
+  end
   core.allocateAssembly = function(script, values, ...)
     local address = originals.allocateAssembly(script, values, ...)
     local first = tostring(script):match("^%s*([%w%p ]*)") or "?"
@@ -8769,6 +8777,7 @@ function C.enableLogged(self, config)
   local ok, problem = pcall(C.enableReal, self, config)
   core.allocateAssembly, core.allocateCode = originals.allocateAssembly, originals.allocateCode
   core.detourCode, C.luaPad = originals.detourCode, originals.luaPad
+  core.allocate = originals.allocate
   if #pieces > 0 then
     table.sort(pieces, function(a, b) return a[1] < b[1] end)
     local lo, hi = pieces[1][1], pieces[#pieces][1] + 0x400
