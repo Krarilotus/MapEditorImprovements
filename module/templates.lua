@@ -1086,6 +1086,11 @@ cmp dword [GAME_MODE],MAP_EDITOR
 jne rotation_plain
 cmp dword [ROTATION_ON],0
 je rotation_plain
+cmp dword [WANTED],0xFFFFFFFF
+je rotation_plain
+mov eax,[TOOL]
+cmp eax,[WANTED_TOOL]
+jne rotation_plain
 call PAD
 mov eax,[WANTED]
 jmp BACK

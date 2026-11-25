@@ -5509,7 +5509,7 @@ function C.patchFrame(self, G, data)
     PLANT_TOOLS = K.PLANT_TOOLS, PLANTS = plants, PAD = pad, OPERAND = rd32(site + 2), BACK = site + K.FRAME.size,
     GROUP_ON = data.groupOn, FIRST_GROUP = G.firstGroup, GROUP_SLOTS = G.groupSlots, GROUP_SIZE = G.groupSize,
     GROUP_COUNT = data.groupCount or data.groupOn, GROUP_MARGIN = K.GROUP_MARGIN, GROUP_PAD = groupPad,
-    ROTATION_ON = rotation.on, ROTATION_DEFAULT = rotation.default, ORIENTATION = rotation.address,
+    ROTATION_ON = rotation.restore or rotation.on, ROTATION_DEFAULT = rotation.default, ORIENTATION = rotation.address,
   }))
   C.frameHooked = true
   -- The menu's own drawing of the preview is no longer needed.
@@ -7888,8 +7888,11 @@ end
 function C.rotationState(G)
   if C.rotation ~= nil then return C.rotation end
   local address = rd32(scan(K.AOB_ORIENTATION, "the building orientation") + K.ORIENTATION)
+  -- restore stays 0: the game sets the orientation itself before every placement check (0xF for
+  -- most buildings, its own direction for gatehouses and drawbridges), so nothing is put back.
   local Q = { address = address, on = core.allocate(4, true), default = core.allocate(4, true),
-    choice = core.allocate(4, true), wanted = core.allocate(4, true),
+    choice = core.allocate(4, true), wanted = core.allocate(4, true), restore = core.allocate(4, true),
+    wantedTool = core.allocate(4, true),
     site = scan(K.AOB_ORIENTATION, "the building orientation") + K.ORIENTATION - 1 }
   wr32(Q.default, rd32(address))
   C.rotation = Q
@@ -7938,7 +7941,7 @@ function C.buildingRotation(self, G, B, data, head, options)
     local site = scan(K.AOB_FRAME, "the map drawing") + K.FRAME.site
     expectBytes(site, { 0x8B, 0x0D }, "the map drawing")
     patchJump(self, site, K.FRAME.size, core.allocateAssembly(templates.rotationFrame, {
-      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION_ON = Q.on, ROTATION_DEFAULT = Q.default,
+      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION_ON = Q.restore, ROTATION_DEFAULT = Q.default,
       ORIENTATION = Q.address, OPERAND = rd32(site + 2), BACK = site + K.FRAME.size,
     }))
     C.frameHooked = true
@@ -7948,7 +7951,7 @@ function C.buildingRotation(self, G, B, data, head, options)
   expectBytes(Q.site, { 0xA1 }, "the building orientation")
   patchJump(self, Q.site, 5, core.allocateAssembly(templates.rotationRead, {
     GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION_ON = Q.on, WANTED = Q.wanted,
-    ORIENTATION = Q.address, BACK = Q.site + 5,
+    TOOL = chosenTool, WANTED_TOOL = Q.wantedTool, ORIENTATION = Q.address, BACK = Q.site + 5,
     PAD = C.luaPad(function()
       log(INFO, string.format("%s: placing a building with orientation %d", MODULE_NAME, rd32(Q.wanted)))
     end, "the rotation log"),
@@ -7996,12 +7999,23 @@ function C.buildingRotation(self, G, B, data, head, options)
     local listHeight = open and #K.ROTATIONS * box.option or 0
     C.markRect(rect, box.x, box.y - listHeight, box.width, box.height + listHeight)
     for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, open and 0 or 1) end
-    local o = turns() and orientation() or rd32(Q.default)   -- other buildings keep their look
-    wr32(Q.address, o)
-    wr32(Q.wanted, o)
-    -- the cursor preview turns with it (placeBuilding sets the same from the orientation)
-    wr32(placeRotation, (o == 0xF) and 0 or (o // 2))
-    editorRotation = true
+    -- Only the buildings placed as several parts turn; every other one keeps the orientation the
+    -- game's own placement check gives it (WANTED -1: the click takes the game's value).
+    if turns() then
+      local o = orientation()
+      wr32(Q.address, o)
+      wr32(Q.wanted, o)
+      wr32(Q.wantedTool, rd32(chosenTool))
+      -- the cursor preview turns with it (placeBuilding sets the same from the orientation)
+      wr32(placeRotation, (o == 0xF) and 0 or (o // 2))
+      editorRotation = true
+    else
+      wr32(Q.wanted, 0xFFFFFFFF)
+      if editorRotation then
+        wr32(placeRotation, 0)
+        editorRotation = false
+      end
+    end
     local ox = rd32(B.menu + MENU_X) + rd32(G.cameraX)
     local oy = rd32(B.menu + MENU_Y) + rd32(G.cameraY)
     local white = rd32(G.pixelFormat) == 0x565 and 0xFFFF or 0x7FFF
