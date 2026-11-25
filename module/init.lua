@@ -8725,6 +8725,45 @@ end
 
 C.enableReal = enable
 
+-- From module load on (before any module is enabled), every piece of code anyone allocates is
+-- logged with where it came from: a crash "in an unknown module" can then be matched.
+function C.watchAllocations()
+  if C.watching then return end
+  C.watching = true
+  local later = { allocateAssembly = core.allocateAssembly, allocateCode = core.allocateCode,
+    insertCode = core.insertCode }
+  local function origin()
+    for level = 3, 7 do
+      local info = debug.getinfo(level, "Sl")
+      if info and info.short_src and not info.short_src:find("core%.lua") then
+        return string.format("%s:%d", info.short_src, info.currentline or -1)
+      end
+    end
+    return "?"
+  end
+  core.allocateAssembly = function(script, values, ...)
+    local address = later.allocateAssembly(script, values, ...)
+    log(INFO, string.format("%s: watch code 0x%X from %s", MODULE_NAME, address, origin()))
+    return address
+  end
+  core.allocateCode = function(code, ...)
+    local address = later.allocateCode(code, ...)
+    log(INFO, string.format("%s: watch code 0x%X (%d bytes) from %s", MODULE_NAME, address,
+      type(code) == "table" and #code or tonumber(code) or 0, origin()))
+    return address
+  end
+  if later.insertCode ~= nil then
+    core.insertCode = function(address, size, ...)
+      local result = later.insertCode(address, size, ...)
+      local target = address
+      if (rd8(address) & 0xFF) == 0xE9 then target = (address + 5 + rd32(address + 1)) & 0xFFFFFFFF end
+      log(INFO, string.format("%s: watch code 0x%X (insertCode at 0x%X) from %s", MODULE_NAME, target, address, origin()))
+      return result
+    end
+  end
+end
+pcall(C.watchAllocations)
+
 -- While enable runs, every piece of code the module allocates is noted, and the ranges go to the
 -- log at the end: a crash "in an unknown module" (Windows' application log gives the address)
 -- can then be told apart from other modules' code.
@@ -8784,32 +8823,6 @@ function C.enableLogged(self, config)
     log(INFO, string.format("%s: its code lies at 0x%X - 0x%X (%d pieces)", MODULE_NAME, lo, hi, #pieces))
     for _, piece in ipairs(pieces) do
       log(INFO, string.format("%s: code 0x%X %s", MODULE_NAME, piece[1], piece[3]:sub(1, 90)))
-    end
-  end
-  -- From now on, every piece of code anyone allocates is logged with where it came from (the
-  -- other modules start after this one, and lua may assemble more while the game runs).
-  if not C.watching then
-    C.watching = true
-    local later = { allocateAssembly = core.allocateAssembly, allocateCode = core.allocateCode }
-    local function origin()
-      for level = 3, 6 do
-        local info = debug.getinfo(level, "Sl")
-        if info and info.short_src and not info.short_src:find("core") then
-          return string.format("%s:%d", info.short_src, info.currentline or -1)
-        end
-      end
-      return "?"
-    end
-    core.allocateAssembly = function(script, values, ...)
-      local address = later.allocateAssembly(script, values, ...)
-      log(INFO, string.format("%s: later code 0x%X from %s", MODULE_NAME, address, origin()))
-      return address
-    end
-    core.allocateCode = function(code, ...)
-      local address = later.allocateCode(code, ...)
-      log(INFO, string.format("%s: later code 0x%X (%d bytes) from %s", MODULE_NAME, address,
-        type(code) == "table" and #code or tonumber(code) or 0, origin()))
-      return address
     end
   end
   if not ok then error(problem, 0) end
