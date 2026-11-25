@@ -2560,21 +2560,7 @@ local function buildTable(G, O)
     core.writeBytes(into, core.readBytes(item(G.table, G.buttons[param].index), MENU_ITEM_SIZE))
   end
   -- A lua function called from injected code: a pad that runs it, switched off after an error.
-  local function luaPad(fn, what)
-    local pad = core.allocateCode({ 0x90, 0x90, 0x90, 0x90, 0x90, 0xC3 })
-    local broken = false
-    core.detourCode(function(registers)
-      if not broken then
-        local ok, problem = pcall(fn)
-        if not ok then
-          broken = true
-          log(WARNING, string.format("%s: %s stopped after an error: %s", MODULE_NAME, what, tostring(problem)))
-        end
-      end
-      return registers
-    end, pad, 5)
-    return pad
-  end
+  local function luaPad(fn, what) return C.luaPad(fn, what) end
   -- A button with no picture of its own, never drawn by the menu.
   local function plainButton(into, action)
     wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
@@ -8756,8 +8742,26 @@ function C.enableLogged(self, config)
     pieces[#pieces + 1] = { address, type(code) == "table" and #code or tonumber(code) or 0, "code" }
     return address
   end
+  -- the stubs UCP builds for lua callbacks: the detoured spot jumps to them
+  local naming = nil
+  originals.detourCode, originals.luaPad = core.detourCode, C.luaPad
+  core.detourCode = function(fn, address, size, ...)
+    local result = originals.detourCode(fn, address, size, ...)
+    if (rd8(address) & 0xFF) == 0xE9 then
+      local stub = (address + 5 + rd32(address + 1)) & 0xFFFFFFFF
+      pieces[#pieces + 1] = { stub, 0, "callback " .. (naming or string.format("at 0x%X", address)) }
+    end
+    return result
+  end
+  C.luaPad = function(fn, what)
+    naming = what
+    local pad = originals.luaPad(fn, what)
+    naming = nil
+    return pad
+  end
   local ok, problem = pcall(C.enableReal, self, config)
   core.allocateAssembly, core.allocateCode = originals.allocateAssembly, originals.allocateCode
+  core.detourCode, C.luaPad = originals.detourCode, originals.luaPad
   if #pieces > 0 then
     table.sort(pieces, function(a, b) return a[1] < b[1] end)
     local lo, hi = pieces[1][1], pieces[#pieces][1] + 0x400
