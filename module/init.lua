@@ -8747,10 +8747,17 @@ function C.enableLogged(self, config)
   originals.detourCode, originals.luaPad = core.detourCode, C.luaPad
   core.detourCode = function(fn, address, size, ...)
     local result = originals.detourCode(fn, address, size, ...)
-    if (rd8(address) & 0xFF) == 0xE9 then
-      local stub = (address + 5 + rd32(address + 1)) & 0xFFFFFFFF
-      pieces[#pieces + 1] = { stub, 0, "callback " .. (naming or string.format("at 0x%X", address)) }
+    local bytes = {}
+    for i = 0, 9 do bytes[#bytes + 1] = string.format("%02X", rd8(address + i) & 0xFF) end
+    local stub = address
+    local first = rd8(address) & 0xFF
+    if first == 0xE9 or first == 0xE8 then
+      stub = (address + 5 + rd32(address + 1)) & 0xFFFFFFFF
+    elseif first == 0x68 then                       -- push target / ret
+      stub = rd32(address + 1) & 0xFFFFFFFF
     end
+    pieces[#pieces + 1] = { stub, 0, string.format("callback %s (pad 0x%X: %s)", naming or "?", address,
+      table.concat(bytes, " ")) }
     return result
   end
   C.luaPad = function(fn, what)
@@ -8767,7 +8774,7 @@ function C.enableLogged(self, config)
     local lo, hi = pieces[1][1], pieces[#pieces][1] + 0x400
     log(INFO, string.format("%s: its code lies at 0x%X - 0x%X (%d pieces)", MODULE_NAME, lo, hi, #pieces))
     for _, piece in ipairs(pieces) do
-      log(INFO, string.format("%s: code 0x%X %s", MODULE_NAME, piece[1], piece[3]:sub(1, 40)))
+      log(INFO, string.format("%s: code 0x%X %s", MODULE_NAME, piece[1], piece[3]:sub(1, 90)))
     end
   end
   if not ok then error(problem, 0) end
