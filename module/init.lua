@@ -8737,7 +8737,39 @@ local function disable(self, config)
   end
 end
 
+C.enableReal = enable
+
+-- While enable runs, every piece of code the module allocates is noted, and the ranges go to the
+-- log at the end: a crash "in an unknown module" (Windows' application log gives the address)
+-- can then be told apart from other modules' code.
+function C.enableLogged(self, config)
+  local pieces = {}
+  local originals = { allocateAssembly = core.allocateAssembly, allocateCode = core.allocateCode }
+  core.allocateAssembly = function(script, values, ...)
+    local address = originals.allocateAssembly(script, values, ...)
+    local first = tostring(script):match("^%s*([%w%p ]*)") or "?"
+    pieces[#pieces + 1] = { address, #tostring(script), first }
+    return address
+  end
+  core.allocateCode = function(code, ...)
+    local address = originals.allocateCode(code, ...)
+    pieces[#pieces + 1] = { address, type(code) == "table" and #code or tonumber(code) or 0, "code" }
+    return address
+  end
+  local ok, problem = pcall(C.enableReal, self, config)
+  core.allocateAssembly, core.allocateCode = originals.allocateAssembly, originals.allocateCode
+  if #pieces > 0 then
+    table.sort(pieces, function(a, b) return a[1] < b[1] end)
+    local lo, hi = pieces[1][1], pieces[#pieces][1] + 0x400
+    log(INFO, string.format("%s: its code lies at 0x%X - 0x%X (%d pieces)", MODULE_NAME, lo, hi, #pieces))
+    for _, piece in ipairs(pieces) do
+      log(INFO, string.format("%s: code 0x%X %s", MODULE_NAME, piece[1], piece[3]:sub(1, 40)))
+    end
+  end
+  if not ok then error(problem, 0) end
+end
+
 return {
-  enable = enable,
+  enable = C.enableLogged,
   disable = disable,
 }
