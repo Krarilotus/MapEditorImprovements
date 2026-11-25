@@ -8786,6 +8786,32 @@ function C.enableLogged(self, config)
       log(INFO, string.format("%s: code 0x%X %s", MODULE_NAME, piece[1], piece[3]:sub(1, 90)))
     end
   end
+  -- From now on, every piece of code anyone allocates is logged with where it came from (the
+  -- other modules start after this one, and lua may assemble more while the game runs).
+  if not C.watching then
+    C.watching = true
+    local later = { allocateAssembly = core.allocateAssembly, allocateCode = core.allocateCode }
+    local function origin()
+      for level = 3, 6 do
+        local info = debug.getinfo(level, "Sl")
+        if info and info.short_src and not info.short_src:find("core") then
+          return string.format("%s:%d", info.short_src, info.currentline or -1)
+        end
+      end
+      return "?"
+    end
+    core.allocateAssembly = function(script, values, ...)
+      local address = later.allocateAssembly(script, values, ...)
+      log(INFO, string.format("%s: later code 0x%X from %s", MODULE_NAME, address, origin()))
+      return address
+    end
+    core.allocateCode = function(code, ...)
+      local address = later.allocateCode(code, ...)
+      log(INFO, string.format("%s: later code 0x%X (%d bytes) from %s", MODULE_NAME, address,
+        type(code) == "table" and #code or tonumber(code) or 0, origin()))
+      return address
+    end
+  end
   if not ok then error(problem, 0) end
 end
 
