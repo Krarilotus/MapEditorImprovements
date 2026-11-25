@@ -323,9 +323,11 @@ K.BUILD_NEEDED = {
   { 27, 248 }, { 61, 190 }, { 61, 191 }, { 61, 192 }, { 61, 193 }, { 61, 194 }, { 61, 358 },
   { 13, 60 }, { 13, 61 }, { 13, 62 }, { 10, 25 }, { 10, 26 }, { 10, 27 }, { 10, 46 },
 }
--- The building list: placeBuilding's `push ebx / mov ecx, BuildingsState / mov [esi+..],edx /
--- call convertCommandBuildingTypeToBuildingType`; BuildingsState + 8 is the list's size.
-K.AOB_BUILDINGS_STATE = "53 B9 ? ? ? ? 89 96 ? ? ? ? E8 ? ? ? ? 83 3D ? ? ? ? 04"
+-- The building list and convertCommandBuildingTypeToBuildingType, from the building table setup:
+-- `mov [esi+..],ecx / push ebx / mov ecx, BuildingsState / call convert.. / mov edx,[eax*4+..]`.
+-- BuildingsState + 8 is the list's size.
+K.AOB_BUILDING_TYPE = "89 8E ? ? ? ? 53 B9 ? ? ? ? E8 ? ? ? ? 8B 14 85"
+K.BUILDING_TYPE = { this = 8, call = 12 }
 K.MAX_BUILDINGS = 8
 -- The list's capacity: a walk over every slot, `mov esi, <first state> / ... / add esi,
 -- <building size> / inc edi / cmp esi, <past the last>`.
@@ -499,14 +501,10 @@ K.AOB_KEEP_PREVIEW_CALL = "8B 0D ? ? ? ? 8B 15 ? ? ? ? 51 56 50 52 B9 ? ? ? ? E8
 K.KEEP_TABLES = { a = 14, b = 18, c = 7, call = 21, rows = 3 }
 -- Only buildings placed as several parts turn (placeBuilding's own placers, by building type):
 -- barracks 8/9, engineers' guild 24, tunnellers' guild 25, oil smelter 28, keeps 40-44. The chosen
--- tool (TriggerPlaceBuilding `mov ecx,[tool] / cmp ecx,0x65 / mov edx,..`) and
--- convertCommandBuildingTypeToBuildingType (`push ebx / mov ecx,BuildingsState / mov [..],edx /
--- call`).
+-- tool: TriggerPlaceBuilding `mov ecx,[tool] / cmp ecx,0x65 / mov edx,..`.
 K.ROTATING_TYPES = { [8] = true, [9] = true, [24] = true, [25] = true, [28] = true, [40] = true, [41] = true,
   [42] = true, [43] = true, [44] = true }
 K.AOB_CHOSEN_TOOL = "8B 0D ? ? ? ? 83 F9 65 8B 15"
-K.AOB_TOOL_TYPE = "53 B9 ? ? ? ? 89 96 ? ? ? ? E8"
-K.TOOL_TYPE = { this = 2, call = 12 }
 K.AOB_PLACE_ROTATION = "83 F8 0F 75 08 89 96 ? ? ? ? EB 0B 99 2B C2 D1 F8 89 86 ? ? ? ?"
 K.PLACE_ROTATION = 7
 K.ROTATIONS = { { "Default" }, { "90\xB0", 2 }, { "180\xB0", 4 }, { "270\xB0", 6 }, { "Location based", "location" } }

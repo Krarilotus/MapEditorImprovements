@@ -271,13 +271,12 @@ function C.buildingRotation(self, G, B, data, head, options)
   local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
   local placeRotation = R.tileMap + rd32(scan(K.AOB_PLACE_ROTATION, "the placement rotation") + K.PLACE_ROTATION)
   local chosenTool = rd32(scan(K.AOB_CHOSEN_TOOL, "the chosen building") + 2)
-  local typeSite = scan(K.AOB_TOOL_TYPE, "the building types")
-  local buildings = rd32(typeSite + K.TOOL_TYPE.this)
-  local typeOf = core.exposeCode(readCallTarget(typeSite, K.TOOL_TYPE.call, "the building types"), 2, 1)
+  local typeOf = core.exposeCode(readCallTarget(scan(K.AOB_BUILDING_TYPE, "the building types"),
+    K.BUILDING_TYPE.call, "the building types"), 2, 1)
   local function turns()
     local tool = rd32(chosenTool)
     if tool <= 0 or tool > 0x200 then return false end
-    return K.ROTATING_TYPES[typeOf(buildings, tool) & 0xFFFF] == true
+    return K.ROTATING_TYPES[typeOf(B.buildings, tool) & 0xFFFF] == true
   end
   -- the keep's preview: its parts where the chosen orientation puts them
   do

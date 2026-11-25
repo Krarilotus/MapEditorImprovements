@@ -117,7 +117,7 @@ function C.resolve(G)
   B.toolbar = B.buttons[K.TAB_TOWERS][K.FIRST_TOWER].action
 
   G.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
-  B.buildings = rd32(scan(K.AOB_BUILDINGS_STATE, "the building list") + 2)
+  B.buildings = rd32(scan(K.AOB_BUILDING_TYPE, "the building list") + K.BUILDING_TYPE.this)
   B.currentPlayer = rd32(scan(K.AOB_CURRENT_PLAYER, "the current player") + 1)
   local loop = scan(K.AOB_PLAYER_LOOP, "the building list walk")
   B.firstState = B.buildings + rd32(loop + 2)
