@@ -382,6 +382,7 @@ add eax,2
 and eax,6
 rock_turn_new:
 mov [esi+ROTATION],eax
+inc dword [PLACED]
 pop edx
 pop ecx
 pop eax

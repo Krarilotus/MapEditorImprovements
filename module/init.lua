@@ -2468,6 +2468,7 @@ local function buildTable(G, O)
     insert(MAP_CLICK_ITEM, "redo")
   end
   if O.compass then insert(MAP_CLICK_ITEM, "compass") end
+  if O.rockTurn then insert(MAP_CLICK_ITEM, "rockTick") end
   if O.counts then insert(INFO_BEFORE_ITEM, "info") end
   if O.treePreview then insert(INFO_BEFORE_ITEM, "treePreview") end
   local pipetteItems = { "pipetteTick", "pipette", "pipettePanel" }
@@ -3174,6 +3175,10 @@ local function buildTable(G, O)
   if added.compass ~= nil then
     local ok, problem = pcall(C.compassItem, G, added.compass, O.undo)
     if not ok then log(WARNING, tostring(problem) .. "; no compass") end
+  end
+  if added.rockTick ~= nil then
+    local ok, problem = pcall(C.rockClickTurn, G, added.rockTick)
+    if not ok then log(WARNING, tostring(problem) .. "; refused rock clicks keep the rotation") end
   end
   if O.treePreview then
     local into = added.treePreview
@@ -6453,8 +6458,9 @@ local function enableRandomPreview(self)
   local turn = scan(K.AOB_ROCK_TURN, "placeRock's rotation")
   local RT = K.ROCK_TURN
   local rotation = rd32(turn + RT.rotation)
+  C.rockPlaced = C.rockPlaced or core.allocate(4, true)
   patchJump(self, turn, RT.size, core.allocateAssembly(templates.rockTurn, {
-    ROTATION = rotation, TURN_MODE = K.ROCK_TURN_MODE, BACK = turn + RT.size,
+    ROTATION = rotation, TURN_MODE = K.ROCK_TURN_MODE, BACK = turn + RT.size, PLACED = C.rockPlaced,
   }))
   patchJump(self, site, K.RANDOM_ROCK_MODE_SIZE, core.allocateAssembly(templates.randomRockMode, {
     MODE = rd32(site + 2), TURN_MODE = K.ROCK_TURN_MODE, BACK = site + K.RANDOM_ROCK_MODE_SIZE,
@@ -8307,6 +8313,31 @@ function C.patchCameraEdge(self, G)
   }))
 end
 
+-- With the random rock rotation (the module's own mode), a click with a rock tool that places no
+-- rock (a rock already there, a blocked tile) also moves the rotation on: when the button is let
+-- go and placeRock counted no rock since it went down. An item run every frame.
+function C.rockClickTurn(G, at)
+  local R = C.resolvePipette(G)
+  local T = R.tileMap
+  C.rockPlaced = C.rockPlaced or core.allocate(4, true)
+  local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = R.keyState }), 1, 0)
+  local wasDown, placedAtPress, pressedOnMap = false, 0, false
+  wr32(at + ITEM_TYPE, TYPE_EVERY_FRAME)
+  wr32(at + ITEM_ACTION, C.luaPad(function()
+    local down = (asyncKey(K.LEFT_BUTTON) % 0x10000) >= 0x8000
+    local tool = rd32(G.subtype)
+    local ours = rd32(R.gameMode) == K.MAP_EDITOR and tool >= K.FIRST_ROCK_COMMAND and tool <= K.LAST_ROCK_COMMAND
+      and rd32(T + K.TILE_MAP.mode) == K.ROCK_TURN_MODE
+    if down and not wasDown then
+      placedAtPress, pressedOnMap = rd32(C.rockPlaced), ours and rd32(G.onMap) ~= 0
+    elseif wasDown and not down and pressedOnMap and ours and rd32(C.rockPlaced) == placedAtPress then
+      local now = rd32(T + K.TILE_MAP.rotation)
+      wr32(T + K.TILE_MAP.rotation, (now + 2 * math.random(1, 3)) % 8)   -- another of 0, 2, 4, 6
+    end
+    wasDown = down
+  end, "the rock click turn"))
+end
+
 -- Keeps leave the ground as it is in the map editor: placeKeep's two calls of the ground painter
 -- (keep tiles: earth and stones 6 around, or thick scrub 3 around on scrub and oasis grass; the
 -- campfire area likewise) do nothing there.
@@ -8586,6 +8617,7 @@ local function enable(self, config)
     spreadOrder = setting(config, "trees", "spread_order") == true,
     spreadOutlines = setting(config, "trees", "spread_outlines") == true,
     compass = setting(config, "menu", "compass") == true,
+    rockTurn = setting(config, "rocks", "random_preview") == true,
     undo = self.undo,
   }
   if setting(config, "pipette", "enabled") == true then
@@ -8629,7 +8661,7 @@ local function enable(self, config)
       or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
       or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks
       or O.textureMask or O.birdButtons or O.animalBin or O.groupWarning or O.eraserChoice or O.eraseGulls
-      or O.spreadOrder or O.spreadOutlines or O.compass then
+      or O.spreadOrder or O.spreadOutlines or O.compass or O.rockTurn then
     local ok, problem = pcall(enableMenu, self, O)
     if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
   end
