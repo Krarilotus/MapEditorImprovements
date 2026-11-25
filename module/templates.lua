@@ -356,10 +356,36 @@ rock_done:
 pop eax
 ]]
 
--- The random rock button's `mov [mode], ecx` (ecx = 5): mode 0 instead, the slowly turning
--- mode the preview follows.
+-- The random rock button's `mov [mode], ecx` (ecx = 5): the module's own mode instead, which
+-- neither of the game's timers turns (5 every frame, 0 once a second); the preview follows the
+-- rotation, and templates.rockTurn moves it on after every placed rock.
 templates.randomRockMode = [[
-mov dword [MODE],0
+mov dword [MODE],TURN_MODE
+jmp BACK
+]]
+
+-- placeRock's `mov eax,[esi+ROTATION]` (the rotation this rock gets): in the module's mode the
+-- next rock gets another rotation (0, 2, 4 or 6, never the same twice in a row).
+templates.rockTurn = [[
+mov eax,[esi+ROTATION]
+cmp dword [esi+ROTATION+4],TURN_MODE
+jne rock_turn_done
+push eax
+push ecx
+push edx
+mov ecx,eax
+rdtsc
+and eax,6
+cmp eax,ecx
+jne rock_turn_new
+add eax,2
+and eax,6
+rock_turn_new:
+mov [esi+ROTATION],eax
+pop edx
+pop ecx
+pop eax
+rock_turn_done:
 jmp BACK
 ]]
 
