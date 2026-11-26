@@ -1,7 +1,7 @@
 name: map-editor-improvements-vanilla
 display-name: Map Editor Improvements Vanilla
 author: Monsterfish, Heroesflorian
-version: 1.0.0
+version: 1.0.1
 type: plugin
 game:
 - SHC==1.41
