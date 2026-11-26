@@ -217,7 +217,21 @@ function C.enableMapSettings(self, O, G)
         end, "the Show locked maps box")
       patchJump(self, site, K.LOCK_FILTER.size, stub)
       ensure()
-      hooks.registerHookCallback("afterInit", ensure)
+      hooks.registerHookCallback("afterInit", function()
+        ensure()
+        -- Another extension may have copied the item into its replacement table.
+        local render = rd32(toggle + ITEM_RENDER)
+        local item = rd32(init + 1)
+        for _ = 1, K.MOST_DIALOG_ITEMS do
+          if rd32(item) == TYPE_END then break end
+          if rd32(item + ITEM_RENDER) == render then
+            toggle = item
+            return
+          end
+          item = item + MENU_ITEM_SIZE
+        end
+        log(WARNING, MODULE_NAME .. ": could not find Show locked maps in the Load dialog")
+      end)
     end)
     if not ok then log(WARNING, tostring(problem) .. "; the Load dialog has no Show locked maps box") end
   end

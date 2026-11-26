@@ -180,7 +180,7 @@ K.AOB_LOAD_MODAL = "68 ? ? ? ? 68 ? ? ? ? 50 68 00 02 00 00 68 8D 01 00 00 68 BC
 K.AOB_MAP_OPENER = "55 56 57 8B F1 C7 05 ? ? ? ? 01 00 00 00 E8 ? ? ? ? 68 80 38 01 00 33 FF 57 68 ? ? ? ? E8 "
   .. "? ? ? ? 83 C4 0C 68"
 K.MAP_LIST_KIND = 2
-K.LOCKED_TOGGLE = { x = 55, y = 64, width = 200, height = 27 }
+K.LOCKED_TOGGLE = { x = 55, y = 408, width = 200, height = 27 }
 
 ---------------------------------------------------------------------------------------
 -- Birds, the animal buttons, the eraser's choice, the tree outlines (36, 37, 39)
