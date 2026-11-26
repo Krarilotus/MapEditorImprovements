@@ -28,8 +28,7 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
 ## Development workflow
 
 1. Edit under `module/`.
-2. `python tools/publish.py --bump` - raises the last version slot (in `definition.yml` and the
-   description) and copies the module to `ucp/modules/map-editor-improvements-<version>` in the
+2. `python tools/publish.py --bump` - raises the last version slot (in `definition.yml`) and copies the module to `ucp/modules/map-editor-improvements-<version>` in the
    game folder. The first time, add `--game "<game folder>"` (the folder with `ucp-config.yml`);
    the script stores it in `tools/publish-config.json` and uses it from then on. Older copies
    are removed, except the newest one and any version the UCP config still uses (`--keep`
@@ -48,7 +47,7 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
    apply. Its entries under "Customisations" switch each feature on or off; by default
    everything is on.
 3. Start the game and open the map editor: the features are in the landscape editor's menus and
-   the castle mode's building menu.
+   the castle mode's building menu. [docs/features.md](docs/features.md) describes every feature.
 
 ## How it works
 
