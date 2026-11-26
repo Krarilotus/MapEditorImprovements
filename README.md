@@ -45,7 +45,7 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
    `definition.yml`, then install it from the UCP3 GUI or drop it into `ucp/modules`.
 2. In the UCP3 GUI's Content tab, add Map Editor Improvements to the active extensions and
    apply. Its entries under "Customisations" switch each feature on or off; by default
-   everything is on.
+   everything is off (see Vanilla and Recommended below).
 3. Start the game and open the map editor: the features are in the landscape editor's menus and
    the castle mode's building menu. [docs/features.md](docs/features.md) describes every feature.
 
@@ -254,6 +254,14 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   reads.
 * Every address is found by pattern scan or read out of the instruction that uses it, and
   checked against the bytes the module expects. Verified offline against both exes.
+
+## Vanilla and Recommended
+
+Every option of the module is off by default, so the module alone leaves the editor as the game
+has it. Two plugins in this repository form the Map Editor Improvements family in the launcher:
+`map-editor-improvements-recommended` (offered first) switches on the recommended settings,
+`map-editor-improvements-vanilla` keeps everything off. Plugins that build on the module set the
+options they need themselves.
 
 ## Credits
 

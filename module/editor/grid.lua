@@ -204,7 +204,7 @@ end
 ---@return boolean enabled
 function M.enable(self, config)
   config = config or {}
-  if config.enabled == false then return false end
+  if config.enabled ~= true then return false end
 
   if modules ~= nil and modules["resource-grid-overlay"] ~= nil then
     log(WARNING, "resource grid: Resource Grid Overlay is active and draws it; "
@@ -223,16 +223,13 @@ function M.enable(self, config)
   local rotationChannels = resolveChoice(config.rotation_colour, V.COLOURS, DEFAULT_ROTATION_COLOUR,
     "rotation colour")
   local mineChannels = resolveChoice(config.mine_colour, V.COLOURS, DEFAULT_MINE_COLOUR, "mine colour")
-  local withRotation = config.rotation_lines ~= false
-  -- Default on, so the overlay is usable for checking alignment against a real map even when the
-  -- config file has not been written yet.
-  local editorOnly = config.outside_editor == false
-  -- Default on: the lines lie on one height, so they only tell the whole truth in the flattened
-  -- view. Turn it off to see them over real terrain as well.
-  local flattenedOnly = config.flattened_only ~= false
+  local withRotation = config.rotation_lines == true
+  local editorOnly = config.outside_editor ~= true
+  -- The lines lie on one height, so they only tell the whole truth in the flattened view.
+  local flattenedOnly = config.flattened_only == true
   -- Kept as its own switch, and separate from the flattened gate, so that if this one ever reads
   -- the wrong thing it can be turned off without losing the other.
-  local hideInVView = config.hide_in_v_view ~= false
+  local hideInVView = config.hide_in_v_view == true
 
   -- Only the mine width has a setting in the GUI: every other position is either worked out from
   -- the game's own numbers or, for the keep rotation origin, measured once and fixed. The reads
@@ -242,7 +239,7 @@ function M.enable(self, config)
   end
   local tune = {
     withRotation = withRotation,
-    mineBoxes = config.mine_boxes ~= false,
+    mineBoxes = config.mine_boxes == true,
     mineSize = number(config.mine_size, V.MINE_FOOTPRINT),
     originX = number(config.origin_x, V.DEFAULT_ROTATION_ORIGIN),
     originY = number(config.origin_y, V.DEFAULT_ROTATION_ORIGIN),

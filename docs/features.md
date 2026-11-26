@@ -333,8 +333,8 @@ cover.
 
 - **Alt + G** shows or hides it in the map editor. Another Alt + key can be chosen in the
   settings.
-- By default it only shows in the flattened view (space bar), where the lines lie exactly on the
-  ground, and it is hidden in the V view.
+- With the recommended settings it only shows in the flattened view (space bar), where the
+  lines lie exactly on the ground, and it is hidden in the V view.
 - **Allow the overlay during games** lets you check the lines in a test game.
 - The colours of the grid, the boundaries and the mine footprint can be changed.
 - Nothing is saved into the map.

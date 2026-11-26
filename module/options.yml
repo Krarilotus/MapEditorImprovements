@@ -12,7 +12,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{counts_enabled}}'
   - url: map-editor-improvements.counts.shown
     name: map-editor-improvements-counts-shown
@@ -20,7 +20,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{counts_shown}}'
 - display: GroupBox
   category:
@@ -35,7 +35,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_growth}}'
   - url: map-editor-improvements.trees.apple
     name: map-editor-improvements-trees-apple
@@ -43,7 +43,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_apple}}'
   - url: map-editor-improvements.trees.shrubs
     name: map-editor-improvements-trees-shrubs
@@ -51,7 +51,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_shrubs}}'
   - url: map-editor-improvements.trees.felled
     name: map-editor-improvements-trees-felled
@@ -59,7 +59,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_felled}}'
   - url: map-editor-improvements.trees.no_shrub_stacking
     name: map-editor-improvements-trees-no-shrub-stacking
@@ -67,7 +67,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_no_stacking}}'
   - url: map-editor-improvements.trees.preview
     name: map-editor-improvements-trees-preview
@@ -75,7 +75,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_preview}}'
   - url: map-editor-improvements.trees.random_mix
     name: map-editor-improvements-trees-random-mix
@@ -83,7 +83,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_random_mix}}'
   - url: map-editor-improvements.trees.obstacles
     name: map-editor-improvements-trees-obstacles
@@ -91,7 +91,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_obstacles}}'
   - url: map-editor-improvements.trees.rocks_and_water
     name: map-editor-improvements-trees-rocks-and-water
@@ -99,7 +99,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_rocks_and_water}}'
   - url: map-editor-improvements.trees.sorted_rows
     name: map-editor-improvements-trees-sorted-rows
@@ -107,7 +107,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_sorted_rows}}'
   - url: map-editor-improvements.trees.spread_order
     name: map-editor-improvements-trees-spread-order
@@ -115,7 +115,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_spread_order}}'
   - url: map-editor-improvements.trees.spread_outlines
     name: map-editor-improvements-trees-spread-outlines
@@ -123,7 +123,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{trees_spread_outlines}}'
 - display: GroupBox
   category:
@@ -138,7 +138,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{textures_gravel_and_iron}}'
   - url: map-editor-improvements.textures.mask
     name: map-editor-improvements-textures-mask
@@ -146,7 +146,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{textures_mask}}'
   - url: map-editor-improvements.textures.mask_by_type
     name: map-editor-improvements-textures-mask-by-type
@@ -154,7 +154,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{textures_mask_by_type}}'
   - url: map-editor-improvements.textures.no_heights_iron
     name: map-editor-improvements-textures-no-heights-iron
@@ -162,7 +162,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{textures_no_heights_iron}}'
 - display: GroupBox
   category:
@@ -177,7 +177,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{water_decorations}}'
   - url: map-editor-improvements.water.foam_on_sea
     name: map-editor-improvements-water-foam-on-sea
@@ -185,7 +185,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{water_foam_on_sea}}'
 - display: GroupBox
   category:
@@ -200,7 +200,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{rocks_signpost}}'
   - url: map-editor-improvements.rocks.random_preview
     name: map-editor-improvements-rocks-random-preview
@@ -208,7 +208,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{rocks_random_preview}}'
   - url: map-editor-improvements.rocks.variants
     name: map-editor-improvements-rocks-variants
@@ -216,7 +216,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{rocks_variants}}'
   - url: map-editor-improvements.rocks.extra_rock
     name: map-editor-improvements-rocks-extra-rock
@@ -224,7 +224,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{rocks_extra_rock}}'
   - url: map-editor-improvements.rocks.invisible
     name: map-editor-improvements-rocks-invisible
@@ -232,7 +232,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{rocks_invisible}}'
   - url: map-editor-improvements.rocks.erase_invisible
     name: map-editor-improvements-rocks-erase-invisible
@@ -240,7 +240,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{rocks_erase_invisible}}'
   - url: map-editor-improvements.rocks.remove_lost
     name: map-editor-improvements-rocks-remove-lost
@@ -248,7 +248,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{rocks_remove_lost}}'
 - display: GroupBox
   category:
@@ -263,7 +263,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{heights_max_height}}'
   - url: map-editor-improvements.heights.tool_options
     name: map-editor-improvements-heights-tool-options
@@ -271,7 +271,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{heights_tool_options}}'
   - url: map-editor-improvements.heights.invert_key_on
     name: map-editor-improvements-heights-invert-key-on
@@ -279,7 +279,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{heights_invert_key_on}}'
   - name: map-editor-improvements-heights-invert-key_details
     display: GroupBox
@@ -394,7 +394,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_building_counts}}'
   - url: map-editor-improvements.castle.tower_ruins
     name: map-editor-improvements-castle-tower-ruins
@@ -402,7 +402,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_tower_ruins}}'
   - url: map-editor-improvements.castle.tunnel_and_tents
     name: map-editor-improvements-castle-tunnel-and-tents
@@ -410,7 +410,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_tunnel_and_tents}}'
   - url: map-editor-improvements.castle.statues_and_shrines
     name: map-editor-improvements-castle-statues-and-shrines
@@ -418,7 +418,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_statues}}'
   - url: map-editor-improvements.castle.barrier
     name: map-editor-improvements-castle-barrier
@@ -426,7 +426,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_barrier}}'
   - url: map-editor-improvements.castle.several_keeps
     name: map-editor-improvements-castle-several-keeps
@@ -434,7 +434,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_several_keeps}}'
   - url: map-editor-improvements.castle.several_storage_and_recruitment
     name: map-editor-improvements-castle-several-storage-and-recruitment
@@ -442,7 +442,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_several_storage}}'
   - url: map-editor-improvements.castle.tower_engines_anywhere
     name: map-editor-improvements-castle-tower-engines-anywhere
@@ -450,7 +450,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_tower_engines}}'
   - url: map-editor-improvements.castle.keep_parts
     name: map-editor-improvements-castle-keep-parts
@@ -458,7 +458,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_keep_parts}}'
   - url: map-editor-improvements.castle.hover_text_left
     name: map-editor-improvements-castle-hover-text-left
@@ -466,7 +466,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_hover_text}}'
   - url: map-editor-improvements.castle.all_players
     name: map-editor-improvements-castle-all-players
@@ -474,7 +474,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_all_players}}'
   - url: map-editor-improvements.castle.player_zero
     name: map-editor-improvements-castle-player-zero
@@ -482,7 +482,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_player_zero}}'
   - url: map-editor-improvements.castle.keep_ground
     name: map-editor-improvements-castle-keep-ground
@@ -491,7 +491,7 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.castle.rotation
     name: map-editor-improvements-castle-rotation
     text: '{{castle_rotation}}'
@@ -499,7 +499,7 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.castle.unit_colour
     name: map-editor-improvements-castle-unit-colour
     text: '{{castle_unit_colour}}'
@@ -507,14 +507,14 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.castle.keep_crests
     name: map-editor-improvements-castle-keep-crests
     text: '{{castle_keep_crests_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_keep_crests}}'
   - url: map-editor-improvements.castle.keep_crest_tooltip
     name: map-editor-improvements-castle-keep-crest-tooltip
@@ -522,7 +522,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_keep_crest_tooltip}}'
   - url: map-editor-improvements.castle.wall_tools
     name: map-editor-improvements-castle-wall-tools
@@ -530,7 +530,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_wall_tools}}'
   - url: map-editor-improvements.castle.all_keeps
     name: map-editor-improvements-castle-all-keeps
@@ -538,7 +538,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_all_keeps}}'
   - url: map-editor-improvements.castle.damaged_walls
     name: map-editor-improvements-castle-damaged-walls
@@ -546,7 +546,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_damaged_walls}}'
   - url: map-editor-improvements.castle.variant_panels
     name: map-editor-improvements-castle-variant-panels
@@ -554,7 +554,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_variant_panels}}'
   - url: map-editor-improvements.castle.ruined_cathedral
     name: map-editor-improvements-castle-ruined-cathedral
@@ -562,7 +562,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_ruined_cathedral}}'
   - url: map-editor-improvements.castle.moat_kinds
     name: map-editor-improvements-castle-moat-kinds
@@ -570,7 +570,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_moat_kinds}}'
   - url: map-editor-improvements.castle.moat_on_marsh
     name: map-editor-improvements-castle-moat-on-marsh
@@ -578,7 +578,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_moat_on_marsh}}'
   - url: map-editor-improvements.castle.moat_removal_keeps_ground
     name: map-editor-improvements-castle-moat-removal-keeps-ground
@@ -586,7 +586,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{castle_moat_removal_keeps_ground}}'
 - display: GroupBox
   category:
@@ -601,7 +601,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{herds_panel}}'
   - url: map-editor-improvements.herds.bird_bins
     name: map-editor-improvements-herds-bird-bins
@@ -609,7 +609,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{herds_bird_bins}}'
   - url: map-editor-improvements.herds.animal_bin
     name: map-editor-improvements-herds-animal-bin
@@ -617,7 +617,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{herds_animal_bin}}'
   - url: map-editor-improvements.herds.group_warning
     name: map-editor-improvements-herds-group-warning
@@ -625,7 +625,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{herds_group_warning}}'
 - display: GroupBox
   category:
@@ -640,7 +640,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{brushes_full_shape}}'
 - display: GroupBox
   category:
@@ -655,7 +655,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{undo_enabled}}'
 - display: GroupBox
   category:
@@ -670,7 +670,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{pipette_enabled}}'
   - url: map-editor-improvements.pipette.select_key_on
     name: map-editor-improvements-pipette-select-key-on
@@ -678,7 +678,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{pipette_select_key_on}}'
   - name: map-editor-improvements-pipette-select-key_details
     display: GroupBox
@@ -796,7 +796,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{pipette_read_key_on}}'
   - name: map-editor-improvements-pipette-read-key_details
     display: GroupBox
@@ -904,7 +904,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{pipette_any_tile_key_on}}'
   - name: map-editor-improvements-pipette-any-tile-key_details
     display: GroupBox
@@ -1019,7 +1019,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{eraser_choice}}'
   - url: map-editor-improvements.eraser.seagulls
     name: map-editor-improvements-eraser-seagulls
@@ -1027,7 +1027,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{eraser_seagulls}}'
 - display: GroupBox
   category:
@@ -1042,7 +1042,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{map_settings_show_locked}}'
   - url: map-editor-improvements.map_settings.button
     name: map-editor-improvements-map-settings-button
@@ -1050,7 +1050,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{map_settings_button}}'
   - url: map-editor-improvements.map_settings.menu
     name: map-editor-improvements-map-settings-menu
@@ -1058,7 +1058,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{map_settings_menu}}'
 - display: GroupBox
   category:
@@ -1073,7 +1073,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{menu_always_update}}'
   - url: map-editor-improvements.map_settings.size_refresh
     name: map-editor-improvements-map-settings-size-refresh
@@ -1082,7 +1082,7 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.map_settings.camera_edge
     name: map-editor-improvements-map-settings-camera-edge
     text: '{{map_settings_camera_edge}}'
@@ -1090,7 +1090,7 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.menu.compass
     name: map-editor-improvements-menu-compass
     text: '{{menu_compass}}'
@@ -1098,7 +1098,7 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.menu.compass_turn
     name: map-editor-improvements-menu-compass-turn
     text: '{{menu_compass_turn}}'
@@ -1106,14 +1106,14 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.menu.dust_clouds
     name: map-editor-improvements-menu-dust-clouds
     text: '{{menu_dust_clouds_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{menu_dust_clouds}}'
 - display: GroupBox
   category:
@@ -1129,7 +1129,7 @@ options:
     display: UCP2Switch
     contents:
       type: boolean
-      value: true
+      value: false
     header: '{{grid_enabled}}'
   - url: map-editor-improvements.grid.key
     name: map-editor-improvements-grid-key
@@ -1219,7 +1219,7 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.grid.flattened_only
     name: map-editor-improvements-grid-flattened-only
     text: '{{grid_flattened_only}}'
@@ -1227,7 +1227,7 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.grid.hide_in_v_view
     name: map-editor-improvements-grid-hide-in-v-view
     text: '{{grid_hide_in_v_view}}'
@@ -1235,7 +1235,7 @@ options:
     display: Switch
     contents:
       type: boolean
-      value: true
+      value: false
   - url: map-editor-improvements.grid.grid_colour
     name: map-editor-improvements-grid-grid-colour
     text: '{{grid_colour}}'
@@ -1273,7 +1273,7 @@ options:
       display: Switch
       contents:
         type: boolean
-        value: true
+        value: false
     - url: map-editor-improvements.grid.rotation_colour
       name: map-editor-improvements-grid-rotation-colour
       text: '{{grid_rotation_colour}}'
@@ -1311,7 +1311,7 @@ options:
       display: Switch
       contents:
         type: boolean
-        value: true
+        value: false
     - url: map-editor-improvements.grid.mine_colour
       name: map-editor-improvements-grid-mine-colour
       text: '{{grid_mine_colour}}'
