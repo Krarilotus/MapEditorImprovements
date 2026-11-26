@@ -23,6 +23,7 @@ local K = layout.K
 local C = layout.C
 local memory = require("editor.memory")
 local scan = memory.scan
+local scanUnique = memory.scanUnique
 local expectBytes = memory.expectBytes
 local readCallTarget = memory.readCallTarget
 local bytesOf = memory.bytesOf
@@ -191,14 +192,14 @@ function C.enableMapSettings(self, O, G)
   -- 38.1: Show locked maps, in the Load dialog while it lists maps.
   if O.lockedMaps then
     local ok, problem = pcall(function()
+      local menu = rd32(scan(K.AOB_LOAD_MODAL, "the Load dialog") + 1)
+      local init = scanUnique("68 ? ? ? ? B9 " .. bytesOf(menu) .. " E8", "the Load dialog's items")
       local show = core.allocate(4, true)
       local site = scan(K.AOB_LOCK_FILTER, "the locked map filter")
       expectBytes(site + K.LOCK_FILTER.jump, { 0x75 }, "the locked map filter")
       local drop = site + K.LOCK_FILTER.size + (rd8(site + K.LOCK_FILTER.jump + 1) & 0xFF)
       local stub = C.assemble("lockedMaps", { SHOW = show, LOCK_STATE = rd32(site + 2), KEEP = site + K.LOCK_FILTER.size,
         DROP = drop })
-      local menu = rd32(scan(K.AOB_LOAD_MODAL, "the Load dialog") + 1)
-      local init = scan("68 ? ? ? ? B9 " .. bytesOf(menu) .. " E8", "the Load dialog's items")
       local opener = core.exposeCode(scan(K.AOB_MAP_OPENER, "the map list"), 2, 1)
       local items, ensure = C.appendItems(self, init, 1, "the Load dialog")
       local toggle = items[1]
@@ -222,8 +223,7 @@ function C.enableMapSettings(self, O, G)
         -- Another extension may have copied the item into its replacement table.
         local render = rd32(toggle + ITEM_RENDER)
         local item = rd32(init + 1)
-        for _ = 1, K.MOST_DIALOG_ITEMS do
-          if rd32(item) == TYPE_END then break end
+        while rd32(item) ~= TYPE_END do
           if rd32(item + ITEM_RENDER) == render then
             toggle = item
             return
