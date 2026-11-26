@@ -235,6 +235,9 @@ function M.enable(self, config)
   -- the game's own numbers or, for the keep rotation origin, measured once and fixed. The reads
   -- stay so that a hand-edited ucp-config.yml can still override them.
   local function number(value, fallback)
+    if type(value) == "table" then
+      value = value.sliderValue
+    end
     return type(value) == "number" and floor(value) or fallback
   end
   local tune = {
