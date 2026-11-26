@@ -171,7 +171,7 @@ K.CHECK_INSET, K.CHECK_SIZE = 7, 13
 K.AOB_PROPERTIES_TABLE = "03 00 00 02 F0 00 00 00 EA 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FD FF FF FF "
   .. "00 00 00 00 06 02 00 40 03 00 00 00"
 K.PROPERTIES_ITEM = 10
-K.SETTINGS_BUTTON = { x = 390, y = 492, width = 160, height = 27 }
+K.SETTINGS_BUTTON = { x = 520, y = 474, width = 160, height = 27 }
 K.MOST_DIALOG_ITEMS = 200
 -- Locked maps: mapNames_filterMapsIfMapLock's `cmp dword [lock], 0 / jne DROP`.
 K.AOB_LOCK_FILTER = "83 3D ? ? ? ? 00 75 0E 53 56 8B CF E8"
