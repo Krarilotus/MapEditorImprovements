@@ -5,6 +5,7 @@ local K = layout.K
 local C = layout.C
 local memory = require("editor.memory")
 local scan = memory.scan
+local scanUnique = memory.scanUnique
 local expectBytes = memory.expectBytes
 local rd32 = memory.rd32
 local native = require("editor.native")
@@ -85,13 +86,25 @@ local function enableSignpost(self)
   core.writeCode(site, { K.JMP_SHORT })
 end
 
--- The random rotation button sets mode 0, which the preview follows, instead of 5.
+-- The editor's random mode turns after each rock placement instead of on a timer.
 local function enableRandomPreview(self)
-  local site = scan(K.AOB_RANDOM_ROCK, "the random rock button") + K.RANDOM_ROCK_MODE
-  expectBytes(site, { 0x89, 0x0D }, "the random rock button")
-  patchJump(self, site, K.RANDOM_ROCK_MODE_SIZE, core.allocateAssembly(templates.randomRockMode, {
-    MODE = rd32(site + 2), BACK = site + K.RANDOM_ROCK_MODE_SIZE,
-  }))
+  local site = scanUnique(K.AOB_RANDOM_ROCK, "the random rock button") + K.RANDOM_ROCK_MODE
+  local turn = scanUnique(K.AOB_ROCK_TURN, "placeRock's rotation")
+  local gameMode = C.gameModeOf({})
+  if rd32(turn + 2) ~= K.TILE_MAP.rotation then
+    error(MODULE_NAME .. ": placeRock uses a different rotation field")
+  end
+  local placed = core.allocate(4, true)
+  local stub = core.allocateAssembly(templates.rockTurn, {
+    GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = K.TILE_MAP.rotation,
+    MODE = K.TILE_MAP.mode, TURN_MODE = K.ROCK_TURN_MODE, BACK = turn + 6, PLACED = placed,
+  })
+  local mode = core.allocateAssembly(templates.randomRockMode, {
+    MODE = rd32(site + 2), TURN_MODE = K.ROCK_TURN_MODE, BACK = site + K.RANDOM_ROCK_MODE_SIZE,
+  })
+  patchJump(self, turn, 6, stub)
+  patchJump(self, site, K.RANDOM_ROCK_MODE_SIZE, mode)
+  return placed
 end
 
 return {

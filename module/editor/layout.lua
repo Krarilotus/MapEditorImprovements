@@ -109,6 +109,8 @@ K.JMP_SHORT = 0xEB
 K.AOB_RANDOM_ROCK = "A3 ? ? ? ? A1 ? ? ? ? 83 F8 02 B9 05 00 00 00 89 0D ? ? ? ? C7 05"
 K.RANDOM_ROCK_MODE = 0x12
 K.RANDOM_ROCK_MODE_SIZE = 6
+K.ROCK_TURN_MODE = 6
+K.AOB_ROCK_TURN = "8B 86 ? ? ? ? 50 55 57 51 D1 FB 03 5C 24 30 52 B9"
 -- The click handler's rock placement: `lea ecx,[variant + size*4] / mov [command param 3],ecx /
 -- push 0x1A / ... / call queueCommand / mov eax,[variant]` (the variant cycling).
 K.AOB_ROCK_PLACE = "8D 0C ? 89 0D ? ? ? ? 6A 1A B9 ? ? ? ? C7 05 ? ? ? ? 14 00 00 00 E8 ? ? ? ? A1"

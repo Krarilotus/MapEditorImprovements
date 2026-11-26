@@ -109,6 +109,7 @@ local function buildTable(G, O)
     insert(MAP_CLICK_ITEM, "redo")
   end
   if O.compass then insert(MAP_CLICK_ITEM, "compass") end
+  if O.rockPlaced then insert(MAP_CLICK_ITEM, "rockTick") end
   if O.counts then insert(INFO_BEFORE_ITEM, "info") end
   if O.treePreview then insert(INFO_BEFORE_ITEM, "treePreview") end
   local pipetteItems = { "pipetteTick", "pipette", "pipettePanel" }
@@ -825,6 +826,32 @@ local function buildTable(G, O)
   end
 
   if O.undo then C.undoButtons(G, added, guarded, O.undo) end
+  if added.rockTick ~= nil then
+    local ok, problem = pcall(function()
+      local R = C.resolvePipette(G)
+      local mode, rotation = R.tileMap + K.TILE_MAP.mode, R.tileMap + K.TILE_MAP.rotation
+      local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = R.keyState }), 1, 0)
+      local wasDown, placedAtPress = false, nil
+      local pad = C.luaPad(function()
+        local tool = rd32(G.subtype)
+        if tool < K.FIRST_ROCK_COMMAND or tool > K.LAST_ROCK_COMMAND or rd32(mode) ~= K.ROCK_TURN_MODE
+            or rd32(R.gameMode) ~= K.MAP_EDITOR then
+          wasDown, placedAtPress = false, nil
+          return
+        end
+        local down = (asyncKey(K.LEFT_BUTTON) & 0x8000) ~= 0
+        if down and not wasDown then
+          placedAtPress = rd32(G.onMap) ~= 0 and rd32(O.rockPlaced) or nil
+        elseif wasDown and not down and placedAtPress == rd32(O.rockPlaced) then
+          wr32(rotation, (rd32(rotation) + 2 * math.random(1, 3)) % 8)
+        end
+        wasDown = down
+      end, "the rock click turn")
+      wr32(added.rockTick + ITEM_TYPE, TYPE_EVERY_FRAME)
+      wr32(added.rockTick + ITEM_ACTION, pad)
+    end)
+    if not ok then log(WARNING, tostring(problem) .. "; refused rock clicks keep the rotation") end
+  end
   if added.compass ~= nil then
     local ok, problem = pcall(C.compassItem, G, added.compass, O.undo)
     if not ok then log(WARNING, tostring(problem) .. "; no compass") end

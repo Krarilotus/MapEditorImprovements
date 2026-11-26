@@ -356,10 +356,39 @@ rock_done:
 pop eax
 ]]
 
--- The random rock button's `mov [mode], ecx` (ecx = 5): mode 0 instead, the slowly turning
--- mode the preview follows.
+-- The random rock button's `mov [mode], ecx` (ecx = 5): the module's own mode instead, which
+-- neither of the game's timers turns (5 every frame, 0 once a second); the preview follows the
+-- rotation, and templates.rockTurn moves it on after every placed rock.
 templates.randomRockMode = [[
-mov dword [MODE],0
+mov dword [MODE],TURN_MODE
+jmp BACK
+]]
+
+-- placeRock's `mov eax,[esi+ROTATION]` (the rotation this rock gets): in the module's mode the
+-- next rock gets another rotation (0, 2, 4 or 6, never the same twice in a row).
+templates.rockTurn = [[
+mov eax,[esi+ROTATION]
+cmp dword [GAME_MODE],MAP_EDITOR
+jne rock_turn_done
+cmp dword [esi+MODE],TURN_MODE
+jne rock_turn_done
+push eax
+push ecx
+push edx
+mov ecx,eax
+rdtsc
+and eax,6
+cmp eax,ecx
+jne rock_turn_new
+add eax,2
+and eax,6
+rock_turn_new:
+mov [esi+ROTATION],eax
+inc dword [PLACED]
+pop edx
+pop ecx
+pop eax
+rock_turn_done:
 jmp BACK
 ]]
 
@@ -923,19 +952,6 @@ mov dword [FLAG],VALUE
 jmp ACTION
 ]]
 
--- Restore the game's orientation outside the editor for AI building placement.
-templates.rotationFrame = [[
-cmp dword [GAME_MODE],MAP_EDITOR
-je rotation_frame_done
-cmp dword [ROTATION_ON],0
-je rotation_frame_done
-push eax
-mov eax,[ROTATION_DEFAULT]
-mov [ORIENTATION],eax
-pop eax
-rotation_frame_done:
-ret
-]]
 
 -- The right-click ring's compass, replacing `mov REG,[NEXT]` before setMapRotation(NEXT): with
 -- Ctrl held the map turns the other way (2 * CURRENT - NEXT, orientations 0, 2, 4, 6).
@@ -1049,13 +1065,15 @@ edge_low_ok:
 jmp BACK
 ]]
 
--- TriggerPlaceBuilding's default orientation, replacing `mov eax,[ORIENTATION]`: in the map
--- editor with the rotation list on, the orientation the list asks for.
+-- TriggerPlaceBuilding's orientation read. An override belongs to the tool that supplied it.
 templates.rotationRead = [[
 cmp dword [GAME_MODE],MAP_EDITOR
 jne rotation_plain
-cmp dword [ROTATION_ON],0
+cmp dword [WANTED],0xFFFFFFFF
 je rotation_plain
+mov eax,[TOOL]
+cmp eax,[WANTED_TOOL]
+jne rotation_plain
 mov eax,[WANTED]
 jmp BACK
 rotation_plain:

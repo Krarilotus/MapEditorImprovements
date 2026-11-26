@@ -160,6 +160,12 @@ local function enable(self, config)
       log(WARNING, tostring(problem) .. "; the editor has no undo")
     end
   end
+  local rockPlaced
+  if setting(config, "rocks", "random_preview") == true then
+    local ok, result = pcall(enableRandomPreview, self)
+    if ok then rockPlaced = result
+    else log(WARNING, tostring(result) .. "; the random rotation is left as it is") end
+  end
   local O = {
     counts = setting(config, "counts", "enabled") == true,
     shown = setting(config, "counts", "shown") == true,
@@ -174,6 +180,7 @@ local function enable(self, config)
     textures = setting(config, "textures", "gravel_and_iron") == true,
     variants = setting(config, "rocks", "variants") == true,
     extraRock = setting(config, "rocks", "extra_rock") == true,
+    rockPlaced = rockPlaced,
     herds = setting(config, "herds", "panel") == true,
     invisibleRocks = setting(config, "rocks", "invisible") == true,
     noStacking = setting(config, "trees", "no_shrub_stacking") == true,
@@ -238,7 +245,7 @@ local function enable(self, config)
       or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
       or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks
       or O.textureMask or O.birdButtons or O.animalBin or O.groupWarning or O.eraserChoice or O.eraseGulls
-      or O.spreadOrder or O.spreadOutlines or O.compass then
+      or O.spreadOrder or O.spreadOutlines or O.compass or O.rockPlaced then
     local ok, problem = pcall(enableMenu, self, O)
     if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
   end
@@ -278,10 +285,6 @@ local function enable(self, config)
   if setting(config, "rocks", "erase_invisible") == true then
     local ok, problem = pcall(C.patchEraser, self)
     if not ok then log(WARNING, tostring(problem) .. "; the eraser leaves invisible rocks") end
-  end
-  if setting(config, "rocks", "random_preview") == true then
-    local ok, problem = pcall(enableRandomPreview, self)
-    if not ok then log(WARNING, tostring(problem) .. "; the random rotation is left as it is") end
   end
   for _, entry in ipairs({ { "size_refresh", C.patchSizeRefresh, "smaller map sizes need a reload" },
       { "camera_edge", C.patchCameraEdge, "the camera stops short of the map edge" } }) do

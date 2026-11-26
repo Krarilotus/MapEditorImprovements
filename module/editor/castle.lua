@@ -40,7 +40,7 @@ local C = layout.C
 local memory = require("editor.memory")
 local scan = memory.scan
 local item = memory.item
-local frame = require("editor.frame")
+local scanUnique = memory.scanUnique
 local buttonPictures = require("editor.images").buttonPictures
 local expectBytes = memory.expectBytes
 local readOperand = memory.readOperand
@@ -229,24 +229,18 @@ function C.patchTowerEngines(self, G)
   end
 end
 
--- The building orientation and the words the frame hook reads to put it back outside the editor.
-function C.rotationState(G)
-  if C.rotation ~= nil then return C.rotation end
-  local address = rd32(scan(K.AOB_ORIENTATION, "the building orientation") + K.ORIENTATION)
-  local Q = { address = address, on = core.allocate(4, true), default = core.allocate(4, true),
-    choice = core.allocate(4, true), wanted = core.allocate(4, true),
-    site = scan(K.AOB_ORIENTATION, "the building orientation") + K.ORIENTATION - 1 }
-  wr32(Q.default, rd32(address))
-  C.rotation = Q
-  return Q
-end
-
 -- The rotation list in the castle menu (head: the box showing the choice, options: one item each)
 -- and, every frame in the map editor while the castle menu is up, the building orientation it
 -- asks for (Location based: as the keep would turn at the start of a match, from the tile under
--- the mouse). Outside the editor the frame hook puts the game's own back.
+-- the mouse).
 function C.buildingRotation(self, G, B, data, head, options)
-  local Q = C.rotationState(G)
+  local site = scanUnique(K.AOB_ORIENTATION, "the building orientation") + K.ORIENTATION - 1
+  expectBytes(site, { 0xA1 }, "the building orientation")
+  local nativeOrientation = rd32(site + 1)
+  local default = rd32(nativeOrientation)
+  local wanted = core.allocate(4, true)
+  local wantedTool = core.allocate(4, true)
+  wr32(wanted, -1)
   local R = C.resolvePipette(G)
   local turn = scan(K.AOB_KEEP_TURN, "the keep's turn at the start of a match")
   local direction = rd32(turn + K.KEEP_TURN.this)
@@ -254,18 +248,17 @@ function C.buildingRotation(self, G, B, data, head, options)
   local result = rd32(turn + K.KEEP_TURN.result)
   local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
   local placeRotation = R.tileMap + rd32(scan(K.AOB_PLACE_ROTATION, "the placement rotation") + K.PLACE_ROTATION)
-  local chosenTool = rd32(scan(K.AOB_CHOSEN_TOOL, "the chosen building") + 2)
+  local chosenTool = rd32(scanUnique(K.AOB_CHOSEN_TOOL, "the chosen building") + 2)
   local typeOf = core.exposeCode(B.typeOfCommand, 2, 1)
-  local function turns()
-    local tool = rd32(chosenTool)
+  local function turns(tool)
     if tool <= 0 or tool > 0x200 then return false end
     return K.ROTATING_TYPES[typeOf(B.buildings, tool) & 0xFFFF] == true
   end
   -- the keep's preview: its parts where the chosen orientation puts them
   do
     local KT = K.KEEP_TABLES
-    local previewSite = scan(K.AOB_KEEP_PREVIEW_CALL, "the building preview") + KT.call
     local ok, problem = pcall(function()
+      local previewSite = scanUnique(K.AOB_KEEP_PREVIEW_CALL, "the building preview") + KT.call
       C.patchCall(self, previewSite, core.allocateAssembly(templates.keepPreviewTurn, {
         GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
         PREVIEW = readCallTarget(previewSite, 0, "the building preview"),
@@ -277,16 +270,9 @@ function C.buildingRotation(self, G, B, data, head, options)
     end)
     if not ok then log(WARNING, tostring(problem) .. "; the keep's preview keeps its first orientation") end
   end
-  frame.add("rotation", core.allocateAssembly(templates.rotationFrame, {
-    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION_ON = Q.on,
-    ROTATION_DEFAULT = Q.default, ORIENTATION = Q.address,
-  }))
-  wr32(Q.on, 1)
-  -- the click itself takes the list's orientation (whatever else sets the game's word)
-  expectBytes(Q.site, { 0xA1 }, "the building orientation")
-  patchJump(self, Q.site, 5, core.allocateAssembly(templates.rotationRead, {
-    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION_ON = Q.on, WANTED = Q.wanted,
-    ORIENTATION = Q.address, BACK = Q.site + 5,
+  patchJump(self, site, 5, core.allocateAssembly(templates.rotationRead, {
+    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, WANTED = wanted,
+    TOOL = chosenTool, WANTED_TOOL = wantedTool, ORIENTATION = nativeOrientation, BACK = site + 5,
   }))
   local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
   local colourBox = core.exposeCode(G.colourBox, 6, 1)
@@ -294,6 +280,7 @@ function C.buildingRotation(self, G, B, data, head, options)
   local text = core.allocate(64, true)
   local open = false
   local editorRotation = false
+  local choice = 1
   local rect = C.takeRect(data)            -- clicks on the list do not reach the map
   local function location()
     if rd32(R.flatView) ~= 0 then flatSetup(R.viewport) else mouseSetup(R.viewport) end
@@ -305,9 +292,9 @@ function C.buildingRotation(self, G, B, data, head, options)
     return o
   end
   local function orientation()
-    local entry = K.ROTATIONS[rd32(Q.choice) + 1]
-    if entry == nil or entry[2] == nil then return rd32(Q.default) end
-    if entry[2] == "location" then return location() or rd32(Q.default) end
+    local entry = K.ROTATIONS[choice]
+    if entry[2] == nil then return default end
+    if entry[2] == "location" then return location() or default end
     return entry[2]
   end
   local box = K.ROTATION_BOX
@@ -317,10 +304,8 @@ function C.buildingRotation(self, G, B, data, head, options)
   end
   local function draw()
     if rd32(R.gameMode) ~= K.MAP_EDITOR then
-      if editorRotation then                 -- the game's own preview again
-        wr32(placeRotation, 0)
-        editorRotation = false
-      end
+      wr32(wanted, -1)
+      editorRotation = false
       wr32(head + ITEM_WIDTH, 0)             -- stays drawn (and so able to come back), never clicked
       for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, 1) end
       open = false
@@ -331,12 +316,21 @@ function C.buildingRotation(self, G, B, data, head, options)
     local listHeight = open and #K.ROTATIONS * box.option or 0
     C.markRect(rect, box.x, box.y - listHeight, box.width, box.height + listHeight)
     for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, open and 0 or 1) end
-    local o = turns() and orientation() or rd32(Q.default)   -- other buildings keep their look
-    wr32(Q.address, o)
-    wr32(Q.wanted, o)
-    -- the cursor preview turns with it (placeBuilding sets the same from the orientation)
-    wr32(placeRotation, (o == 0xF) and 0 or (o // 2))
-    editorRotation = true
+    local tool = rd32(chosenTool)
+    if turns(tool) then
+      local o = orientation()
+      wr32(nativeOrientation, o)
+      wr32(wanted, o)
+      wr32(wantedTool, tool)
+      wr32(placeRotation, (o == 0xF) and 0 or (o // 2))
+      editorRotation = true
+    else
+      wr32(wanted, -1)
+      if editorRotation then
+        wr32(placeRotation, 0)
+        editorRotation = false
+      end
+    end
     local ox = rd32(B.menu + MENU_X) + rd32(G.cameraX)
     local oy = rd32(B.menu + MENU_Y) + rd32(G.cameraY)
     local white = rd32(G.pixelFormat) == 0x565 and 0xFFFF or 0x7FFF
@@ -357,13 +351,13 @@ function C.buildingRotation(self, G, B, data, head, options)
       for i, o in ipairs(options) do
         local ot = listTop + (i - 1) * box.option
         if rd16(o + ITEM_HOVERED) ~= 0 then roundedBox(G.pencil, l, ot, l + box.width, ot + box.option, BOX_BLEND) end
-        if i == rd32(Q.choice) + 1 then frame(l, ot, l + box.width, ot + box.option) end
+        if i == choice then frame(l, ot, l + box.width, ot + box.option) end
       end
     end
     wr32(G.pencil + PENCIL_TARGET, target)
     local layer = rd32(G.textLayer)
     wr32(G.textLayer, MAP_LAYER)
-    local entry = K.ROTATIONS[rd32(Q.choice) + 1] or K.ROTATIONS[1]
+    local entry = K.ROTATIONS[choice]
     write("Rotation: " .. entry[1], l + TOOLTIP_PADDING, t + (box.height - TOOLTIP_LINE) // 2 + 2)
     write("v", l + box.width - TOOLTIP_PADDING - 6, t + (box.height - TOOLTIP_LINE) // 2 + 2)
     if open then
@@ -377,7 +371,7 @@ function C.buildingRotation(self, G, B, data, head, options)
   wr16(head + ITEM_HIDDEN, 0)              -- a hidden item is not drawn, so it could never show itself
   for i, o in ipairs(options) do
     C.luaItem(o, box.x, box.y - (#K.ROTATIONS - i + 1) * box.option, box.width, box.option, function()
-      wr32(Q.choice, i - 1)
+      choice = i
       open = false
     end, nil, "the rotation list")
     wr16(o + ITEM_HIDDEN, 1)

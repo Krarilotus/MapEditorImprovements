@@ -26,7 +26,7 @@ local LOAD_ECX, LOAD_ECX_SIZE = 21, 6   -- mov ecx,[B]
 local AFTER_LOADS = 27                  -- push eax / push ecx
 local VIEWPORT = 30                     -- operand of mov ecx,viewport
 local OPCODE_LOAD_EAX = 0xA1
-local ORDER = { "grid", "editor", "rotation" }
+local ORDER = { "grid", "editor" }
 
 local M = {}
 local site = nil
@@ -54,7 +54,7 @@ function M.resolve()
 end
 
 ---A feature's routine, run every frame on the game screen once install() has put the site in.
----@param name string "grid", "editor" or "rotation"
+---@param name string "grid" or "editor"
 ---@param routine number address of the routine
 function M.add(name, routine)
   routines[name] = routine
@@ -98,7 +98,7 @@ function M.install(self)
     LOAD_A = readAddress(S.base + LOAD_EAX + 1),
     LOAD_B = readAddress(S.base + LOAD_ECX + 2),
     BACK = S.base + AFTER_LOADS,
-    GRID = routines.grid, EDITOR = routines.editor, ROTATION = routines.rotation,
+    GRID = routines.grid, EDITOR = routines.editor,
   }))
   for name in pairs(routines) do running[name] = true end
   routines = {}
