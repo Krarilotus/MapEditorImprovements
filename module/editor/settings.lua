@@ -196,8 +196,6 @@ function C.enableMapSettings(self, O, G)
       local menu = rd32(anchor + 1)
       local init, problem = core.AOBScanUnique("68 ? ? ? ? B9 " .. bytesOf(menu) .. " E8")
       if not init then error(MODULE_NAME .. ": Load dialog constructor " .. problem) end
-      local readMemory = core.exposeCode(ucp.internal.getLibraryProcAddressA("kernel32.dll", "ReadProcessMemory"),
-        5, CallingConvention.STDCALL)
       local show = core.allocate(4, true)
       local site = scan(K.AOB_LOCK_FILTER, "the locked map filter")
       expectBytes(site + K.LOCK_FILTER.jump, { 0x75 }, "the locked map filter")
@@ -228,20 +226,17 @@ function C.enableMapSettings(self, O, G)
         ensure()
         -- Another extension may have copied the item into its replacement table.
         local item = rd32(init + 1)
-        local buffer = core.allocate(MENU_ITEM_SIZE)
         local match
         toggle = nil
         -- The checkbox and Autosave's three buttons may extend the table.
         for _ = 0, K.MOST_DIALOG_ITEMS + 4 do
-          if readMemory(-1, item, buffer, MENU_ITEM_SIZE, 0) == 0 then break end
-          if rd32(buffer + ITEM_TYPE) == TYPE_END then
+          if rd32(item + ITEM_TYPE) == TYPE_END then
             toggle = match
             break
           end
-          if not match and rd32(buffer + ITEM_RENDER) == render then match = item end
+          if not match and rd32(item + ITEM_RENDER) == render then match = item end
           item = item + MENU_ITEM_SIZE
         end
-        core.deallocate(buffer)
         if not toggle then
           log(WARNING, MODULE_NAME .. ": could not rebind Show locked maps in the Load dialog")
         end
