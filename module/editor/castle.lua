@@ -238,17 +238,18 @@ function C.buildingRotation(self, G, B, data, head, options)
   expectBytes(site, { 0xA1 }, "the building orientation")
   local nativeOrientation = rd32(site + 1)
   local default = rd32(nativeOrientation)
-  local wanted = core.allocate(4, true)
-  local wantedTool = core.allocate(4, true)
-  wr32(wanted, -1)
+  local gameMode = C.gameModeOf()
   local R = C.resolvePipette(G)
-  local turn = scan(K.AOB_KEEP_TURN, "the keep's turn at the start of a match")
+  local turn = scanUnique(K.AOB_KEEP_TURN, "the keep's turn at the start of a match")
   local direction = rd32(turn + K.KEEP_TURN.this)
   local towards = core.exposeCode(readCallTarget(turn, K.KEEP_TURN.call, "the direction"), 5, 1)
   local result = rd32(turn + K.KEEP_TURN.result)
   local mouseSetup, flatSetup = core.exposeCode(R.mouseSetup, 1, 1), core.exposeCode(R.flatSetup, 1, 1)
-  local placeRotation = R.tileMap + rd32(scan(K.AOB_PLACE_ROTATION, "the placement rotation") + K.PLACE_ROTATION)
+  local placeRotation = R.tileMap + rd32(scanUnique(K.AOB_PLACE_ROTATION, "the placement rotation") + K.PLACE_ROTATION)
   local chosenTool = rd32(scanUnique(K.AOB_CHOSEN_TOOL, "the chosen building") + 2)
+  local wanted = core.allocate(4, true)
+  local wantedTool = core.allocate(4, true)
+  wr32(wanted, -1)
   local typeOf = core.exposeCode(B.typeOfCommand, 2, 1)
   local function turns(tool)
     if tool <= 0 or tool > 0x200 then return false end
@@ -260,18 +261,18 @@ function C.buildingRotation(self, G, B, data, head, options)
     local ok, problem = pcall(function()
       local previewSite = scanUnique(K.AOB_KEEP_PREVIEW_CALL, "the building preview") + KT.call
       C.patchCall(self, previewSite, core.allocateAssembly(templates.keepPreviewTurn, {
-        GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
+        GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
         PREVIEW = readCallTarget(previewSite, 0, "the building preview"),
-        TABLE_A = rd32(scan(K.AOB_KEEP_TABLE_A, "the keep layout") + KT.a),
-        TABLE_B = rd32(scan(K.AOB_KEEP_CAMPFIRE, "the keep's campfire area") + KT.b),
-        TABLE_C = rd32(scan(K.AOB_KEEP_STOCKPILE, "the keep's stockpile") + KT.c),
+        TABLE_A = rd32(scanUnique(K.AOB_KEEP_TABLE_A, "the keep layout") + KT.a),
+        TABLE_B = rd32(scanUnique(K.AOB_KEEP_CAMPFIRE, "the keep's campfire area") + KT.b),
+        TABLE_C = rd32(scanUnique(K.AOB_KEEP_STOCKPILE, "the keep's stockpile") + KT.c),
         KEEP_ROWS = KT.rows,
       }))
     end)
     if not ok then log(WARNING, tostring(problem) .. "; the keep's preview keeps its first orientation") end
   end
   patchJump(self, site, 5, core.allocateAssembly(templates.rotationRead, {
-    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, WANTED = wanted,
+    GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, WANTED = wanted,
     TOOL = chosenTool, WANTED_TOOL = wantedTool, ORIENTATION = nativeOrientation, BACK = site + 5,
   }))
   local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
@@ -303,7 +304,7 @@ function C.buildingRotation(self, G, B, data, head, options)
     shadowedText(G.textManager, text, x, y, ALIGN_LEFT, TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
   end
   local function draw()
-    if rd32(R.gameMode) ~= K.MAP_EDITOR then
+    if rd32(gameMode) ~= K.MAP_EDITOR then
       wr32(wanted, -1)
       editorRotation = false
       wr32(head + ITEM_WIDTH, 0)             -- stays drawn (and so able to come back), never clicked
@@ -583,8 +584,15 @@ function C.unitColours(self, G, B, data, panel, crests)
   wr16(panel + ITEM_HIDDEN, 0)
 end
 
--- The game mode word, from G or found again (the landscape menu's G may not have it).
+-- Callers without a menu context share the checked game mode binding.
+local checkedGameMode
 function C.gameModeOf(G)
+  if G == nil then
+    if checkedGameMode == nil then
+      checkedGameMode = rd32(scanUnique(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
+    end
+    return checkedGameMode
+  end
   if G.gameMode == nil then G.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND) end
   return G.gameMode
 end

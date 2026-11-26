@@ -829,13 +829,14 @@ local function buildTable(G, O)
   if added.rockTick ~= nil then
     local ok, problem = pcall(function()
       local R = C.resolvePipette(G)
+      local gameMode = C.gameModeOf()
       local mode, rotation = R.tileMap + K.TILE_MAP.mode, R.tileMap + K.TILE_MAP.rotation
       local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = R.keyState }), 1, 0)
       local wasDown, placedAtPress = false, nil
       local pad = C.luaPad(function()
         local tool = rd32(G.subtype)
         if tool < K.FIRST_ROCK_COMMAND or tool > K.LAST_ROCK_COMMAND or rd32(mode) ~= K.ROCK_TURN_MODE
-            or rd32(R.gameMode) ~= K.MAP_EDITOR then
+            or rd32(gameMode) ~= K.MAP_EDITOR then
           wasDown, placedAtPress = false, nil
           return
         end

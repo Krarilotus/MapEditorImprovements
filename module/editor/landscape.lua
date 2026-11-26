@@ -90,7 +90,7 @@ end
 local function enableRandomPreview(self)
   local site = scanUnique(K.AOB_RANDOM_ROCK, "the random rock button") + K.RANDOM_ROCK_MODE
   local turn = scanUnique(K.AOB_ROCK_TURN, "placeRock's rotation")
-  local gameMode = C.gameModeOf({})
+  local gameMode = C.gameModeOf()
   if rd32(turn + 2) ~= K.TILE_MAP.rotation then
     error(MODULE_NAME .. ": placeRock uses a different rotation field")
   end

@@ -68,22 +68,10 @@ local function sectionEnd(inside)
   return nil
 end
 
--- scan, and also refused when the pattern matches a second time further on in the executable's
--- section that holds it (its last byte), so the second look doesn't wander through the game's data
--- or the rest of the process.
 local function scanUnique(pattern, purpose)
-  local address = scan(pattern, purpose)
-  local stop = sectionEnd(address)
-  local again
-  if stop ~= nil then
-    again = core.scanForAOB(pattern, address + 1, stop - 1)
-  else
-    again = core.scanForAOB(pattern, address + 1)
-  end
-  -- Only a match inside the section counts: the framework's scanner checks its end between memory
-  -- regions, so a merged region could reach past it.
-  if again ~= nil and again ~= 0 and (stop == nil or again < stop) then
-    error(string.format("%s: %s matches twice (0x%X, 0x%X)", MODULE_NAME, purpose, address, again))
+  local address, problem = core.AOBScanUnique(pattern)
+  if address == nil then
+    error(string.format("%s: %s %s", MODULE_NAME, purpose, problem))
   end
   return address
 end
