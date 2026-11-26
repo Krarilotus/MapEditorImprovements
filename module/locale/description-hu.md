@@ -2,4 +2,4 @@
 
 **Szerzők**: Monsterfish, Heroesflorian
 
-Több információt jelenít meg a szerkesztett térképről a térképszerkesztőben, és hiányzó eszközökkel bővíti azt: fák növekedési fokozatai, almafák, több bokor, kidöntött fák, kavics és vas, sziklavariánsok, csordaméretek és sok más. Minden rész ki van kapcsolva, amíg be nem kapcsolod a beállításokban.
+Bővíti a térképszerkesztőt. A tájszerkesztő több fát, sziklát, textúrát, vizet, magasságot és csordát, valamint térképszámlálókat kap. A vármód több épületet, romot és falváltozatot kap. Emellett térképbeállítások, visszavonás és újra, valamint nyersanyagrács is jár. Minden rész ki van kapcsolva, amíg be nem kapcsolod a beállításokban.

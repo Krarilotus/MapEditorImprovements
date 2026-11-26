@@ -2,4 +2,4 @@
 
 **Autores**: Monsterfish, Heroesflorian
 
-Hace que el editor de mapas muestre más información sobre el mapa en el que trabajas y añade herramientas que le faltaban: fases de crecimiento de árboles, manzanos, más arbustos, árboles talados, grava y hierro, variantes de rocas, tamaños de manadas y mucho más. Cada función está desactivada hasta que la actives en los ajustes.
+Amplía el editor de mapas. El editor de paisaje gana más árboles, rocas, texturas, agua, alturas y manadas, y contadores del mapa. El modo castillo gana más edificios, ruinas y variantes de muro. Añade también ajustes del mapa, deshacer y rehacer y una cuadrícula de recursos. Cada función está desactivada hasta que la actives en los ajustes.

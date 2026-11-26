@@ -2,4 +2,4 @@
 
 **Autoren**: Monsterfish, Heroesflorian
 
-Zeigt im Karteneditor deutlich mehr Informationen über die bearbeitete Karte an und ergänzt Werkzeuge, die dem Editor fehlen: Wachstumsstufen für Bäume, Apfelbäume, mehr Sträucher, gefällte Bäume, Kies und Eisen, Felsenvarianten, Herdengrößen und vieles mehr. Jeder Teil ist aus, bis du ihn in den Einstellungen einschaltest.
+Erweitert den Karteneditor. Der Landschaftseditor erhält mehr Bäume, Felsen, Texturen, Wasser, Höhen und Herden sowie Kartenzähler. Der Burgmodus erhält mehr Gebäude, Ruinen und Mauervarianten. Dazu Karteneinstellungen, Rückgängig und Wiederherstellen und ein Ressourcenraster. Jeder Teil ist aus, bis du ihn in den Einstellungen einschaltest.

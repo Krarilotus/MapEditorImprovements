@@ -2,4 +2,4 @@
 
 **Auteurs** : Monsterfish, Heroesflorian
 
-Enrichit l'éditeur de cartes avec davantage d'informations sur la carte en cours et des outils qui lui manquaient : stades de croissance des arbres, pommiers, buissons supplémentaires, arbres abattus, gravier et fer, variantes de rochers, taille des troupeaux, etc. Chaque fonctionnalité reste désactivée tant que vous ne l'activez pas dans les paramètres.
+Étend l'éditeur de cartes. L'éditeur de paysage gagne arbres, rochers, textures, eau, reliefs et troupeaux, et des compteurs de la carte. Le mode château gagne bâtiments, ruines et variantes de murs. S'y ajoutent les paramètres de la carte, annuler et rétablir, et une grille des ressources. Chaque fonctionnalité reste désactivée tant que vous ne l'activez pas.
