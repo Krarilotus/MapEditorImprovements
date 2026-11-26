@@ -78,7 +78,7 @@ rocks_signpost_tooltip: |-
   Los mapas de escaramuza reciben el mismo menú Rocas que los mapas de escenario, incluido el botón del poste indicador.
 rocks_random_preview: Rotación aleatoria visible en la vista previa
 rocks_random_preview_tooltip: |-
-  Con el botón de rotación aleatoria activado, el juego gira la roca tan rápido que la vista previa bajo el ratón no puede seguirla. Con esto activado gira una vez por segundo y muestra exactamente la roca que vas a colocar.
+  La vista previa muestra el siguiente ángulo de la roca. La rotación aleatoria elige un ángulo distinto tras cada intento de colocación.
 rocks_variants: Fila de variantes de roca
 rocks_variants_tooltip: |-
   Una fila sobre el menú Rocas muestra las cuatro variantes del tamaño de roca elegido, giradas tal como se colocarán. Haz clic en una para colocar solo esa variante; vuelve a hacer clic en ella o en cualquier botón del menú Rocas para recuperar el cambio automático.
@@ -293,7 +293,7 @@ castle_keep_ground_tooltip: |-
   Una fortaleza colocada en el editor de mapas ya no pinta tierra y piedras (o matorral denso) alrededor de sí misma y de su hoguera.
 castle_rotation: Lista de rotación de edificios
 castle_rotation_tooltip: |-
-  Una lista de rotación sobre el menú del castillo: predeterminada, 90, 180 y 270 grados, o según la ubicación (como giraría allí una fortaleza de la IA al empezar la partida). La vista previa y los edificios colocados la siguen, solo en el editor de mapas.
+  Elige un ángulo para fortalezas, cuarteles, campamentos de mercenarios, gremios de ingenieros y zapadores, y fundiciones de aceite. «Según la ubicación» usa la misma dirección hacia la que miraría una fortaleza de la IA en esa casilla.
 castle_unit_colour: Jugador de visualización de unidades
 castle_unit_colour_tooltip: |-
   Sobre los menús de unidades europeas y árabes: un escudo por jugador 0–8. Las unidades colocadas en el editor siguen siendo del jugador actual, pero se dibujan con los colores del jugador elegido. Elegir otro jugador actual vuelve a seleccionar su escudo.

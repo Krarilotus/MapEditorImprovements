@@ -78,7 +78,7 @@ rocks_signpost_tooltip: |-
   Les cartes d'escarmouche reçoivent le même menu Rochers que les cartes de scénario, avec le bouton panneau indicateur.
 rocks_random_preview: Rotation aléatoire visible dans l'aperçu
 rocks_random_preview_tooltip: |-
-  Lorsque la rotation aléatoire est choisie, le jeu fait tourner le rocher si vite que l'aperçu sous la souris ne peut pas suivre. Avec cette option, il tourne une fois par seconde et l'aperçu montre exactement le rocher sur le point d'être posé.
+  L'aperçu montre l'angle du prochain rocher. La rotation aléatoire choisit un autre angle après chaque tentative de placement.
 rocks_variants: Rangée de variantes de rochers
 rocks_variants_tooltip: |-
   Une rangée au-dessus du menu Rochers affiche les quatre variantes de la taille de rocher choisie, orientées telles qu'elles seront posées. Cliquez sur l'une d'elles pour ne placer que cette variante ; cliquez de nouveau dessus ou sur un bouton du menu Rochers pour revenir à l'alternance normale du jeu.
@@ -293,7 +293,7 @@ castle_keep_ground_tooltip: |-
   Un donjon posé dans l'éditeur de cartes ne peint plus de terre et de pierres (ou de broussailles épaisses) autour de lui et de son feu de camp.
 castle_rotation: Liste de rotation des bâtiments
 castle_rotation_tooltip: |-
-  Une liste de rotation au-dessus du menu du château : par défaut, 90, 180 et 270 degrés, ou selon l'emplacement (comme un donjon d'IA s'orienterait là en début de partie). L'aperçu et les bâtiments posés la suivent, dans l'éditeur de cartes uniquement.
+  Choisissez un angle pour les donjons, casernes, camps de mercenaires, guildes des ingénieurs et des tunneliers, et fonderies d'huile. « Selon l'emplacement » utilise l'orientation qu'un donjon d'IA prendrait sur cette case.
 castle_unit_colour: Joueur affiché pour les unités
 castle_unit_colour_tooltip: |-
   Au-dessus des menus d'unités européennes et arabes : un écusson par joueur de 0 à 8. Les unités posées dans l'éditeur appartiennent toujours au joueur actuel mais sont dessinées aux couleurs du joueur choisi. Choisir un autre joueur actuel reprend son écusson.

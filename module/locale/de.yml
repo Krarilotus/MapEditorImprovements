@@ -78,7 +78,7 @@ rocks_signpost_tooltip: |-
   Gefechtskarten erhalten dasselbe Felsenmenü wie Szenariokarten, einschließlich der Wegweiser-Schaltfläche.
 rocks_random_preview: Zufällige Drehung in der Vorschau sichtbar
 rocks_random_preview_tooltip: |-
-  Bei gewählter Zufallsdrehung dreht das Spiel den Felsen so schnell, dass die Vorschau unter der Maus nicht folgen kann. Mit dieser Option dreht er sich stattdessen einmal pro Sekunde und zeigt genau den Felsen, den du gleich setzt.
+  Die Vorschau zeigt den nächsten Drehwinkel des Felsens. Die Zufallsdrehung wählt nach jedem Platzierungsversuch einen anderen Winkel.
 rocks_variants: Leiste für Felsenvarianten
 rocks_variants_tooltip: |-
   Eine Leiste über dem Felsenmenü zeigt die vier Varianten der gewählten Felsengröße in ihrer aktuellen Drehung. Klicke eine an, um nur diese Variante zu setzen; ein weiterer Klick darauf oder auf eine Schaltfläche des Felsenmenüs kehrt zum automatischen Wechsel zurück.
@@ -293,7 +293,7 @@ castle_keep_ground_tooltip: |-
   Ein im Karteneditor gesetzter Bergfried malt keine Erde und Steine (oder dichtes Gestrüpp) mehr auf den Boden um sich und sein Lagerfeuer.
 castle_rotation: Liste für die Gebäudedrehung
 castle_rotation_tooltip: |-
-  Eine Drehungsliste über dem Burgmenü: Standard, 90, 180 und 270 Grad oder nach Lage (so, wie sich ein KI-Bergfried dort zu Spielbeginn drehen würde). Vorschau und gesetzte Gebäude folgen ihr, nur im Karteneditor.
+  Wähle einen Winkel für Bergfriede, Kasernen, Söldnerlager, Baumeister- und Tunnelgräbergilden sowie Ölschmelzen. „Nach Lage“ nutzt dieselbe Richtung, in die ein KI-Bergfried auf diesem Feld zeigen würde.
 castle_unit_colour: Anzeigespieler für Einheiten
 castle_unit_colour_tooltip: |-
   Über den europäischen und arabischen Einheitenmenüs: ein Wappen je Spieler 0–8. Im Karteneditor gesetzte Einheiten gehören weiter dem aktuellen Spieler, werden aber in den Farben des gewählten Spielers gezeichnet. Ein Wechsel des aktuellen Spielers wählt wieder dessen Wappen.

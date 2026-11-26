@@ -78,7 +78,7 @@ rocks_signpost_tooltip: |-
   A csetepaté térképek ugyanazt a Sziklák menüt kapják, mint a küldetéstérképek, az útjelző tábla gombbal együtt.
 rocks_random_preview: Véletlen forgatás az előnézetben
 rocks_random_preview_tooltip: |-
-  Véletlen forgatásnál a játék túl gyorsan forgatja a sziklát ahhoz, hogy az előnézet kövesse. Bekapcsolva másodpercenként egyszer fordul, így az előnézet pontosan a lehelyezendő sziklát mutatja.
+  Az előnézet a következő szikla szögét mutatja. A véletlen forgatás minden elhelyezési kísérlet után másik szöget választ.
 rocks_variants: Sziklavariánsok sora
 rocks_variants_tooltip: |-
   A Sziklák menü feletti sor a választott sziklaméret négy variánsát mutatja a lehelyezési tájolásban. Kattints egyre, hogy csak azt rakja le; újabb kattintás rá vagy bármely Sziklák menügombra visszaállítja a váltakozást.
@@ -293,7 +293,7 @@ castle_keep_ground_tooltip: |-
   A térképszerkesztőben lerakott vártorony már nem fest földet és köveket (vagy sűrű bozótot) maga és a tábortüze köré.
 castle_rotation: Épületforgatási lista
 castle_rotation_tooltip: |-
-  Forgatási lista a várépítő menü fölött: alapértelmezett, 90, 180 és 270 fok, vagy hely szerinti (ahogy egy MI-vártorony ott a meccs elején fordulna). Az előnézet és a lerakott épületek ezt követik, csak a térképszerkesztőben.
+  Válassz szöget a vártornyokhoz, kaszárnyákhoz, zsoldostáborokhoz, a mérnökök és az alagútásók céhéhez, valamint az olajolvasztókhoz. A „Hely szerinti” ugyanazt az irányt használja, amerre egy MI-vártorony azon a mezőn nézne.
 castle_unit_colour: Egységek megjelenítési játékosa
 castle_unit_colour_tooltip: |-
   Az európai és arab egységmenük fölött: játékosonként egy címer (0–8). A térképszerkesztőben lerakott egységek a jelenlegi játékoséi maradnak, de a választott játékos színeiben jelennek meg. Másik jelenlegi játékos választása újra annak címerét jelöli ki.

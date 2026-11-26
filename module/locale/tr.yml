@@ -78,7 +78,7 @@ rocks_signpost_tooltip: |-
   Çarpışma haritaları, yol tabelası düğmesi dâhil senaryo haritalarıyla aynı Kayalar menüsüne kavuşur.
 rocks_random_preview: Rastgele döndürme önizlemede görünür
 rocks_random_preview_tooltip: |-
-  Rastgele döndürme düğmesi seçiliyken oyun kayayı o kadar hızlı döndürür ki fare altındaki önizleme yetişemez. Bu ayar açıkken saniyede bir kez döner ve tam koyacağınız kayayı gösterir.
+  Önizleme bir sonraki kaya açısını gösterir. Rastgele döndürme her yerleştirme denemesinden sonra farklı bir açı seçer.
 rocks_variants: Kaya çeşitleri satırı
 rocks_variants_tooltip: |-
   Kayalar menüsünün üzerindeki satır, seçilen kaya boyutunun dört çeşidini yerleştirileceği yönde gösterir. Yalnızca o çeşidi koymak için birine tıklayın; oyunun değişen çeşitlerine dönmek için tekrar tıklayın veya Kayalar menüsünden herhangi bir düğme seçin.
@@ -293,7 +293,7 @@ castle_keep_ground_tooltip: |-
   Harita düzenleyicide yerleştirilen iç kale artık kendi ve kamp ateşinin çevresine toprak ve taş (ya da sık çalı) boyamaz.
 castle_rotation: Bina döndürme listesi
 castle_rotation_tooltip: |-
-  Kale menüsünün üstünde bir döndürme listesi: varsayılan, 90, 180 ve 270 derece ya da konuma göre (bir YZ iç kalesinin maç başında orada döneceği gibi). Önizleme ve yerleştirilen binalar buna uyar, yalnızca harita düzenleyicide.
+  İç kaleler, kışlalar, paralı asker kampları, mühendisler ve tünelciler loncaları ile yağ eritme ocakları için bir açı seçin. «Konuma göre», bir YZ iç kalesinin o karede bakacağı yönü kullanır.
 castle_unit_colour: Birim görüntüleme oyuncusu
 castle_unit_colour_tooltip: |-
   Avrupa ve Arap birim menülerinin üstünde: her oyuncu için bir arma (0–8). Harita düzenleyicide yerleştirilen birimler mevcut oyuncuya ait kalır ama seçilen oyuncunun renkleriyle çizilir. Başka bir mevcut oyuncu seçmek yine onun armasını seçer.
