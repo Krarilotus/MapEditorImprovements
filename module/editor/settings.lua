@@ -23,7 +23,6 @@ local K = layout.K
 local C = layout.C
 local memory = require("editor.memory")
 local scan = memory.scan
-local scanUnique = memory.scanUnique
 local expectBytes = memory.expectBytes
 local readCallTarget = memory.readCallTarget
 local bytesOf = memory.bytesOf
@@ -192,8 +191,13 @@ function C.enableMapSettings(self, O, G)
   -- 38.1: Show locked maps, in the Load dialog while it lists maps.
   if O.lockedMaps then
     local ok, problem = pcall(function()
-      local menu = rd32(scan(K.AOB_LOAD_MODAL, "the Load dialog") + 1)
-      local init = scanUnique("68 ? ? ? ? B9 " .. bytesOf(menu) .. " E8", "the Load dialog's items")
+      local anchor, reason = core.AOBScanUnique(K.AOB_LOAD_MODAL)
+      if not anchor then error(MODULE_NAME .. ": Load dialog anchor " .. reason) end
+      local menu = rd32(anchor + 1)
+      local init, problem = core.AOBScanUnique("68 ? ? ? ? B9 " .. bytesOf(menu) .. " E8")
+      if not init then error(MODULE_NAME .. ": Load dialog constructor " .. problem) end
+      local readMemory = core.exposeCode(ucp.internal.getLibraryProcAddressA("kernel32.dll", "ReadProcessMemory"),
+        5, CallingConvention.STDCALL)
       local show = core.allocate(4, true)
       local site = scan(K.AOB_LOCK_FILTER, "the locked map filter")
       expectBytes(site + K.LOCK_FILTER.jump, { 0x75 }, "the locked map filter")
@@ -206,11 +210,12 @@ function C.enableMapSettings(self, O, G)
       local function listingMaps() return rd32(S.listState) == K.MAP_LIST_KIND end
       C.luaItem(toggle, K.LOCKED_TOGGLE.x, K.LOCKED_TOGGLE.y, K.LOCKED_TOGGLE.width, K.LOCKED_TOGGLE.height,
         function()
-          if not listingMaps() then return end
+          if not toggle or not listingMaps() then return end
           wr32(show, rd32(show) ~= 0 and 0 or 1)
           opener(S.listState, rd32(S.modal))
         end,
         function()
+          if not toggle then return end
           local on = listingMaps()
           wr32(toggle + ITEM_WIDTH, on and K.LOCKED_TOGGLE.width or 0)
           wr32(toggle + ITEM_HEIGHT, on and K.LOCKED_TOGGLE.height or 0)
@@ -218,19 +223,28 @@ function C.enableMapSettings(self, O, G)
         end, "the Show locked maps box")
       patchJump(self, site, K.LOCK_FILTER.size, stub)
       ensure()
+      local render = rd32(toggle + ITEM_RENDER)
       hooks.registerHookCallback("afterInit", function()
         ensure()
         -- Another extension may have copied the item into its replacement table.
-        local render = rd32(toggle + ITEM_RENDER)
         local item = rd32(init + 1)
-        while rd32(item) ~= TYPE_END do
-          if rd32(item + ITEM_RENDER) == render then
-            toggle = item
-            return
+        local buffer = core.allocate(MENU_ITEM_SIZE)
+        local match
+        toggle = nil
+        -- The checkbox and Autosave's three buttons may extend the table.
+        for _ = 0, K.MOST_DIALOG_ITEMS + 4 do
+          if readMemory(-1, item, buffer, MENU_ITEM_SIZE, 0) == 0 then break end
+          if rd32(buffer + ITEM_TYPE) == TYPE_END then
+            toggle = match
+            break
           end
+          if not match and rd32(buffer + ITEM_RENDER) == render then match = item end
           item = item + MENU_ITEM_SIZE
         end
-        log(WARNING, MODULE_NAME .. ": could not find Show locked maps in the Load dialog")
+        core.deallocate(buffer)
+        if not toggle then
+          log(WARNING, MODULE_NAME .. ": could not rebind Show locked maps in the Load dialog")
+        end
       end)
     end)
     if not ok then log(WARNING, tostring(problem) .. "; the Load dialog has no Show locked maps box") end
