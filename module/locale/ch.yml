@@ -267,6 +267,12 @@ key_tab: Tab
 menu_group: 编辑器菜单
 menu_group_descr: |-
   屏幕底部编辑器菜单的绘制方式。
+menu_compass: 左上角指南针
+menu_compass_tooltip: |-
+  地图编辑器中始终显示右键环的指南针，位于撤销按钮下方，旋转地图时指向北方。
+menu_compass_turn: Ctrl 反向旋转地图
+menu_compass_turn_tooltip: |-
+  移到右键环的指南针上时按住 Ctrl，地图逆时针而不是顺时针旋转 90 度。
 menu_dust_clouds: 防止尘土云导致游戏崩溃
 menu_dust_clouds_tooltip: |-
   丢失移动数据的尘土云会导致游戏除以零崩溃。开启此项后，这类尘土云会留在原地而不再崩溃。
@@ -282,6 +288,15 @@ castle_all_keeps_tooltip: |-
 castle_player_zero: 玩家 0 盾徽
 castle_player_zero_tooltip: |-
   玩家盾徽中间新增第九个白色盾徽用于选择玩家 0，该玩家也可在地图上拥有建筑和单位。
+castle_keep_ground: 主堡不改变地面
+castle_keep_ground_tooltip: |-
+  在地图编辑器中放置的主堡不再在自身和营火周围绘制泥土和石块（或茂密灌木）。
+castle_rotation: 建筑旋转列表
+castle_rotation_tooltip: |-
+  城堡菜单上方的旋转列表：默认、90、180、270 度，或按位置（如同 AI 主堡在开局时在该处的朝向）。放置预览和已放置的建筑都随之旋转，仅限地图编辑器。
+castle_unit_colour: 单位显示玩家
+castle_unit_colour_tooltip: |-
+  欧洲和阿拉伯单位菜单上方：玩家 0–8 各一个盾徽。在地图编辑器中放置的单位仍属于当前玩家，但以所选玩家的颜色绘制。选择其他当前玩家时会重新选中该玩家的盾徽。
 castle_keep_crests: 活跃主堡盾徽
 castle_keep_crests_tooltip: |-
   每座主堡上方都会显示所属玩家的盾徽，其中玩家的活跃主堡（领主、初始部队和新农民出现处）带有边框。点击盾徽可将该主堡设为活跃，点击已活跃盾徽可使该玩家无活跃主堡。新建主堡不再自动接管活跃状态，移除活跃主堡时会由该玩家的另一座主堡接替。主储藏区始终跟随活跃主堡（否则游戏保留最早的储藏区，导致多主堡时 AI 认为建城点被占而不建城）。需开启“每位玩家可放置多个主堡”。
@@ -321,6 +336,12 @@ map_settings_button_tooltip: |-
 map_settings_menu: 扩展“地图设置”菜单
 map_settings_menu_tooltip: |-
   为 Alt + , 菜单补全标题、单人与多人、四种单人地图类型（攻城、入侵、经济、自由建造）、四种尺寸加自定义与 10–400 尺寸滑块（松开时生效）、平衡、山丘之王、锁定地图和返回按钮。
+map_settings_size_refresh: 缩小地图尺寸立即生效
+map_settings_size_refresh_tooltip: |-
+  在地图编辑器中缩小地图后，被裁掉的地块立即变黑并封锁，镜头也限定在新尺寸内，无需保存并重新加载地图。
+map_settings_camera_edge: 镜头可到达地图边缘
+map_settings_camera_edge_tooltip: |-
+  在地图编辑器中，镜头可在每一侧多移动一格，地图最外圈的地块可完整显示。
 eraser_group: 橡皮擦
 eraser_group_descr: |-
   地形编辑器橡皮擦清除的对象范围。

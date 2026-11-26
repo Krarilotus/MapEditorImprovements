@@ -267,6 +267,12 @@ key_tab: Tab
 menu_group: Menu de l'éditeur
 menu_group_descr: |-
   Manière dont le menu de l'éditeur en bas de l'écran est dessiné.
+menu_compass: Boussole en haut à gauche
+menu_compass_tooltip: |-
+  La boussole de l'anneau du clic droit reste affichée dans l'éditeur de cartes, sous les boutons Annuler, et indique le nord quand la carte tourne.
+menu_compass_turn: Ctrl tourne la carte dans l'autre sens
+menu_compass_turn_tooltip: |-
+  Maintenir Ctrl en passant sur la boussole de l'anneau du clic droit tourne la carte de 90 degrés dans le sens antihoraire au lieu du sens horaire.
 menu_dust_clouds: Les nuages de poussière ne font plus planter le jeu
 menu_dust_clouds_tooltip: |-
   Un nuage de poussière ayant perdu ses données de mouvement provoquait une division par zéro et un plantage du jeu. Avec cette option, un tel nuage reste simplement immobile.
@@ -282,6 +288,15 @@ castle_all_keeps_tooltip: |-
 castle_player_zero: Écusson du joueur 0
 castle_player_zero_tooltip: |-
   Un neuvième écusson blanc au centre des écussons de joueurs sélectionne le joueur 0, qui peut lui aussi posséder bâtiments et unités sur une carte.
+castle_keep_ground: Les donjons laissent le sol intact
+castle_keep_ground_tooltip: |-
+  Un donjon posé dans l'éditeur de cartes ne peint plus de terre et de pierres (ou de broussailles épaisses) autour de lui et de son feu de camp.
+castle_rotation: Liste de rotation des bâtiments
+castle_rotation_tooltip: |-
+  Une liste de rotation au-dessus du menu du château : par défaut, 90, 180 et 270 degrés, ou selon l'emplacement (comme un donjon d'IA s'orienterait là en début de partie). L'aperçu et les bâtiments posés la suivent, dans l'éditeur de cartes uniquement.
+castle_unit_colour: Joueur affiché pour les unités
+castle_unit_colour_tooltip: |-
+  Au-dessus des menus d'unités européennes et arabes : un écusson par joueur de 0 à 8. Les unités posées dans l'éditeur appartiennent toujours au joueur actuel mais sont dessinées aux couleurs du joueur choisi. Choisir un autre joueur actuel reprend son écusson.
 castle_keep_crests: Écussons de donjon actif
 castle_keep_crests_tooltip: |-
   Chaque donjon affiche l'écusson de son propriétaire au-dessus de lui ; le donjon actif du joueur (où apparaissent le seigneur, les unités de départ et les nouveaux paysans) est encadré. Cliquez sur un écusson pour activer ce donjon, ou sur l'écusson actif pour laisser le joueur sans donjon actif. Un nouveau donjon ne remplace plus automatiquement l'actif, et si l'actif est supprimé, un autre donjon du joueur prend le relais. La réserve principale suit toujours le donjon actif (sinon le jeu gardait la première réserve posée, bloquant l'emplacement de l'IA avec plusieurs donjons). Nécessite « Plusieurs donjons par joueur ».
@@ -321,6 +336,12 @@ map_settings_button_tooltip: |-
 map_settings_menu: Menu Paramètres de la carte étendu
 map_settings_menu_tooltip: |-
   Le menu Alt + , reçoit un titre, Solo et Multijoueur, les quatre types de cartes solo (Siège, Invasion, Économique, Construction libre), les quatre tailles plus Personnalisée et un curseur de taille de carte (10 à 400 ; appliqué au relâchement), Équilibrée, Roi de la colline, Verrouiller la carte et un bouton Retour.
+map_settings_size_refresh: Taille de carte réduite appliquée aussitôt
+map_settings_size_refresh_tooltip: |-
+  Quand la taille de la carte est réduite dans l'éditeur, les cases coupées deviennent aussitôt noires et bloquées et la caméra respecte la nouvelle taille, sans enregistrer ni recharger la carte.
+map_settings_camera_edge: Caméra jusqu'au bord de la carte
+map_settings_camera_edge_tooltip: |-
+  Dans l'éditeur de cartes, la caméra peut aller une case plus loin de chaque côté, et les cases du bord de la carte s'affichent en entier.
 eraser_group: Gomme
 eraser_group_descr: |-
   Ce que la gomme de l'éditeur de paysage supprime.

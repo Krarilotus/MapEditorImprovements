@@ -267,6 +267,12 @@ key_tab: Tab
 menu_group: Menú del editor
 menu_group_descr: |-
   Cómo se dibuja el menú del editor en la parte inferior de la pantalla.
+menu_compass: Brújula en la esquina superior izquierda
+menu_compass_tooltip: |-
+  La brújula del anillo del clic derecho se muestra siempre en el editor de mapas, bajo los botones de deshacer, y señala el norte al girar el mapa.
+menu_compass_turn: Ctrl gira el mapa al otro lado
+menu_compass_turn_tooltip: |-
+  Mantener Ctrl al pasar sobre la brújula del anillo del clic derecho gira el mapa 90 grados en sentido antihorario en lugar de horario.
 menu_dust_clouds: Las nubes de polvo no bloquean el juego
 menu_dust_clouds_tooltip: |-
   Una nube de polvo que perdía sus datos de movimiento provocaba una división por cero y cerraba el juego. Con esto activado, simplemente permanece en su sitio.
@@ -282,6 +288,15 @@ castle_all_keeps_tooltip: |-
 castle_player_zero: Escudo del jugador 0
 castle_player_zero_tooltip: |-
   Un noveno escudo blanco en medio de los escudos de jugador selecciona al jugador 0, que también puede poseer edificios y unidades en un mapa.
+castle_keep_ground: Las fortalezas no cambian el suelo
+castle_keep_ground_tooltip: |-
+  Una fortaleza colocada en el editor de mapas ya no pinta tierra y piedras (o matorral denso) alrededor de sí misma y de su hoguera.
+castle_rotation: Lista de rotación de edificios
+castle_rotation_tooltip: |-
+  Una lista de rotación sobre el menú del castillo: predeterminada, 90, 180 y 270 grados, o según la ubicación (como giraría allí una fortaleza de la IA al empezar la partida). La vista previa y los edificios colocados la siguen, solo en el editor de mapas.
+castle_unit_colour: Jugador de visualización de unidades
+castle_unit_colour_tooltip: |-
+  Sobre los menús de unidades europeas y árabes: un escudo por jugador 0–8. Las unidades colocadas en el editor siguen siendo del jugador actual, pero se dibujan con los colores del jugador elegido. Elegir otro jugador actual vuelve a seleccionar su escudo.
 castle_keep_crests: Escudos de fortaleza activa
 castle_keep_crests_tooltip: |-
   Cada fortaleza muestra encima el escudo de su dueño; la fortaleza activa del jugador (donde aparecen el Señor, las unidades iniciales y los nuevos campesinos) aparece enmarcada. Haz clic en un escudo para activar esa fortaleza, o en el activo para dejar al jugador sin fortaleza activa. Una nueva fortaleza ya no quita el puesto automáticamente a la activa, y si se elimina la activa toma el relevo otra fortaleza del jugador. El almacén principal sigue siempre a la fortaleza activa (el juego conservaba antes el primer almacén colocado, de modo que con varias fortalezas la IA veía bloqueado su solar y no seguía ningún plano de castillo). Requiere «Varias fortalezas por jugador».
@@ -321,6 +336,12 @@ map_settings_button_tooltip: |-
 map_settings_menu: Menú Ajustes del mapa ampliado
 map_settings_menu_tooltip: |-
   El menú Alt + , recibe título, Un jugador y Multijugador, los cuatro tipos de mapa individual (Asedio, Invasión, Económico, Construcción libre), los cuatro tamaños más Personalizado y un deslizador de tamaño (de 10 a 400; aplica al soltar), Equilibrado, Rey de la colina, Bloquear mapa y un botón Atrás.
+map_settings_size_refresh: Reducir el mapa se aplica al instante
+map_settings_size_refresh_tooltip: |-
+  Al reducir el tamaño del mapa en el editor, las casillas recortadas se vuelven negras y bloqueadas al momento y la cámara se ajusta al nuevo tamaño, sin guardar ni volver a cargar el mapa.
+map_settings_camera_edge: La cámara llega al borde del mapa
+map_settings_camera_edge_tooltip: |-
+  En el editor de mapas la cámara puede avanzar una casilla más por cada lado, así las casillas exteriores del mapa se ven enteras.
 eraser_group: Borrador
 eraser_group_descr: |-
   Qué elimina el borrador del editor de terreno.

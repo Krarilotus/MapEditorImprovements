@@ -267,6 +267,12 @@ key_tab: Tab
 menu_group: Szerkesztőmenü
 menu_group_descr: |-
   Hogyan rajzolódik ki a képernyő alján lévő szerkesztőmenü.
+menu_compass: Iránytű a bal felső sarokban
+menu_compass_tooltip: |-
+  A jobbklikk-gyűrű iránytűje a térképszerkesztőben mindig látható a visszavonás gombjai alatt, és a térkép forgatásakor északra mutat.
+menu_compass_turn: A Ctrl a másik irányba forgat
+menu_compass_turn_tooltip: |-
+  Ha a jobbklikk-gyűrű iránytűjére lépve nyomva tartod a Ctrl-t, a térkép 90 fokkal az óramutatóval ellentétesen fordul, nem azzal megegyezően.
 menu_dust_clouds: A porfelhők nem omlaszthatják össze a játékot
 menu_dust_clouds_tooltip: |-
   Az elveszett mozgásadatú porfelhők nullával való osztást és összeomlást okoztak. Bekapcsolva az ilyen porfelhő egyszerűen egy helyben marad.
@@ -282,6 +288,15 @@ castle_all_keeps_tooltip: |-
 castle_player_zero: 0. játékos címere
 castle_player_zero_tooltip: |-
   Egy fehér kilencedik címer a játékoscímerek közepén a 0. játékost választja ki, aki szintén birtokolhat épületeket és egységeket a térképen.
+castle_keep_ground: A vártornyok nem változtatják a talajt
+castle_keep_ground_tooltip: |-
+  A térképszerkesztőben lerakott vártorony már nem fest földet és köveket (vagy sűrű bozótot) maga és a tábortüze köré.
+castle_rotation: Épületforgatási lista
+castle_rotation_tooltip: |-
+  Forgatási lista a várépítő menü fölött: alapértelmezett, 90, 180 és 270 fok, vagy hely szerinti (ahogy egy MI-vártorony ott a meccs elején fordulna). Az előnézet és a lerakott épületek ezt követik, csak a térképszerkesztőben.
+castle_unit_colour: Egységek megjelenítési játékosa
+castle_unit_colour_tooltip: |-
+  Az európai és arab egységmenük fölött: játékosonként egy címer (0–8). A térképszerkesztőben lerakott egységek a jelenlegi játékoséi maradnak, de a választott játékos színeiben jelennek meg. Másik jelenlegi játékos választása újra annak címerét jelöli ki.
 castle_keep_crests: Aktív vártorony-címerek
 castle_keep_crests_tooltip: |-
   Minden vártorony felett látható a tulajdonosa címere; a játékos aktív vártornyán (ahol a lord, a kezdőegységek és az új parasztok megjelennek) kerettel. Kattints egy címerre a vártorony aktiválásához, vagy az aktívra, hogy ne legyen aktív vártornya a játékosnak. Az új vártorony nem veszi át automatikusan az aktív szerepet, és ha az aktívat törlik, a játékos egy másik vártornya veszi át. A fő raktár mindig követi az aktív vártornyot (különben a játék az elsőként lerakott raktárat őrizte meg, így több vártoronynál az MI blokkolva találta a várhelyét és nem épített terv szerint). A „Több vártorony játékosonként” opciót igényli.
@@ -321,6 +336,12 @@ map_settings_button_tooltip: |-
 map_settings_menu: Nagyobb Térképbeállítások menü
 map_settings_menu_tooltip: |-
   Az Alt + , menü címet, Egyjátékos és Többjátékos választást, a négy egyjátékos térképtípust (Ostrom, Invázió, Gazdasági, Szabad építés), a négy térképméretet plusz Egyénit és egy Térképméret csúszkát (10-től 400-ig; elengedéskor alkalmazódik), Kiegyensúlyozott, Domb királya, Térkép zárolása és Vissza gombot kap.
+map_settings_size_refresh: A kisebb térképméret azonnal érvényes
+map_settings_size_refresh_tooltip: |-
+  Ha a térképszerkesztőben kisebbre veszed a térképet, a levágott mezők azonnal feketék és zároltak lesznek, a kamera pedig az új mérethez igazodik, mentés és újratöltés nélkül.
+map_settings_camera_edge: A kamera eléri a térkép szélét
+map_settings_camera_edge_tooltip: |-
+  A térképszerkesztőben a kamera minden oldalon egy mezővel tovább mehet, így a térkép legszélső mezői is teljesen látszanak.
 eraser_group: Radír
 eraser_group_descr: |-
   Mit töröljön a tájszerkesztő radírja.
