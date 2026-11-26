@@ -388,21 +388,8 @@ function C.patchEraserChoice(self, G, choice, gulls)
   local E = C.eraserWords()
   local D = C.resolveBirds(G)
   local sites = C.eraseSites()
-  local buildings, units = {}, {}
-  local from = 0x400000
-  while #buildings <= K.ERASE_SITES do
-    local ok, found = pcall(core.scanForAOB, K.AOB_ERASE_BUILDING, from, K.HERD_SEARCH_END)
-    if not ok or found == nil or found == 0 then break end
-    buildings[#buildings + 1] = found
-    from = found + 1
-  end
-  from = 0x400000
-  while #units <= K.ERASE_SITES do
-    local ok, found = pcall(core.scanForAOB, K.AOB_ERASE_UNIT, from, K.HERD_SEARCH_END)
-    if not ok or found == nil or found == 0 then break end
-    units[#units + 1] = found
-    from = found + 1
-  end
+  local buildings = memory.scanAll(K.AOB_ERASE_BUILDING, K.ERASE_SITES + 1)
+  local units = memory.scanAll(K.AOB_ERASE_UNIT, K.ERASE_SITES + 1)
   if #buildings ~= K.ERASE_SITES or #units ~= K.ERASE_SITES then
     error(MODULE_NAME .. ": the eraser is not the one this module knows")
   end

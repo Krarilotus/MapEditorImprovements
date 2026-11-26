@@ -89,13 +89,7 @@ end
 -- In the map editor, any number of empty stockpiles, granaries and armouries.
 function C.patchEmptyStorage(self, G)
   local E = K.EMPTY_STORAGE
-  local sites, from = {}, 0x400000
-  while #sites <= E.sites do
-    local ok, found = pcall(core.scanForAOB, K.AOB_EMPTY_STORAGE, from, K.HERD_SEARCH_END)
-    if not ok or found == nil or found == 0 then break end
-    sites[#sites + 1] = found
-    from = found + 1
-  end
+  local sites = memory.scanAll(K.AOB_EMPTY_STORAGE, E.sites + 1)
   if #sites ~= E.sites then error(MODULE_NAME .. ": the empty storage limits are not the ones this module knows") end
   for _, base in ipairs(sites) do
     local site = base + E.site
@@ -199,17 +193,7 @@ end
 -- solid wherever a click would place one.
 function C.patchTowerEngines(self, G)
   local T = K.TOWER_ENGINE
-  local function all(pattern)
-    local from, sites = 0x400000, {}
-    while #sites < 3 do
-      local ok, found = pcall(core.scanForAOB, pattern, from, K.HERD_SEARCH_END)
-      if not ok or found == nil or found == 0 then break end
-      sites[#sites + 1] = found
-      from = found + 1
-    end
-    return sites
-  end
-  local sites, previews = all(K.AOB_TOWER_ENGINE_CLICK), all(K.AOB_TOWER_ENGINE_PREVIEW)
+  local sites, previews = memory.scanAll(K.AOB_TOWER_ENGINE_CLICK, 3), memory.scanAll(K.AOB_TOWER_ENGINE_PREVIEW, 3)
   if #sites ~= 2 or #previews ~= 2 then
     error(MODULE_NAME .. ": the tower engine placement is not the one this module knows")
   end
@@ -303,9 +287,6 @@ function C.buildingRotation(self, G, B, data, head, options)
   patchJump(self, Q.site, 5, core.allocateAssembly(templates.rotationRead, {
     GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION_ON = Q.on, WANTED = Q.wanted,
     ORIENTATION = Q.address, BACK = Q.site + 5,
-    PAD = C.luaPad(function()
-      log(INFO, string.format("%s: placing a building with orientation %d", MODULE_NAME, rd32(Q.wanted)))
-    end, "the rotation log"),
   }))
   local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
   local colourBox = core.exposeCode(G.colourBox, 6, 1)
@@ -398,8 +379,6 @@ function C.buildingRotation(self, G, B, data, head, options)
     C.luaItem(o, box.x, box.y - (#K.ROTATIONS - i + 1) * box.option, box.width, box.option, function()
       wr32(Q.choice, i - 1)
       open = false
-      log(INFO, string.format("%s: building rotation %s (orientation now %d)", MODULE_NAME,
-        (K.ROTATIONS[i][1]:gsub("\xB0", " degrees")), orientation()))
     end, nil, "the rotation list")
     wr16(o + ITEM_HIDDEN, 1)
   end
@@ -723,27 +702,6 @@ function C.patchKeepParts(self, G, data)
     previewStockpile + KP.done, rd32(previewStockpile + KP.stockpileTable))
 end
 
--- The game's language for the names it has no text for: German or English.
-function C.language()
-  local file = io.open(K.TEXT_FILE, "rb")
-  if file == nil then return "en" end
-  local data = file:read("a")
-  file:close()
-  if #data < K.TEXT_START + 4 * K.TEXT_GROUPS then return "en" end
-  local at = K.TEXT_START + 1 + 2 * string.unpack("<I4", data, 1 + 4 * K.TEXT_GROUP)
-  local index = 0
-  while index < K.TEXT_INDEX and at < #data do
-    if data:byte(at) == 0 and data:byte(at + 1) == 0 then index = index + 1 end
-    at = at + 2
-  end
-  local chars = {}
-  while at < #data and not (data:byte(at) == 0 and data:byte(at + 1) == 0) and #chars < 32 do
-    chars[#chars + 1] = data:sub(at, at)
-    at = at + 2
-  end
-  return table.concat(chars) == K.GERMAN_TEXT and "de" or "en"
-end
-
 -- All eight player shields beside the minimap on every map type. The shields' render function,
 -- in the map editor, shows players 1-5 on scenario maps and only player 1 on other single
 -- player maps (`cmp [map type],ebp / jne <shown>`): the jne becomes a jmp.
@@ -778,13 +736,7 @@ function C.patchDustClouds(self)
   local D = K.DUST_STEP
   local sites = {}
   for _, kind in ipairs({ { K.AOB_DUST_X, D.x, D.xSize }, { K.AOB_DUST_Y, 0, D.ySize } }) do
-    local from, found = 0x400000, {}
-    while #found <= D.sites do
-      local ok, at = pcall(core.scanForAOB, kind[1], from, 0x600000)
-      if not ok or at == nil or at == 0 then break end
-      found[#found + 1] = at
-      from = at + 1
-    end
+    local found = memory.scanAll(kind[1], D.sites + 1)
     if #found ~= D.sites then error(MODULE_NAME .. ": the dust clouds' steps are not the ones this module knows") end
     for _, at in ipairs(found) do
       -- The step's code ends in `jge rel8`: its next instruction is the negative case, its
@@ -878,7 +830,6 @@ function C.enable(self, O)
   try(O.moatKinds or O.moatRemoval, C.patchMoatModes, "the moat modes", O.moatKinds, O.moatRemoval)
   try(O.moatOnMarsh, C.patchMoatMarsh, "moat on marsh")
   try(O.variantPanels, C.patchVariantLocks, "the variant panels", G)
-  log(INFO, string.format("%s: build menu changed (menu 0x%X, items 0x%X)", MODULE_NAME, B.menu, B.table))
 end
 
 return true

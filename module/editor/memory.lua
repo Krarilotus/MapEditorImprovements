@@ -88,6 +88,22 @@ local function scanUnique(pattern, purpose)
   return address
 end
 
+-- Up to `most` matches of `pattern`, in the executable section that holds the first one.
+local function scanAll(pattern, most)
+  local sites = {}
+  local ok, at = pcall(core.scanForAOB, pattern)
+  local stop = ok and at ~= nil and at ~= 0 and sectionEnd(at) or nil
+  while ok and at ~= nil and at ~= 0 and (stop == nil or at < stop) and #sites < most do
+    sites[#sites + 1] = at
+    if stop ~= nil then
+      ok, at = pcall(core.scanForAOB, pattern, at + 1, stop - 1)
+    else
+      ok, at = pcall(core.scanForAOB, pattern, at + 1)
+    end
+  end
+  return sites
+end
+
 local function expectBytes(address, bytes, purpose)
   for index, byte in ipairs(bytes) do
     if (rd8(address + index - 1) & 0xFF) ~= byte then
@@ -128,9 +144,7 @@ local function item(itemTable, index, offset)
 end
 
 local function writeCString(address, text)
-  local bytes = { string.byte(text, 1, -1) }
-  bytes[#bytes + 1] = 0
-  core.writeBytes(address, bytes)
+  core.writeString(address, text .. "\0")
 end
 
 -- A zero-terminated list of dwords (pairs flattened) in allocated memory.
@@ -150,6 +164,7 @@ end
 return {
   scan = scan,
   scanUnique = scanUnique,
+  scanAll = scanAll,
   sectionEnd = sectionEnd,
   expectBytes = expectBytes,
   readOperand = readOperand,

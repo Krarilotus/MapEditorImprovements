@@ -145,7 +145,6 @@ K.TURN = {
 K.AOB_HERD = "0F B6 05 ? ? ? ? 83 E0 ? BF ? 00 00 00 83 C0 ?"
 K.HERD = { site = 7, size = 11, mask = 9, unit = 11, base = 17, group = { -7, { 0x66, 0xC7, 0x44, 0x28, 0x42 } } }
 K.HERD_ANIMALS = { { DEER, "Deer" }, { LION, "Lion" }, { RABBIT, "Rabbit" }, { CAMEL, "Camel" } }
-K.HERD_SEARCH_END = 0x01000000       -- the end of the game's code for searches with several hits
 
 -- placeTree: `xor ebx,ebx / test eax,eax / mov [esp+0x10],esi / jle <past the check>`.
 K.AOB_OBSTACLES = "33 DB 85 C0 89 74 24 10 7E 50 56 55 8D 44 24 18"
@@ -184,11 +183,9 @@ K.CREATE_ROCK_ARGUMENTS = 0x14
 K.CHECK_BOX_GAP = 8
 -- Tooltips of the check boxes sit higher than the category tooltips (clear of the menu's top).
 K.CHECK_BOX_TOOLTIP_RAISE = 20
--- Names the game has no text for, shown on the description line in the game's language
--- (German when the game's text for iron, cr.tex group 8 text 337, is "Eisen").
+-- Names the game has no text for, shown on the description line: German in a German game,
+-- English otherwise.
 K.NAMES = { apple = { en = "Apple tree", de = "Apfelbaum" }, gravel = { en = "Gravel", de = "Kies" } }
-K.TEXT_FILE, K.TEXT_GROUP, K.TEXT_INDEX, K.GERMAN_TEXT = "cr.tex", 8, 337, "Eisen"
-K.TEXT_GROUPS, K.TEXT_START = 250, 1000
 -- A felled tree placed at the smallest growth stage is placed at the next one, with 1 log (the
 -- smallest stage has no felled picture).
 K.SMALLEST_FELLED_STAGE, K.SMALLEST_FELLED_LOGS = 1, 1

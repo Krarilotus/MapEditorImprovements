@@ -74,8 +74,6 @@ local function enableMenu(self, O)
   self.shownFlag = data.shown
   self.landscape = G
   data.installed = true          -- the menu is in: the module's actions may act on it
-  log(INFO, string.format("%s: editor menu changed (menu 0x%X, items 0x%X -> 0x%X; %d tree, %d rock, "
-    .. "%d group slots)", MODULE_NAME, G.menu, G.table, newTable, G.treeSlots, G.rockSlots, G.groupSlots))
 end
 
 -- Skirmish maps get the Rocks tab with the signpost: the jl past `mov eax, 239` always jumps.

@@ -66,7 +66,15 @@ local lane = require("editor.lane")
 -- Map counts: the tooltip
 ---------------------------------------------------------------------------------------
 
--- candidates: { item = button, lines = function returning text lines or nil }.
+-- A name as a string, or { en = ..., de = ... } chosen by the framework's game language (known
+-- after the game's init).
+local function localName(name)
+  if type(name) ~= "table" then return name end
+  return name[data.version.getGameLanguage() == "german" and "de" or "en"]
+end
+
+-- candidates: { item = button, name = text or localName table } or
+-- { item = button, lines = function returning text lines or nil }.
 local function makeTooltip(G, candidates)
   local isMouseInside = core.exposeCode(G.isMouseInside, 5, 1)
   local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
@@ -85,7 +93,7 @@ local function makeTooltip(G, candidates)
       local y = rd32(G.menu + MENU_Y) + rd32(button + ITEM_Y)
       local shown = rd16(button + ITEM_HOVERED) ~= 0
         and isMouseInside(G.mouse, x, y, rd32(button + ITEM_WIDTH), rd32(button + ITEM_HEIGHT)) ~= 0
-        and (candidate.name or candidate.lines())
+        and (localName(candidate.name) or candidate.lines())
       if shown and candidate.name ~= nil then   -- a name on the description line, like the game's
         writeCString(lineBuffers[1], shown)
         local layer = rd32(G.textLayer)

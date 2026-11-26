@@ -42,13 +42,7 @@ end
 -- rock flag and the tile's rock number go.
 function C.eraseSites()
   if C.erasers ~= nil then return C.erasers end
-  local sites, from = {}, 0x400000
-  while #sites <= K.ERASE_SITES do
-    local ok, found = pcall(core.scanForAOB, K.AOB_ERASE_ROCK, from, K.HERD_SEARCH_END)
-    if not ok or found == nil or found == 0 then break end
-    sites[#sites + 1] = found
-    from = found + 1
-  end
+  local sites = memory.scanAll(K.AOB_ERASE_ROCK, K.ERASE_SITES + 1)
   if #sites ~= K.ERASE_SITES then error(MODULE_NAME .. ": the eraser is not the one this module knows") end
   C.erasers = sites
   return sites

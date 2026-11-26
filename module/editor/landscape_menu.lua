@@ -354,11 +354,10 @@ local function buildTable(G, O)
   end
 
   local rows, newButtons, sizeOf = {}, {}, {}
-  local language = C.language()
   local hoverText = item(newTable, moved(HOVER_TEXT_ITEM))
   G.describeAt = { rd32(hoverText + ITEM_X), rd32(hoverText + ITEM_Y) }
   if O.apple then
-    tooltips[#tooltips + 1] = { item = added.apple, name = K.NAMES.apple[language] }
+    tooltips[#tooltips + 1] = { item = added.apple, name = K.NAMES.apple }
     pictureButton(added.apple, VEGETATION_TREES[1], APPLE_COMMAND, pictures.apple)
     sizeOf[added.apple] = { pictures.apple.width, pictures.apple.height }
     newButtons[added.apple] = true
@@ -444,7 +443,7 @@ local function buildTable(G, O)
   end
 
   if O.textures then
-    tooltips[#tooltips + 1] = { item = added.gravel, name = K.NAMES.gravel[language] }
+    tooltips[#tooltips + 1] = { item = added.gravel, name = K.NAMES.gravel }
     pictureButton(added.gravel, TEXTURE_ROWS[1][1], GRAVEL_COMMAND, pictures.gravel)
     sizeOf[added.gravel] = { pictures.gravel.width, pictures.gravel.height }
     newButtons[added.gravel] = true
@@ -525,7 +524,7 @@ local function buildTable(G, O)
       wr16(into + ITEM_CONTROL, -1)
       wr16(into + ITEM_HIDDEN, 1)
       decorations[#decorations + 1] = into
-      tooltips[#tooltips + 1] = { item = into, name = K.NAMES[decoration.name][language] }
+      tooltips[#tooltips + 1] = { item = into, name = K.NAMES[decoration.name] }
     end
     -- Once the menu has placed its buttons: the two join its shortest rows (a row: buttons whose
     -- middles are within K.ROW_TOLERANCE of each other). Every button keeps its height on the

@@ -327,13 +327,7 @@ end
 
 -- Herds: per animal the herd code site and what it does.
 local function resolveHerds(G)
-  local sites, start = {}, 0x400000
-  while #sites < #K.HERD_ANIMALS + 1 do
-    local ok, found = pcall(core.scanForAOB, K.AOB_HERD, start, K.HERD_SEARCH_END)
-    if not ok or found == nil or found == 0 then break end
-    sites[#sites + 1] = found
-    start = found + 1
-  end
+  local sites = memory.scanAll(K.AOB_HERD, #K.HERD_ANIMALS + 1)
   if #sites ~= #K.HERD_ANIMALS then
     error(MODULE_NAME .. ": the herd code is not the one this module knows")
   end

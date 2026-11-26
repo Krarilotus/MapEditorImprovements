@@ -1050,13 +1050,12 @@ jmp BACK
 ]]
 
 -- TriggerPlaceBuilding's default orientation, replacing `mov eax,[ORIENTATION]`: in the map
--- editor with the rotation list on, the orientation the list asks for (logged by PAD).
+-- editor with the rotation list on, the orientation the list asks for.
 templates.rotationRead = [[
 cmp dword [GAME_MODE],MAP_EDITOR
 jne rotation_plain
 cmp dword [ROTATION_ON],0
 je rotation_plain
-call PAD
 mov eax,[WANTED]
 jmp BACK
 rotation_plain:
