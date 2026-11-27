@@ -47,6 +47,7 @@ local wr16 = memory.wr16
 local buttonPictures = require("editor.images").buttonPictures
 local makePanel = require("editor.ui").makePanel
 local patchJump = require("editor.menu_install").patchJump
+local actions = require("editor.actions")
 
 ---------------------------------------------------------------------------------------
 -- Constants of 36-39
@@ -141,7 +142,7 @@ K.AOB_SETTINGS_SIZE = "B8 90 01 00 00 74 04 8B 44 24 08 50 B9 ? ? ? ? A3 ? ? ? ?
 K.SETTINGS_SIZE_VAR = 18
 K.AOB_SETTINGS_SIZE_ENTRY = "B9 ? ? ? ? E8 ? ? ? ? 83 FE 14 75 07 B8 A0 00 00 00"
 K.AOB_ALT_COMMA = "83 3D ? ? ? ? 11 0F 85 ? ? ? ? A1 ? ? ? ? 83 F8 1F 75 13 6A 00 6A FF B9 ? ? ? ? E8"
-K.ALT_COMMA = { screen = 2, modal = 14, manager = 28, open = 32 }
+K.ALT_COMMA = { skip = 7, modal = 14, manager = 28, open = 32 }
 K.OPENER_STATE = 0x18                    -- the modal opener's `mov ecx, list state`
 K.MAP_TYPE_PARAMS = { 3, 4, 5, 6 }       -- Siege, Invasion, Economic, Just Build
 K.MAP_SIZE_PARAMS = { 0x14, 0x15, 0x16, 0x17 }
@@ -218,11 +219,33 @@ function C.resolveBirds(G)
   D.firstGull = D.entities + rd32(new + K.NEW_GULL.first)
   expectBytes(new + K.NEW_GULL.limit, { 0x83, 0xFB }, "the seagull placement")
   D.gullSlots = rd8(new + K.NEW_GULL.limit + 2) & 0xFF        -- slots 1 .. gullSlots - 1
-  local alt = scan(K.AOB_DELETE_ANIMALS, "Alt + E")
-  D.units = rd32(alt + K.DELETE_ANIMALS.units)
-  D.deleteAnimals = readCallTarget(alt, K.DELETE_ANIMALS.call, "the animal removal")
   C.birds = D
   return D
+end
+
+local eraseAnimals, eraseShortcutCall
+local function resolveAnimalErase()
+  if eraseAnimals == nil then
+    local alt = scan(K.AOB_DELETE_ANIMALS, "Alt + E")
+    local call = K.DELETE_ANIMALS
+    local units = rd32(alt + call.units)
+    local deleteAnimals = core.exposeCode(readCallTarget(alt, call.call, "the animal removal"), 1, 1)
+    eraseAnimals = function()
+      deleteAnimals(units)
+      return true
+    end
+    eraseShortcutCall = alt + call.call
+  end
+  return eraseAnimals, eraseShortcutCall
+end
+
+function C.enableEraseAnimalsHotkey(self, hotkeys)
+  local erase, call = resolveAnimalErase()
+  expectBytes(call, { 0xE8 }, "the Alt + E animal removal call")
+  -- Every editor screen that accepts Alt + E reaches this call.
+  if actions.nativePress(hotkeys, "erase-animals", "letter_e", erase) then
+    patchJump(self, call, 5, call + 5)
+  end
 end
 
 function C.birdCounts(G, D)
@@ -257,7 +280,6 @@ function C.animalsMenu(M)
   })
   local deleteEntity = core.exposeCode(D.deleteEntity, 2, 1)
   local deleteAllGulls = core.exposeCode(D.deleteAllGulls, 0, 0)
-  local deleteAnimals = core.exposeCode(D.deleteAnimals, 1, 1)
   local function eraseCrows()
     for i = 0, G.treeSlots - 1 do
       local tree = G.firstTree + i * G.treeSize
@@ -280,8 +302,8 @@ function C.animalsMenu(M)
       text = "Erase all seagulls" }
   end
   if O.animalBin then
-    bins[#bins + 1] = { item = added.animalBin, fn = function() deleteAnimals(D.units) end,
-      text = "Erase all animals (Alt + E)" }
+    bins[#bins + 1] = { item = added.animalBin, fn = resolveAnimalErase(),
+      text = "Erase all land animals" }
   end
   for _, bin in ipairs(bins) do
     local into = bin.item

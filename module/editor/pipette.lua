@@ -337,8 +337,11 @@ function C.pipette(G, O, data, added, guarded, places, button)
     return true
   end
 
+  local anyTileHeld = actions.hold("pipette-any-tile")
+  local readHeld = actions.hold("pipette-read")
+
   local function apply(x, y)
-    local any = S.anyKeyOn and down(anyKey)
+    local any = anyTileHeld() or (S.anyKeyOn and down(anyKey))
     local changed = false
     local tiles = brushTiles(x, y, rd32(T + R.brushField))
     if O.undo ~= nil then O.undo.beginEdit() end
@@ -428,7 +431,7 @@ function C.pipette(G, O, data, added, guarded, places, button)
       return
     end
     wr32(activeFlag, 1)
-    P.reading = S.readKeyOn and down(readKey)
+    P.reading = readHeld() or (S.readKeyOn and down(readKey))
     -- One tile in the brush preview while taking a tile, and for objects (placed one at a time).
     -- (a tree's own tool too: placed one per tile like the game's tree tool, whatever the brush)
     local oneTile = K.NO_TOOL

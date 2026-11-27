@@ -127,6 +127,7 @@ require("editor.castle_menu")
 require("editor.castle")
 local frame = require("editor.frame")
 local grid = require("editor.grid")
+local actions = require("editor.actions")
 
 ---------------------------------------------------------------------------------------
 -- Always keep the menu up to date
@@ -165,6 +166,19 @@ end
 
 local function enable(self, config)
   config = config or {}
+  local hotkeys = actions.provider()
+  if hotkeys ~= nil then
+    for _, shortcut in ipairs({
+      { C.enableEraseAnimalsHotkey, "Erase all land animals" },
+      { C.enableMapSettingsHotkey, "Open Map Settings" },
+    }) do
+      local ok, problem = pcall(shortcut[1], self, hotkeys)
+      if not ok then
+        log(ERROR, shortcut[2] .. " is unavailable in Custom Hotkeys.")
+        log(WARNING, tostring(problem))
+      end
+    end
+  end
   -- Undo first: its buttons go into the menus below.
   if setting(config, "undo", "enabled") == true then
     local ok, problem = pcall(C.enableUndo, self)

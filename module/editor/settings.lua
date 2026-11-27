@@ -32,6 +32,7 @@ local rd8 = memory.rd8
 local wr32 = memory.wr32
 local wr16 = memory.wr16
 local patchJump = require("editor.menu_install").patchJump
+local actions = require("editor.actions")
 
 ---------------------------------------------------------------------------------------
 -- Map settings (38): locked maps in the Load dialog, the map menu's Map Settings button and the
@@ -121,15 +122,41 @@ function C.resolveSettings(G)
   S.lock = rd32(scan(K.AOB_SETTINGS_ACTION, "the map lock") + K.SETTINGS_LOCK)
   S.size = rd32(scan(K.AOB_SETTINGS_SIZE, "the map size") + K.SETTINGS_SIZE_VAR)
   S.sizeEntry = scan(K.AOB_SETTINGS_SIZE_ENTRY, "the map size change")
-  local alt = scan(K.AOB_ALT_COMMA, "Alt + ,")
-  S.screen = rd32(alt + K.ALT_COMMA.screen)
-  S.modal = rd32(alt + K.ALT_COMMA.modal)
-  S.manager = rd32(alt + K.ALT_COMMA.manager)
-  S.open = readCallTarget(alt, K.ALT_COMMA.open, "the modal opener")
-  expectBytes(S.open + K.OPENER_STATE, { 0xB9 }, "the modal opener")
-  S.listState = rd32(S.open + K.OPENER_STATE + 1)
   C.settings = S
   return S
+end
+
+local settingsControls
+local function resolveSettingsControls()
+  if settingsControls == nil then
+    local alt = scan(K.AOB_ALT_COMMA, "Alt + ,")
+    local modal = rd32(alt + K.ALT_COMMA.modal)
+    local manager = rd32(alt + K.ALT_COMMA.manager)
+    local entry = readCallTarget(alt, K.ALT_COMMA.open, "the modal opener")
+    expectBytes(entry + K.OPENER_STATE, { 0xB9 }, "the modal opener")
+    local open = core.exposeCode(entry, 3, 1)
+    local function openSettings()
+      if rd32(modal) ~= -1 then return false end
+      open(manager, K.SETTINGS_MODAL_ID, 0)
+      return true
+    end
+    settingsControls = {
+      modal = modal, listState = rd32(entry + K.OPENER_STATE + 1),
+      openSettings = openSettings, branch = alt + K.ALT_COMMA.skip,
+      closeSettings = function() open(manager, -1, 0) end,
+    }
+  end
+  return settingsControls
+end
+
+function C.enableMapSettingsHotkey(self, hotkeys)
+  local controls = resolveSettingsControls()
+  local branch = controls.branch
+  expectBytes(branch, { 0x0F, 0x85 }, "the Alt + comma screen check")
+  local exit = branch + 6 + rd32(branch + 2)
+  if actions.nativePress(hotkeys, "map-settings", "comma", controls.openSettings) then
+    patchJump(self, branch, 6, exit)
+  end
 end
 
 -- Draws a button the way the Map settings menu draws its own: background (highlighted while
@@ -182,10 +209,7 @@ end
 function C.enableMapSettings(self, O, G)
   local S = C.resolveSettings(G)
   local draw = C.buttonDrawer(S, G)
-  local open = core.exposeCode(S.open, 3, 1)
-  local function openSettings()
-    if rd32(S.modal) == -1 then open(S.manager, K.SETTINGS_MODAL_ID, 0) end
-  end
+  local controls = resolveSettingsControls()
   local done = {}
 
   -- 38.1: Show locked maps, in the Load dialog while it lists maps.
@@ -205,12 +229,12 @@ function C.enableMapSettings(self, O, G)
       local opener = core.exposeCode(scan(K.AOB_MAP_OPENER, "the map list"), 2, 1)
       local items, ensure = C.appendItems(self, init, 1, "the Load dialog")
       local toggle = items[1]
-      local function listingMaps() return rd32(S.listState) == K.MAP_LIST_KIND end
+      local function listingMaps() return rd32(controls.listState) == K.MAP_LIST_KIND end
       C.luaItem(toggle, K.LOCKED_TOGGLE.x, K.LOCKED_TOGGLE.y, K.LOCKED_TOGGLE.width, K.LOCKED_TOGGLE.height,
         function()
           if not toggle or not listingMaps() then return end
           wr32(show, rd32(show) ~= 0 and 0 or 1)
-          opener(S.listState, rd32(S.modal))
+          opener(controls.listState, rd32(controls.modal))
         end,
         function()
           if not toggle then return end
@@ -256,7 +280,7 @@ function C.enableMapSettings(self, O, G)
       local init = scan("68 " .. bytesOf(props) .. " B9 ? ? ? ? E8", "the map menu's constructor")
       local items, ensure = C.appendItems(self, init, 1, "the map menu")
       local b = K.SETTINGS_BUTTON
-      C.luaItem(items[1], b.x, b.y, b.width, b.height, openSettings,
+      C.luaItem(items[1], b.x, b.y, b.width, b.height, controls.openSettings,
         function() draw.button("Map Settings", false) end, "the Map Settings button")
       ensure()
       hooks.registerHookCallback("afterInit", ensure)
@@ -269,7 +293,7 @@ function C.enableMapSettings(self, O, G)
 
   -- 38.3-38.9: the menu itself.
   if O.settingsMenu then
-    local ok, problem = pcall(C.settingsMenu, self, G, S, draw, open)
+    local ok, problem = pcall(C.settingsMenu, self, G, S, draw, controls.closeSettings)
     if not ok then
       log(ERROR, "Expanded Map Settings is off.")
       log(WARNING, tostring(problem))
@@ -279,7 +303,7 @@ function C.enableMapSettings(self, O, G)
   if buttonFailed then log(ERROR, "The Map Settings button is off.") end
 end
 
-function C.settingsMenu(self, G, S, draw, open)
+function C.settingsMenu(self, G, S, draw, closeSettings)
   local L = K.SETTINGS_LAYOUT
   local keyState = C.resolved and C.resolved.keyState or rd32(scan(K.AOB_ASYNC_KEY, "the key state") + K.ASYNC_KEY_IMPORT)
   local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = keyState }), 1, 0)
@@ -375,7 +399,7 @@ function C.settingsMenu(self, G, S, draw, open)
     function() wr32(S.lock, rd32(S.lock) ~= 0 and 0 or K.MAP_LOCKED) end,
     function() draw.button("Lock map", false, rd32(S.lock) ~= 0) end, "the Lock map box")
   C.luaItem(at.back, L.back.x, L.back.y, L.back.width, h,
-    function() open(S.manager, -1, 0) end, function() draw.button("Back", false) end, "the Back button")
+    closeSettings, function() draw.button("Back", false) end, "the Back button")
 
   -- Texts: Singleplayer and Multiplayer.
   self.saved = self.saved or {}

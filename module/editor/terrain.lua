@@ -52,6 +52,7 @@ local wr16 = memory.wr16
 local drawTooltipOnTop = require("editor.ui").drawTooltipOnTop
 local keyCode = require("editor.pipette_native").keyCode
 local lane = require("editor.lane")
+local actions = require("editor.actions")
 
 ---------------------------------------------------------------------------------------
 -- The heights menu: max height, the height tools' options, lost rocks (features 28, 29)
@@ -569,13 +570,15 @@ function C.heightsMenu(M)
     -- equalize tool is chosen: its invert key (inverts while held, unless Invert is ticked).
     local settle = C.rockSettler(G, R, H)
     local key = O.invertKey ~= nil and keyCode(O.invertKey) or nil
+    local invertHeld = actions.hold("equalize-invert")
     local tick = added.heightTick
     wr32(tick + ITEM_TYPE, TYPE_EVERY_FRAME)
     wr32(tick + ITEM_ACTION, C.assemble("heightTick", {
       COUNT = H.count, SUBTYPE = G.subtype, EQUALIZE_TOOL = K.EQUALIZE_TOOL,
       PAD = C.luaPad(function()
         if rd32(H.count) ~= 0 then settle() end
-        local held = key ~= nil and rd32(G.subtype) == K.EQUALIZE_TOOL and rd32(R.menuGuard) == -1 and down(key)
+        local held = rd32(G.subtype) == K.EQUALIZE_TOOL and rd32(R.menuGuard) == -1
+          and (invertHeld() or (key ~= nil and down(key)))
         if held and not H.keyInvert and rd32(H.invert) == 0 then
           wr32(H.invert, 1)
           H.keyInvert = true

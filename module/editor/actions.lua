@@ -6,10 +6,7 @@
 --
 -- A suggested key is the US-layout position of the key chosen in the module's options; Custom
 -- Hotkeys leaves an action unbound when its suggestion collides with a binding the active preset
--- already has. The specs use only the fields every version of the API takes (id, label, category,
--- context, default, callback). The pipette's "take a tile" and "any tile" keys and the height tools' invert key
--- are not here: they are held keys, by default a bare Ctrl or Alt, and the API takes no bare
--- modifiers.
+-- already has. Holds start unassigned because their module defaults use bare modifiers.
 
 local labels = require("editor.action_labels")
 
@@ -36,7 +33,7 @@ M.SCAN_CODES = {
   numpad_decimal = { 0x53 }, numpad_divide = { 0x35, true },
   insert = { 0x52, true }, delete_key = { 0x53, true }, home = { 0x47, true },
   end_key = { 0x4F, true }, page_up = { 0x49, true }, page_down = { 0x51, true },
-  caps_lock = { 0x3A },
+  caps_lock = { 0x3A }, comma = { 0x33 },
 }
 
 ---The Custom Hotkeys proxy when it offers module actions, else nil.
@@ -59,13 +56,31 @@ end
 
 ---Register one action; true, or false after logging why Custom Hotkeys refused it.
 ---@param fallback string what the module does instead, for the log line
-local function register(hotkeys, id, label, context, default, callback, fallback)
+local function register(hotkeys, id, label, context, default, callback, fallback, release)
   local spec = { id = M.ID_PREFIX .. id, label = label, category = labels.category, context = context,
-    default = default, callback = callback }
+    default = default, callback = callback, release = release }
   local ok, result = pcall(hotkeys.registerAction, hotkeys, spec)
   if ok and result == true then return true end
   log(WARNING, string.format("Custom Hotkeys refused the action %s (%s); %s", spec.id, tostring(result), fallback))
   return false
+end
+
+function M.nativePress(hotkeys, id, key, callback)
+  return register(hotkeys, id, labels[id], { kind = "editor" }, M.suggest(key, ALT), callback,
+    "the original shortcut stays active")
+end
+
+-- An optional binding alongside the module's own key setting.
+function M.hold(id)
+  local held = false
+  local hotkeys = M.provider()
+  if hotkeys ~= nil then
+    register(hotkeys, id, labels[id], { kind = "editor" }, false, function()
+      held = true
+      return true
+    end, "the tool keeps its own key", function() held = false end)
+  end
+  return function() return held end
 end
 
 ---The resource grid's toggle: in the map editor, and in games when the grid may show there. Both
