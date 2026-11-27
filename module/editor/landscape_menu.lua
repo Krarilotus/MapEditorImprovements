@@ -874,10 +874,10 @@ local function buildTable(G, O)
     wr32(into + ITEM_TYPE, TYPE_CLICKABLE)    -- no size, so never under the mouse
     wr32(into + ITEM_RENDER_TYPE, RENDER_NONE)
     local ok, problem = pcall(function()
-      local preview = C.makeTreePreview(G, O, data)
-      wr32(into + ITEM_RENDER, C.luaPad(preview, "the tree preview"))
+      local pad = C.luaPad(C.makeTreePreview(G, O, data), "the tree preview")
+      wr32(into + ITEM_RENDER, pad)
       wr32(into + ITEM_RENDER_TYPE, RENDER_SIMPLE)
-      data.treePreviewDraw, data.treePreviewItem = preview, into
+      data.treePreviewPad, data.treePreviewItem = pad, into
     end)
     if not ok then
       log(ERROR, "The vegetation preview is off.")

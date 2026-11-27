@@ -87,7 +87,7 @@ local function enableMenu(self, O)
   self.shownFlag = data.shown
   self.landscape = G
   data.installed = true          -- the menu is in: the module's actions may act on it
-  if data.heights ~= nil or data.treePreviewDraw ~= nil or data.groupWarning ~= nil then
+  if data.heights ~= nil or data.treePreviewPad ~= nil or data.groupWarning ~= nil then
     local ok, problem = pcall(C.patchFrame, self, G, data)
     if ok then return data end
     reportFrameFailure(data, problem)

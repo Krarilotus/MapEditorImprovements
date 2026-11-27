@@ -231,11 +231,11 @@ function C.patchFrame(self, G, data)
     wr32(data.groupOn, 1)
     groupPad = C.luaPad(data.groupWarning, "the herds and groups line")
   end
-  if data.treePreviewDraw ~= nil then
+  if data.treePreviewPad ~= nil then
     for command in pairs(G.plantTypes or {}) do
       if command < K.PLANT_TOOLS then core.writeByte(plants + command, 1) end
     end
-    pad = C.luaPad(data.treePreviewDraw, "the tree preview")
+    pad = data.treePreviewPad
   end
   frame.add("editor", C.assemble("frameHook", {
     GAME_MODE = R.gameMode, MAP_EDITOR = K.MAP_EDITOR, RANGE_MIN = H.rangeMin, RANGE_MAX = H.rangeMax,
