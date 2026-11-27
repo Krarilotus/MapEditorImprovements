@@ -119,6 +119,7 @@ end
 -- remembered): every tile of the rock by the average change of its touched tiles, then what the
 -- height tools do afterwards (path links per tile, walk layer, minimap).
 function C.rockSettler(G, R, H)
+  local validTiles = C.resolveValidTiles()
   local T = R.tileMap
   local links = core.exposeCode(R.links, 3, 1)
   local walk = core.exposeCode(R.walk, 4, 1)
@@ -155,7 +156,7 @@ function C.rockSettler(G, R, H)
         local row = rd32(R.rows + y * 12)
         for x = math.max(0, rx - K.ROCK_REACH), math.min(K.MAP_SIZE - 1, rx + K.ROCK_REACH) do
           local tile = row + x
-          if rd8(R.validTiles + y * K.MAP_SIZE + x) ~= 0 and tile >= 0 and tile < K.MAP_TILES
+          if rd8(validTiles + y * K.MAP_SIZE + x) ~= 0 and tile >= 0 and tile < K.MAP_TILES
               and (rd16(T + R.organism + tile * 2) & 0xFFFF) == number then
             local height = math.max(0, math.min(0xFF, (rock.old[tile] or baseAt(tile)) + delta))
             if height ~= baseAt(tile) then

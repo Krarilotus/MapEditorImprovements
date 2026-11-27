@@ -240,6 +240,7 @@ function C.buildingRotation(self, G, B, data, head, options)
   local default = rd32(nativeOrientation)
   local gameMode = C.gameModeOf()
   local R = C.resolvePipette(G)
+  local validTiles = C.resolveValidTiles()
   local turn = scanUnique(K.AOB_KEEP_TURN, "the keep's turn at the start of a match")
   local direction = rd32(turn + K.KEEP_TURN.this)
   local towards = core.exposeCode(readCallTarget(turn, K.KEEP_TURN.call, "the direction"), 5, 1)
@@ -291,7 +292,7 @@ function C.buildingRotation(self, G, B, data, head, options)
       call, core.allocateAssembly(source, {
         GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
         WALK = readCallTarget(call, 0, "the preview footprint iterator"), SKIP = call + skip,
-        TILE_X = K.TILE_MAP.tileX, TILE_Y = K.TILE_MAP.tileY, VALID = R.validTiles, MAP_SIZE = K.MAP_SIZE,
+        TILE_X = K.TILE_MAP.tileX, TILE_Y = K.TILE_MAP.tileY, VALID = validTiles, MAP_SIZE = K.MAP_SIZE,
         PART = part and (barracks + part * 8) or oil, ROW_SIZE = part and 24 or 8,
       }),
     }
@@ -631,6 +632,7 @@ end
 
 -- 47.1: a smaller map size takes the cut-off tiles away at once (no reload needed).
 function C.patchSizeRefresh(self, G)
+  local validTiles = C.resolveValidTiles()
   local load = scan(K.AOB_VIEWPORT_LOAD, "the map load's viewport setup")
   local V = K.VIEWPORT_LOAD
   local site = scan(K.AOB_SIZE_TAIL, "the map size change") + K.SIZE_TAIL.site
@@ -655,7 +657,7 @@ function C.patchSizeRefresh(self, G)
       for y = 0, K.MAP_SIZE - 1 do
         local row = rd32(R.rows + y * 12)
         for x = 0, K.MAP_SIZE - 1 do
-          local at = R.validTiles + y * K.MAP_SIZE + x
+          local at = validTiles + y * K.MAP_SIZE + x
           if rd8(at) ~= 0 and (rd32(T + R.logic + (row + x) * 4) & K.MAP_BORDER) ~= 0 then
             core.writeByte(at, 0)
           end

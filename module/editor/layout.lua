@@ -885,7 +885,8 @@ K.AOB_HEIGHT_TOOL = "6A 09 B9 ? ? ? ? E8 ? ? ? ? 6A 02 B9 ? ? ? ? C7 05 ? ? ? ? 
 K.HEIGHT_TOOL = { walk = 7, minimap = 0x0F, macro = 0x15, redraw = 0x1D }
 -- The tiles that are on the map, a byte per x, y (400 a row): the height commands' test `mov esi,
 -- eax / imul esi,esi,400 / cmp byte [esi+ecx+VALID],0 / pop esi / je`.
-K.AOB_TILE_VALID = "8B F0 69 F6 90 01 00 00 80 BC 0E ? ? ? ? 00 5E 74"
+-- The brush preview rejects a tile before reading its brush size.
+K.AOB_TILE_VALID = "8B C3 69 C0 90 01 00 00 80 BC 08 ? ? ? ? 00 0F 84 ? ? ? ?"
 K.TILE_VALID = 11
 
 -- The heights menu (features 28 and 29). Its tools: raise 2 and lower 3 (raiseLand, which hill

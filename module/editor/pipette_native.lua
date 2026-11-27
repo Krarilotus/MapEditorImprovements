@@ -34,11 +34,20 @@ local function keyCode(name)
 end
 C.keyCode = keyCode
 
+local validTiles, validTilesError
+function C.resolveValidTiles()
+  if validTiles == nil and validTilesError == nil then
+    local ok, site = pcall(memory.scanUnique, K.AOB_TILE_VALID, "the map's tiles")
+    if ok then validTiles = rd32(site + K.TILE_VALID) else validTilesError = site end
+  end
+  if validTilesError ~= nil then error(validTilesError, 0) end
+  return validTiles
+end
+
 -- What the game needs for the pipette, from the code that uses it.
 function C.resolvePipette(G)
   if C.resolved ~= nil then return C.resolved end
   local R = {}
-  R.validTiles = rd32(scan(K.AOB_TILE_VALID, "the map's tiles") + K.TILE_VALID)
   local mouse = scan(K.AOB_MOUSE_CLICK, "the map click")
   local M = K.MOUSE_CLICK
   R.clickStart, R.mouseX, R.mouseY = rd32(mouse + M.start), rd32(mouse + M.x), rd32(mouse + M.y)

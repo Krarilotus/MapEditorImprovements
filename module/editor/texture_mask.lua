@@ -122,6 +122,7 @@ end
 -- The mask in the texture tools' tile loops (setTerrain and setLand) and around setTerrain's
 -- call of setLand.
 function C.patchTextureMask(self, G, data)
+  local validTiles = C.resolveValidTiles()
   local W = data.mask.words
   local R = C.resolvePipette(G)
   local T = R.tileMap
@@ -164,7 +165,7 @@ function C.patchTextureMask(self, G, data)
   }) }
   local rock = scan(K.AOB_MASK_ROCK, "placeRock")
   stubs[#stubs + 1] = { rock, K.MASK_ROCK.size, C.assemble("rockMask", {
-    MASK_CHECK = check, MAP_SIZE = K.MAP_SIZE, VALID = R.validTiles, ROWS = R.rows, BACK = rock + K.MASK_ROCK.size,
+    MASK_CHECK = check, MAP_SIZE = K.MAP_SIZE, VALID = validTiles, ROWS = R.rows, BACK = rock + K.MASK_ROCK.size,
   }) }
   for _, stub in ipairs(stubs) do C.patchJump(self, stub[1], stub[2], stub[3]) end
 end

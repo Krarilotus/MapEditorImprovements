@@ -28,6 +28,7 @@ local wr16 = memory.wr16
 -- draws trees; a felled one from the felled tree pictures. data.treePreview, when the pipette
 -- sets it, is the exact tree to show.
 function C.makeTreePreview(G, O, data)
+  local validTiles = C.resolveValidTiles()
   local R = C.resolvePipette(G)
   local T = R.tileMap
   local renderGM = core.exposeCode(G.renderGM, 5, 1)
@@ -168,7 +169,7 @@ function C.makeTreePreview(G, O, data)
     local x, y = rd32(R.mouseX), rd32(R.mouseY)
     if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return end
     -- Not where the tree cannot go: placeTree's tests on the tile, and the mask.
-    if rd8(R.validTiles + y * K.MAP_SIZE + x) == 0 then return "refused" end
+    if rd8(validTiles + y * K.MAP_SIZE + x) == 0 then return "refused" end
     local tile = rd32(R.rows + y * 12) + x
     local logic = rd32(T + R.logic + tile * 4) & 0xFFFFFFFF
     local refused = K.TREE_REFUSED
