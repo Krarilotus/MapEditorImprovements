@@ -1162,7 +1162,7 @@ local PANEL_BOTTOM = 444
 local PANEL_PADDING, PANEL_GAP, PANEL_MARGIN = 4, 2, 4
 -- The present function, where it reads the screen size: mov edx,[width] / mov edi,[height].
 local AOB_SCREEN_SIZE = "8B 15 ? ? ? ? 8B 3D ? ? ? ? 89 44 24 20 03 C2 89 44 24 28"
-local SCREEN_WIDTH_OPERAND = 2
+local SCREEN_WIDTH_OPERAND, SCREEN_HEIGHT_OPERAND = 2, 8
 local MOST_LOGS = 9                      -- buttons in the felled tree panel
 
 -- The unit count, and the limit the editor tests it against before placing more.
@@ -1338,6 +1338,7 @@ return {
   PANEL_MARGIN = PANEL_MARGIN,
   AOB_SCREEN_SIZE = AOB_SCREEN_SIZE,
   SCREEN_WIDTH_OPERAND = SCREEN_WIDTH_OPERAND,
+  SCREEN_HEIGHT_OPERAND = SCREEN_HEIGHT_OPERAND,
   MOST_LOGS = MOST_LOGS,
   AOB_MENU_REDRAW = AOB_MENU_REDRAW,
   MENU_REDRAW_SITE = MENU_REDRAW_SITE,

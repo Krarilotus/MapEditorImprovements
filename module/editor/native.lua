@@ -80,6 +80,7 @@ local PLACE_TREE = layout.PLACE_TREE
 local CREATE_TREE = layout.CREATE_TREE
 local AOB_SCREEN_SIZE = layout.AOB_SCREEN_SIZE
 local SCREEN_WIDTH_OPERAND = layout.SCREEN_WIDTH_OPERAND
+local SCREEN_HEIGHT_OPERAND = layout.SCREEN_HEIGHT_OPERAND
 local AOB_IMAGE_BUTTON = layout.AOB_IMAGE_BUTTON
 local memory = require("editor.memory")
 local scan = memory.scan
@@ -222,7 +223,9 @@ local function resolveDrawing(G)
   G.setupSurface = readCallTarget(G.colourBox, COLOUR_BOX_SURFACE, "the drawing surface")
   G.setupPencil = readCallTarget(G.colourBox, COLOUR_BOX_CLIP, "the drawing clip")
   G.pixelFormat = rd32(scan(AOB_PIXEL_FORMAT, "the pixel format") + PIXEL_FORMAT_OPERAND)
-  G.screenWidth = rd32(scan(AOB_SCREEN_SIZE, "the screen size") + SCREEN_WIDTH_OPERAND)
+  local screenSize = memory.scanUnique(AOB_SCREEN_SIZE, "the screen size")
+  G.screenWidth = rd32(screenSize + SCREEN_WIDTH_OPERAND)
+  G.screenHeight = rd32(screenSize + SCREEN_HEIGHT_OPERAND)
 
   local menuItem = scan(AOB_MENU_ITEM, "the menu's mouse test")
   G.mouse = readOperand(menuItem, MENU_ITEM_MOUSE, "the menu's mouse test")

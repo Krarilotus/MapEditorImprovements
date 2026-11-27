@@ -617,6 +617,7 @@ function C.keepCrests(G, B, data, at)
     wasDown = down
     local menuX, menuY = rd32(B.menu + MENU_X), rd32(B.menu + MENU_Y)
     local camX, camY = rd32(G.cameraX), rd32(G.cameraY)
+    local screenWidth, screenHeight = rd32(G.screenWidth), rd32(G.screenHeight)
     local t = G.textures
     local mode, target = rd32(t + TEXTURES_MODE), rd32(G.pencil + PENCIL_TARGET)
     wr32(t + TEXTURES_MODE, MAP_LAYER)
@@ -635,12 +636,16 @@ function C.keepCrests(G, B, data, at)
           local active = rd32(entry(p, 0)) == keep.id
           local w, h = zero.width, zero.height
           local sx, sy = drawX + K.TILE_WIDTH // 2 - w // 2, drawY - K.CREST.lift - h
+          local screenX, screenY = sx - camX, sy - camY
+          -- A crest outside the viewport can wrap on the map surface.
+          if screenX >= screenWidth or screenY >= screenHeight or screenX + w <= 0 or screenY + h <= 0 then
+            goto next_keep
+          end
           if p == 0 then
             blit(active and zero.chosen or zero.normal, sx, sy)
           else
             renderGM(t, crest[p].gm, crest[p].picture + (active and K.CREST.selected or 0), sx, sy)
           end
-          local screenX, screenY = sx - camX, sy - camY
           used = used + 1
           if rects[used] ~= nil then C.markRect(rects[used], screenX - menuX, screenY - menuY, w, h) end
           local over = inside(G.mouse, screenX, screenY, w, h) ~= 0
@@ -652,6 +657,7 @@ function C.keepCrests(G, B, data, at)
           end
         end
       end
+      ::next_keep::
     end
     if hovered ~= nil and explain ~= nil then
       hovered.active = rd32(entry(hovered.player, 0)) == hovered.keep   -- after a click this frame
