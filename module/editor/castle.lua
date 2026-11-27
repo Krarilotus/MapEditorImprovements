@@ -318,7 +318,9 @@ function C.buildingRotation(self, G, B, data, head, options)
     local x, y = rd32(R.mouseX), rd32(R.mouseY)
     if x < 0 or y < 0 or x >= K.MAP_SIZE or y >= K.MAP_SIZE then return nil end
     towards(direction, x, y, K.MAP_CENTRE, K.MAP_CENTRE)
-    local o = rd32(result) & 0xFFFE
+    local o = rd32(result)
+    if o == 0xF then return o end
+    o = o & 0xFFFE
     if o == 6 then o = 2 elseif o == 2 then o = 6 end
     return o
   end
