@@ -822,7 +822,7 @@ function C.enable(self, O)
   local B = C.resolve(G)
   local data = nil
   if O.buildingCounts or O.towerRuins or O.armyExtras or O.statues or O.barrier or O.keepParts or O.damagedWalls
-      or O.undo or O.moatKinds or O.ruinedCathedral then
+      or O.undo or O.moatKinds or O.ruinedCathedral or O.rotation then
     local newTable
     C.owner = self                         -- for patches made while the table is built
     newTable, data = C.build(G, B, O)
