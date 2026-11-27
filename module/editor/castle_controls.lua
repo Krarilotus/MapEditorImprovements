@@ -193,13 +193,13 @@ function C.makeCounts(G, B, counts, data)
 end
 
 -- The graphics loader passes the first 1000-byte name record, for GM 1.
+-- The loader call itself may be wrapped (e.g. by GM Resource Modifier), so verify
+-- the name table records directly instead of the call target's body.
 function C.resolveBarrierPicture(G)
   local site = scan(K.AOB_GM_LIST, "the GM table loader")
-  local loader = readCallTarget(site, K.GM_LIST.call, "the GM table loader")
   local names = rd32(site + K.GM_LIST.address)
   local boxes = rd32(G.buttonImages + K.CHECKED_IMAGE * IMAGE_SIZE)
-  if not core.matchesAOB("83 C0 01 BF ? ? ? ? 8B F5 B9 05 00 00 00 33 D2 F3 A6 74 10 81 C5 E8 03 00 00", loader + 0x10)
-      or boxes ~= K.GM_CHECK_BOXES_ID
+  if boxes ~= K.GM_CHECK_BOXES_ID
       or not core.matchesAOB(K.GM_CHECK_BOXES_NAME, names + (boxes - 1) * K.GM_RECORD_SIZE)
       or not core.matchesAOB(K.GM_NO_WORKERS_NAME, names + (K.NO_WORKERS_GM - 1) * K.GM_RECORD_SIZE) then
     error("the barrier picture's GM table has unexpected records")

@@ -318,7 +318,7 @@ K.GM_CHECK_BOXES_NAME = "69 6E 74 65 72 66 61 63 65 5F 69 63 6F 6E 73 33 00"   -
 K.GM_RECORD_SIZE = 1000
 K.GM_CHECK_BOXES_ID = 156
 K.AOB_GM_LIST = "6A 08 B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 53 6A 03"
-K.GM_LIST = { address = 23, call = 32 }
+K.GM_LIST = { address = 23 }
 K.SCREEN_LAYER = 0
 K.BUILD_NEEDED = {
   { 11, 110 }, { 11, 111 }, { 11, 112 }, { 11, 113 }, { 11, 114 }, { 14, 88 }, { 14, 89 }, { 15, 313 }, { 15, 318 },
