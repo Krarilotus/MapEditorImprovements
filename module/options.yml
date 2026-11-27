@@ -2,6 +2,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{counts_group}}'
   text: '{{counts_group_descr}}'
   hasHeader: true
@@ -14,17 +15,10 @@ options:
       type: boolean
       value: false
     header: '{{counts_enabled}}'
-  - url: map-editor-improvements.counts.shown
-    name: map-editor-improvements-counts-shown
-    text: '{{counts_shown_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{counts_shown}}'
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{trees_group}}'
   text: '{{trees_group_descr}}'
   hasHeader: true
@@ -101,21 +95,13 @@ options:
       type: boolean
       value: false
     header: '{{trees_rocks_and_water}}'
-  - url: map-editor-improvements.trees.sorted_rows
-    name: map-editor-improvements-trees-sorted-rows
-    text: '{{trees_sorted_rows_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{trees_sorted_rows}}'
-  - url: map-editor-improvements.trees.spread_order
-    name: map-editor-improvements-trees-spread-order
+  - url: map-editor-improvements.trees.group_by_spread
+    name: map-editor-improvements-trees-group-by-spread
     text: '{{trees_spread_order_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: false
+      value: null
     header: '{{trees_spread_order}}'
   - url: map-editor-improvements.trees.spread_outlines
     name: map-editor-improvements-trees-spread-outlines
@@ -128,6 +114,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{textures_group}}'
   text: '{{textures_group_descr}}'
   hasHeader: true
@@ -151,22 +138,16 @@ options:
   - url: map-editor-improvements.textures.mask_by_type
     name: map-editor-improvements-textures-mask-by-type
     text: '{{textures_mask_by_type_tooltip}}'
+    enabled: map-editor-improvements.textures.mask == true
     display: UCP2Switch
     contents:
       type: boolean
       value: false
     header: '{{textures_mask_by_type}}'
-  - url: map-editor-improvements.textures.no_heights_iron
-    name: map-editor-improvements-textures-no-heights-iron
-    text: '{{textures_no_heights_iron_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{textures_no_heights_iron}}'
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{water_group}}'
   text: '{{water_group_descr}}'
   hasHeader: true
@@ -182,6 +163,7 @@ options:
   - url: map-editor-improvements.water.foam_on_sea
     name: map-editor-improvements-water-foam-on-sea
     text: '{{water_foam_on_sea_tooltip}}'
+    enabled: map-editor-improvements.water.decorations == true
     display: UCP2Switch
     contents:
       type: boolean
@@ -190,6 +172,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{rocks_group}}'
   text: '{{rocks_group_descr}}'
   hasHeader: true
@@ -210,22 +193,14 @@ options:
       type: boolean
       value: false
     header: '{{rocks_random_preview}}'
-  - url: map-editor-improvements.rocks.variants
-    name: map-editor-improvements-rocks-variants
+  - url: map-editor-improvements.rocks.variant_row
+    name: map-editor-improvements-rocks-variant-row
     text: '{{rocks_variants_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: false
+      value: null
     header: '{{rocks_variants}}'
-  - url: map-editor-improvements.rocks.extra_rock
-    name: map-editor-improvements-rocks-extra-rock
-    text: '{{rocks_extra_rock_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{rocks_extra_rock}}'
   - url: map-editor-improvements.rocks.invisible
     name: map-editor-improvements-rocks-invisible
     text: '{{rocks_invisible_tooltip}}'
@@ -253,6 +228,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{heights_group}}'
   text: '{{heights_group_descr}}'
   hasHeader: true
@@ -273,28 +249,24 @@ options:
       type: boolean
       value: false
     header: '{{heights_tool_options}}'
-  - url: map-editor-improvements.heights.invert_key_on
-    name: map-editor-improvements-heights-invert-key-on
-    text: '{{heights_invert_key_on_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{heights_invert_key_on}}'
   - name: map-editor-improvements-heights-invert-key_details
     display: GroupBox
     hasHeader: true
     header: '{{heights_invert_key}}'
     text: '{{heights_invert_key_tooltip}}'
     children:
-    - url: map-editor-improvements.heights.invert_key
-      name: map-editor-improvements-heights-invert-key
-      enabled: map-editor-improvements.heights.invert_key_on == true
+    - url: map-editor-improvements.heights.invert_shortcut
+      name: map-editor-improvements-heights-invert-shortcut
+      enabled: map-editor-improvements.heights.tool_options == true
       display: Choice
       contents:
         type: string
-        value: ctrl
+        value: configured
         choices:
+        - name: configured
+          text: '{{key_configured}}'
+        - name: 'off'
+          text: '{{key_off}}'
         - name: ctrl
           text: '{{key_ctrl}}'
         - name: shift
@@ -384,17 +356,18 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{castle_group}}'
   text: '{{castle_group_descr}}'
   hasHeader: true
   children:
-  - url: map-editor-improvements.castle.building_counts
-    name: map-editor-improvements-castle-building-counts
+  - url: map-editor-improvements.castle.show_building_counts
+    name: map-editor-improvements-castle-show-building-counts
     text: '{{castle_building_counts_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: false
+      value: null
     header: '{{castle_building_counts}}'
   - url: map-editor-improvements.castle.tower_ruins
     name: map-editor-improvements-castle-tower-ruins
@@ -460,14 +433,6 @@ options:
       type: boolean
       value: false
     header: '{{castle_keep_parts}}'
-  - url: map-editor-improvements.castle.hover_text_left
-    name: map-editor-improvements-castle-hover-text-left
-    text: '{{castle_hover_text_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_hover_text}}'
   - url: map-editor-improvements.castle.all_players
     name: map-editor-improvements-castle-all-players
     text: '{{castle_all_players_tooltip}}'
@@ -508,22 +473,14 @@ options:
     contents:
       type: boolean
       value: false
-  - url: map-editor-improvements.castle.keep_crests
-    name: map-editor-improvements-castle-keep-crests
+  - url: map-editor-improvements.castle.active_keep_crests
+    name: map-editor-improvements-castle-active-keep-crests
     text: '{{castle_keep_crests_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: false
+      value: null
     header: '{{castle_keep_crests}}'
-  - url: map-editor-improvements.castle.keep_crest_tooltip
-    name: map-editor-improvements-castle-keep-crest-tooltip
-    text: '{{castle_keep_crest_tooltip_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_keep_crest_tooltip}}'
   - url: map-editor-improvements.castle.wall_tools
     name: map-editor-improvements-castle-wall-tools
     text: '{{castle_wall_tools_tooltip}}'
@@ -591,6 +548,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{herds_group}}'
   text: '{{herds_group_descr}}'
   hasHeader: true
@@ -611,14 +569,6 @@ options:
       type: boolean
       value: false
     header: '{{herds_bird_bins}}'
-  - url: map-editor-improvements.herds.animal_bin
-    name: map-editor-improvements-herds-animal-bin
-    text: '{{herds_animal_bin_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{herds_animal_bin}}'
   - url: map-editor-improvements.herds.group_warning
     name: map-editor-improvements-herds-group-warning
     text: '{{herds_group_warning_tooltip}}'
@@ -630,6 +580,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{brushes_group}}'
   text: '{{brushes_group_descr}}'
   hasHeader: true
@@ -645,6 +596,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{undo_group}}'
   text: '{{undo_group_descr}}'
   hasHeader: true
@@ -660,6 +612,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{pipette_group}}'
   text: '{{pipette_group_descr}}'
   hasHeader: true
@@ -672,28 +625,24 @@ options:
       type: boolean
       value: false
     header: '{{pipette_enabled}}'
-  - url: map-editor-improvements.pipette.select_key_on
-    name: map-editor-improvements-pipette-select-key-on
-    text: '{{pipette_select_key_on_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{pipette_select_key_on}}'
   - name: map-editor-improvements-pipette-select-key_details
     display: GroupBox
     hasHeader: true
     header: '{{pipette_select_key}}'
     text: '{{pipette_select_key_tooltip}}'
     children:
-    - url: map-editor-improvements.pipette.select_key
-      name: map-editor-improvements-pipette-select-key
-      enabled: map-editor-improvements.pipette.select_key_on == true
+    - url: map-editor-improvements.pipette.select_shortcut
+      name: map-editor-improvements-pipette-select-shortcut
+      enabled: map-editor-improvements.pipette.enabled == true
       display: Choice
       contents:
         type: string
-        value: letter_p
+        value: configured
         choices:
+        - name: configured
+          text: '{{key_configured}}'
+        - name: 'off'
+          text: '{{key_off}}'
         - name: letter_a
           text: '{{key_letter_a}}'
         - name: letter_b
@@ -790,136 +739,24 @@ options:
           text: '{{key_f11}}'
         - name: f12
           text: '{{key_f12}}'
-  - url: map-editor-improvements.pipette.read_key_on
-    name: map-editor-improvements-pipette-read-key-on
-    text: '{{pipette_read_key_on_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{pipette_read_key_on}}'
   - name: map-editor-improvements-pipette-read-key_details
     display: GroupBox
     hasHeader: true
     header: '{{pipette_read_key}}'
     text: '{{pipette_read_key_tooltip}}'
     children:
-    - url: map-editor-improvements.pipette.read_key
-      name: map-editor-improvements-pipette-read-key
-      enabled: map-editor-improvements.pipette.read_key_on == true
+    - url: map-editor-improvements.pipette.read_shortcut
+      name: map-editor-improvements-pipette-read-shortcut
+      enabled: map-editor-improvements.pipette.enabled == true
       display: Choice
       contents:
         type: string
-        value: ctrl
+        value: configured
         choices:
-        - name: ctrl
-          text: '{{key_ctrl}}'
-        - name: shift
-          text: '{{key_shift}}'
-        - name: alt
-          text: '{{key_alt}}'
-        - name: space
-          text: '{{key_space}}'
-        - name: tab
-          text: '{{key_tab}}'
-        - name: letter_a
-          text: '{{key_letter_a}}'
-        - name: letter_b
-          text: '{{key_letter_b}}'
-        - name: letter_c
-          text: '{{key_letter_c}}'
-        - name: letter_d
-          text: '{{key_letter_d}}'
-        - name: letter_e
-          text: '{{key_letter_e}}'
-        - name: letter_f
-          text: '{{key_letter_f}}'
-        - name: letter_g
-          text: '{{key_letter_g}}'
-        - name: letter_h
-          text: '{{key_letter_h}}'
-        - name: letter_i
-          text: '{{key_letter_i}}'
-        - name: letter_j
-          text: '{{key_letter_j}}'
-        - name: letter_k
-          text: '{{key_letter_k}}'
-        - name: letter_l
-          text: '{{key_letter_l}}'
-        - name: letter_m
-          text: '{{key_letter_m}}'
-        - name: letter_n
-          text: '{{key_letter_n}}'
-        - name: letter_o
-          text: '{{key_letter_o}}'
-        - name: letter_p
-          text: '{{key_letter_p}}'
-        - name: letter_q
-          text: '{{key_letter_q}}'
-        - name: letter_r
-          text: '{{key_letter_r}}'
-        - name: letter_s
-          text: '{{key_letter_s}}'
-        - name: letter_t
-          text: '{{key_letter_t}}'
-        - name: letter_u
-          text: '{{key_letter_u}}'
-        - name: letter_v
-          text: '{{key_letter_v}}'
-        - name: letter_w
-          text: '{{key_letter_w}}'
-        - name: letter_x
-          text: '{{key_letter_x}}'
-        - name: letter_y
-          text: '{{key_letter_y}}'
-        - name: letter_z
-          text: '{{key_letter_z}}'
-        - name: f1
-          text: '{{key_f1}}'
-        - name: f2
-          text: '{{key_f2}}'
-        - name: f3
-          text: '{{key_f3}}'
-        - name: f4
-          text: '{{key_f4}}'
-        - name: f5
-          text: '{{key_f5}}'
-        - name: f6
-          text: '{{key_f6}}'
-        - name: f7
-          text: '{{key_f7}}'
-        - name: f8
-          text: '{{key_f8}}'
-        - name: f9
-          text: '{{key_f9}}'
-        - name: f10
-          text: '{{key_f10}}'
-        - name: f11
-          text: '{{key_f11}}'
-        - name: f12
-          text: '{{key_f12}}'
-  - url: map-editor-improvements.pipette.any_tile_key_on
-    name: map-editor-improvements-pipette-any-tile-key-on
-    text: '{{pipette_any_tile_key_on_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{pipette_any_tile_key_on}}'
-  - name: map-editor-improvements-pipette-any-tile-key_details
-    display: GroupBox
-    hasHeader: true
-    header: '{{pipette_any_tile_key}}'
-    text: '{{pipette_any_tile_key_tooltip}}'
-    children:
-    - url: map-editor-improvements.pipette.any_tile_key
-      name: map-editor-improvements-pipette-any-tile-key
-      enabled: map-editor-improvements.pipette.any_tile_key_on == true
-      display: Choice
-      contents:
-        type: string
-        value: alt
-        choices:
+        - name: configured
+          text: '{{key_configured}}'
+        - name: 'off'
+          text: '{{key_off}}'
         - name: ctrl
           text: '{{key_ctrl}}'
         - name: shift
@@ -1009,6 +846,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{eraser_group}}'
   text: '{{eraser_group_descr}}'
   hasHeader: true
@@ -1032,6 +870,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{map_settings_group}}'
   text: '{{map_settings_group_descr}}'
   hasHeader: true
@@ -1044,25 +883,18 @@ options:
       type: boolean
       value: false
     header: '{{map_settings_show_locked}}'
-  - url: map-editor-improvements.map_settings.button
-    name: map-editor-improvements-map-settings-button
-    text: '{{map_settings_button_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{map_settings_button}}'
-  - url: map-editor-improvements.map_settings.menu
-    name: map-editor-improvements-map-settings-menu
+  - url: map-editor-improvements.map_settings.expanded
+    name: map-editor-improvements-map-settings-expanded
     text: '{{map_settings_menu_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: false
+      value: null
     header: '{{map_settings_menu}}'
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{map_editor}}'
   header: '{{menu_group}}'
   text: '{{menu_group_descr}}'
   hasHeader: true
@@ -1274,31 +1106,6 @@ options:
       contents:
         type: boolean
         value: false
-    - url: map-editor-improvements.grid.rotation_colour
-      name: map-editor-improvements-grid-rotation-colour
-      text: '{{grid_rotation_colour}}'
-      enabled: map-editor-improvements.grid.rotation_lines
-      display: Choice
-      contents:
-        type: string
-        value: cyan
-        choices:
-        - name: cyan
-          text: '{{grid_colour_cyan}}'
-        - name: white
-          text: '{{grid_colour_white}}'
-        - name: yellow
-          text: '{{grid_colour_yellow}}'
-        - name: red
-          text: '{{grid_colour_red}}'
-        - name: green
-          text: '{{grid_colour_green}}'
-        - name: magenta
-          text: '{{grid_colour_magenta}}'
-        - name: orange
-          text: '{{grid_colour_orange}}'
-        - name: black
-          text: '{{grid_colour_black}}'
   - name: map-editor-improvements-grid-mine
     display: GroupBox
     hasHeader: true
@@ -1312,40 +1119,5 @@ options:
       contents:
         type: boolean
         value: false
-    - url: map-editor-improvements.grid.mine_colour
-      name: map-editor-improvements-grid-mine-colour
-      text: '{{grid_mine_colour}}'
-      enabled: map-editor-improvements.grid.mine_boxes
-      display: Choice
-      contents:
-        type: string
-        value: red
-        choices:
-        - name: red
-          text: '{{grid_colour_red}}'
-        - name: white
-          text: '{{grid_colour_white}}'
-        - name: yellow
-          text: '{{grid_colour_yellow}}'
-        - name: cyan
-          text: '{{grid_colour_cyan}}'
-        - name: green
-          text: '{{grid_colour_green}}'
-        - name: magenta
-          text: '{{grid_colour_magenta}}'
-        - name: orange
-          text: '{{grid_colour_orange}}'
-        - name: black
-          text: '{{grid_colour_black}}'
-    - url: map-editor-improvements.grid.mine_size
-      name: map-editor-improvements-grid-mine-size
-      text: '{{grid_mine_size}}'
-      enabled: map-editor-improvements.grid.mine_boxes
-      display: Slider
-      contents:
-        value: 4
-        min: 1
-        max: 5
-        step: 1
 meta:
   version: 1.0.0

@@ -346,3 +346,31 @@ cover.
 - Trees, shrubs and rocks are counted by the places they take up in the game's lists, which
   is what the limits apply to. A stack of shrubs on one spot counts every shrub in it.
 - Nothing is saved into the map.
+
+## Author settings
+
+Set these URLs under `map-editor-improvements` in a preset or profile.
+
+| Setting | Effect |
+| --- | --- |
+| `counts.shown` | Start with map counts visible when counts are enabled. |
+| `textures.no_heights_iron` | Hide Iron in Heights when Gravel and Iron are available in Textures. |
+| `pipette.any_tile_key_on`, `pipette.any_tile_key` | Enable and assign the held modifier for pasting heights and textures on protected tiles. The modifier defaults to Alt and starts disabled. |
+| `grid.rotation_colour`, `grid.mine_colour`, `grid.mine_size` | Set the keep rotation line color, the iron mine outline color, and the mine footprint width in tiles. |
+| `herds.animal_bin` | Retain the All Animals button for a profile that supplies it. Alt+E clears all land animals in the editor. |
+
+When a profile leaves a combined switch unset, the two component settings supply its
+behavior. Setting the combined switch turns both on or off together.
+
+| Combined switch | Component settings |
+| --- | --- |
+| `trees.group_by_spread` | `trees.sorted_rows`, `trees.spread_order` |
+| `rocks.variant_row` | `rocks.variants`, `rocks.extra_rock` |
+| `castle.show_building_counts` | `castle.building_counts`, `castle.hover_text_left` |
+| `castle.active_keep_crests` | `castle.keep_crests`, `castle.keep_crest_tooltip` |
+| `map_settings.expanded` | `map_settings.button`, `map_settings.menu` |
+
+Use configured key reads the profile’s separate enable and key settings for
+`heights.invert_shortcut`, `pipette.select_shortcut` and `pipette.read_shortcut`.
+Choose Off to disable the module’s shortcut or choose a key directly. With Custom
+Hotkeys, the Pipette action has its own binding in the in-game editor.

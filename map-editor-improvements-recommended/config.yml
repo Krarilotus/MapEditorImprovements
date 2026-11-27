@@ -39,10 +39,7 @@ config-sparse:
           rocks_and_water:
             contents:
               suggested-value: true
-          sorted_rows:
-            contents:
-              suggested-value: true
-          spread_order:
+          group_by_spread:
             contents:
               suggested-value: true
           spread_outlines:
@@ -75,10 +72,7 @@ config-sparse:
           random_preview:
             contents:
               suggested-value: true
-          variants:
-            contents:
-              suggested-value: true
-          extra_rock:
+          variant_row:
             contents:
               suggested-value: true
           invisible:
@@ -101,7 +95,7 @@ config-sparse:
             contents:
               suggested-value: true
         castle:
-          building_counts:
+          show_building_counts:
             contents:
               suggested-value: true
           tower_ruins:
@@ -128,9 +122,6 @@ config-sparse:
           keep_parts:
             contents:
               suggested-value: true
-          hover_text_left:
-            contents:
-              suggested-value: true
           all_players:
             contents:
               suggested-value: true
@@ -146,10 +137,7 @@ config-sparse:
           unit_colour:
             contents:
               suggested-value: true
-          keep_crests:
-            contents:
-              suggested-value: true
-          keep_crest_tooltip:
+          active_keep_crests:
             contents:
               suggested-value: true
           wall_tools:
@@ -181,9 +169,6 @@ config-sparse:
             contents:
               suggested-value: true
           bird_bins:
-            contents:
-              suggested-value: true
-          animal_bin:
             contents:
               suggested-value: true
           group_warning:
@@ -221,10 +206,7 @@ config-sparse:
           show_locked:
             contents:
               suggested-value: true
-          button:
-            contents:
-              suggested-value: true
-          menu:
+          expanded:
             contents:
               suggested-value: true
           size_refresh:

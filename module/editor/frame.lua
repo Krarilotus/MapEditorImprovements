@@ -109,12 +109,12 @@ end
 ---enabled: that module reads the whole call site, the second load included, when it is enabled
 ---and stays off if it has changed, so the site goes in after it in either load order.
 ---@param self table the module
----@param onProblem fun(problem: any) told when the site could not be put in
+---@param onProblem fun(problem: any, editorOverlay: boolean) told when the site could not be put in
 ---@return string when "now" or "afterInit"
 function M.commit(self, onProblem)
   local function run()
     local ok, problem = pcall(M.install, self)
-    if not ok then onProblem(problem) end
+    if not ok then onProblem(problem, routines.editor ~= nil) end
   end
   if modules ~= nil and modules["resource-grid-overlay"] ~= nil then
     hooks.registerHookCallback("afterInit", run)

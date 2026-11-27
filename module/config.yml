@@ -1,0 +1,90 @@
+meta:
+  version: 1.0.0
+config-sparse:
+  modules:
+    map-editor-improvements:
+      config:
+        counts:
+          shown:
+            contents:
+              suggested-value: false
+        trees:
+          sorted_rows:
+            contents:
+              suggested-value: false
+          spread_order:
+            contents:
+              suggested-value: false
+        textures:
+          no_heights_iron:
+            contents:
+              suggested-value: false
+        rocks:
+          variants:
+            contents:
+              suggested-value: false
+          extra_rock:
+            contents:
+              suggested-value: false
+        castle:
+          building_counts:
+            contents:
+              suggested-value: false
+          hover_text_left:
+            contents:
+              suggested-value: false
+          keep_crests:
+            contents:
+              suggested-value: false
+          keep_crest_tooltip:
+            contents:
+              suggested-value: false
+        herds:
+          animal_bin:
+            contents:
+              suggested-value: false
+        map_settings:
+          menu:
+            contents:
+              suggested-value: false
+          button:
+            contents:
+              suggested-value: false
+        heights:
+          invert_key_on:
+            contents:
+              suggested-value: false
+          invert_key:
+            contents:
+              suggested-value: ctrl
+        pipette:
+          select_key_on:
+            contents:
+              suggested-value: false
+          select_key:
+            contents:
+              suggested-value: letter_p
+          read_key_on:
+            contents:
+              suggested-value: false
+          read_key:
+            contents:
+              suggested-value: ctrl
+          any_tile_key_on:
+            contents:
+              suggested-value: false
+          any_tile_key:
+            contents:
+              suggested-value: alt
+        grid:
+          rotation_colour:
+            contents:
+              suggested-value: cyan
+          mine_colour:
+            contents:
+              suggested-value: red
+          mine_size:
+            contents:
+              suggested-value: 4
+  plugins: {}
+  load-order: []

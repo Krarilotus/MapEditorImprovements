@@ -6,9 +6,6 @@ counts_enabled_tooltip: |-
   Hayvanlar, Bitki Örtüsü veya Kayalar düğmelerinin üzerine gelerek mevcut sayıyı ve oyun sınırını gösteren bir ipucu görün; örneğin «Ağaçlar ve çalılar: 812/1999». Hayvanlar ipucu ayrıca kendi sınırına sahip sürü ve grupları da gösterir.
   Hayvanlar menüsünde geyik, deve, tavşan ve aslan düğmeleri her birinin sayısını gösterir; Bitki Örtüsü menüsünde her ağaç ve çalı düğmesi o bitkinin sayısını gösterir.
   Anahtar düğmesinin üzerindeki kırmızı «i» düğmesi çalışırken tüm bunları açıp kapatır.
-counts_shown: Düzenleyici açıldığında sayıları göster
-counts_shown_tooltip: |-
-  Kapalı: sayılar başlangıçta gizlidir ve «i» düğmesiyle açılır.
 trees_group: Ağaçlar ve çalılar
 trees_group_descr: |-
   Arazi düzenleyicide bitki örtüsü yerleştirirken daha fazla seçenek sunar.
@@ -37,9 +34,6 @@ trees_obstacles_tooltip: |-
 trees_rocks_and_water: Kaya ve su üzerine bitki örtüsü onay kutusu
 trees_rocks_and_water_tooltip: |-
   Bitki Örtüsü menüsünün sağında, engellerin yanına ağaç kutusunun altında yer alan onay kutusu (başlangıçta kapalı). İşaretliyken ağaçlar ve çalılar bataklık, nehir, geçit, kayalık, iri taş ve çakıl zeminlere de yerleştirilebilir.
-trees_sorted_rows: Bitki Örtüsü menüsü satırlarını düzenle
-trees_sorted_rows_tooltip: |-
-  Üst satırdaki çalıyı alt satıra taşır ve alt satırdaki çalıları sıralar; böylece üst satırda ağaçlar (elma ağacı ve onay kutusuyla birlikte), alt satırda ise tüm çalılar yer alır.
 trees_preview: Ağaç önizlemesi
 trees_preview_tooltip: |-
   Bir ağaç veya çalı seçiliyken fare altındaki karede dikilecek ağaç, fırçanın verdiği aşamada (veya seçili kütük sayısıyla devrilmiş hâlde) oyunun çizeceği biçimde gösterilir. Uzaklaştırılmış görünümde gösterilmez.
@@ -52,9 +46,6 @@ textures_group_descr: |-
 textures_gravel_and_iron: Dokular menüsünde çakıl ve demir
 textures_gravel_and_iron_tooltip: |-
   Üst satıra Çakıl, alt satıra Demir ekler ve iki satırı dengeli dağıtır. Çakıl görseli images/gravel.png (gravel_hover.png ve gravel_selected.png ile) dosyasıdır.
-textures_no_heights_iron: Demir yalnızca Dokular menüsünde
-textures_no_heights_iron_tooltip: |-
-  Dokular menüsünde zaten bulunduğu için Yükseklikler menüsündeki demir düğmesini kaldırır.
 textures_mask: Maske düğmesi
 textures_mask_tooltip: |-
   Arazi düzenleyici menüsünün sol üstüne bir Maske düğmesi (yarısı dolu kare) ekler. Açıkken doğa araçları (yükseklikler, dokular, su, ağaçlar ve çalılar, kayalar ve damlalık) yalnızca ilk tıkladığınız kareyle aynı dokuya sahip kareleri değiştirir; fareyi bıraktığınızda sonraki tıklama hedef dokuyu yeniden seçer.
@@ -82,9 +73,6 @@ rocks_random_preview_tooltip: |-
 rocks_variants: Kaya çeşitleri satırı
 rocks_variants_tooltip: |-
   Kayalar menüsünün üzerindeki satır, seçilen kaya boyutunun dört çeşidini yerleştirileceği yönde gösterir. Yalnızca o çeşidi koymak için birine tıklayın; oyunun değişen çeşitlerine dönmek için tekrar tıklayın veya Kayalar menüsünden herhangi bir düğme seçin.
-rocks_extra_rock: Ek küçük kaya
-rocks_extra_rock_tooltip: |-
-  En küçük kayalar için çeşit satırı beşinci bir seçenek daha sunar: oyunda bulunan ancak düzenleyicinin hiç koymadığı küçük bir kaya. Diğer tüm kayalar gibi haritaya kaydedilir.
 rocks_invisible: Görünmez kayalar onay kutusu
 rocks_invisible_tooltip: |-
   Kayalar menüsü düğmelerinin sağına bir onay kutusu ekler. İşaretliyken koyduğunuz her kaya, önce 4000 kaya koymaya gerek kalmadan doğrudan «görünmez kaya» olur: kareler doludur (bina dikilemez ve yürünemez) ancak kaya çizilmez, böylece önceki zemin görünmeye devam eder («2k taş numarası»). Normal kayalar için işareti kaldırın.
@@ -109,9 +97,6 @@ heights_tool_options_tooltip: |-
   - Yükselt, alçalt ve eşitle için: Aralığa oturt (başlangıçta açık), Ters çevir (yalnızca eşitle), yükseklik aralığı (başlangıçta 8–156; iki uçtan sürüklenebilir) ve güç. Aralığa oturt açıkken aralık dışındaki kareler aralığa çekilir; kapalıyken dokunulmaz. Ters çevir, eşitlemenin düzleştirmek yerine zemini engebeli yapmasını sağlar.
   - Kaya yüksekliği değişiklikleri (başlangıçta Tüm kaya): araçların dokunduğu kayaya ne yapacağı. Yalnızca kare sadece fırça altındaki kareleri hareket ettirir; Tüm kaya kayanın tüm karelerini birlikte taşır; Kayayı sil kayayı kaldırır (Asgari Yükseklik gibi).
   Aralık, Aralığa oturt, Ters çevir ve yok sayma kutuları harita düzenleyiciden çıkınca varsayılana döner.
-heights_invert_key_on: Eşitlemeyi ters çevirmek için basılı tut
-heights_invert_key_on_tooltip: |-
-  Eşitleme aracı seçiliyken bu tuş basılı tutulduğu sürece araç zemini engebelendirir (Ters çevir işaretliymiş gibi); bırakınca tekrar düzleştirir.
 heights_invert_key: Eşitlemeyi ters çevirme tuşu
 heights_invert_key_tooltip: |-
   Eşitleme aracını ters çevirmek için basılı tutulacak tuş.
@@ -146,9 +131,6 @@ castle_keep_parts: Kamp ateşi veya deposuz iç kale
 castle_keep_parts_tooltip: |-
   Bir iç kale seçiliyken iç kaleler menüsünün üzerindeki satır iki ek seçenek sunar: «Yalnızca iç kale» (kamp ateşi alanı ve depo olmadan iç kale ile girişi) ve «Deposuz» (iç kale, girişi ve kamp ateşi alanı). Menüden bir iç kale seçmek tekrar tam iç kale yerleştirir.
   Önizleme ve alan kontrolü yalnızca o parçaları kapsar.
-castle_hover_text: Bina adları daha solda
-castle_hover_text_tooltip: |-
-  Fare altındaki binanın adı («Oyuncu 1'in İç Kalesi») 100 piksel sola kayar, böylece mini haritanın üstündeki bina sayaçlarıyla çakışmaz.
 castle_damaged_walls: Hasarlı surlar ve merdivenler
 castle_damaged_walls_tooltip: |-
   Merdiven, alçak sur, yüksek sur veya mazgal seçiliyken kale binaları menüsünün üzerindeki satır «Hasarlı» seçeneğini sunar: konulan surlar yüksekliklerini koruyarak hasarlı sur tepesi alır. Menüden suru seçmek tekrar sağlam surlara döndürür.
@@ -193,24 +175,12 @@ pipette_enabled_tooltip: |-
   Fırça boyutunun üstüne damlalık düğmesini ekler (fırça boyutu, cetvel ve silgi biraz aşağı kayar).
   Seçildiğinde menünün üzerinde bir satır — Yükseklikler, Dokular, Nesneler, Tümü — ve onun üzerinde damlalığın tuttuğu içerik görünür. Örnek almak için bir kareye tıklayın (damlalık tek kare gösterir), ardından fırça altındaki karelere uygulamak için tıklayın veya sürükleyin. Yükseklikler zemini, Dokular yükseklikleri değiştirmez. Nesneler karedeki bina, sur, ağaç veya kayayı alır: binalar ve surlar aynı oyuncu için kendi menü düğmesi gibi yerleştirilir (o oyuncunun arması seçilir); ağaçlar (aynı tür ve aşama veya aynı kütük sayısıyla devrilmiş) ve kayalar (aynı tür ve yön) kendi araçları gibi sürükleme dâhil yerleştirilir. Tümü ayrıca bir ağaç veya 1×1 kayayı alır ve fırça altındaki her kareye koyar. Damlalığı veya bir türünü tekrar seçmek onu boşaltır.
   Yükseklikler deniz, kumsal, bataklık, hendek, kaya, sur veya binalara uygulanmaz; dokular kaya, sur veya binalara uygulanmaz. Dik kenarlardaki uçurum kayaları temizlenir ve dik kalan yerlerde yeniden oluşur. Geri al damlalık darbelerini de geri alır.
-pipette_select_key_on: Damlalık tuşu
-pipette_select_key_on_tooltip: |-
-  Damlalığı seçen (ve boşaltan) bir tuş. Damlalık seçiliyken tekrar basıldığında sonraki türe geçer: Yükseklikler, Dokular, Nesneler, Tümü.
 pipette_select_key: Damlalık için tuş
 pipette_select_key_tooltip: |-
   Harita düzenleyicide damlalığı seçen tuş. Olağan işlevini de sürdürür.
-pipette_read_key_on: Kare almak için basılı tut
-pipette_read_key_on_tooltip: |-
-  Bu tuş basılı tutulurken dolu bir damlalık yeniden kare örneği alır (tıklayana kadar eskisi kalır). Bırakıldığında — içinde bir şey varsa — tekrar uygular.
 pipette_read_key: Kare alma tuşu
 pipette_read_key_tooltip: |-
   Damlalık doluyken yeni bir kare örneği almak için basılı tutulacak tuş.
-pipette_any_tile_key_on: Herhangi bir kareye uygulamak için basılı tut
-pipette_any_tile_key_on_tooltip: |-
-  Deneysel: bu tuş basılı tutulurken damlalık deniz, bataklık, kayalar (yerinde kalır), surlar ve binalar dâhil fırça altındaki her kareye yükseklik ve doku uygular (harita kenarına asla). Nesnelerin nereye konabileceğini değiştirmez.
-pipette_any_tile_key: Herhangi bir kareye uygulama tuşu
-pipette_any_tile_key_tooltip: |-
-  Damlalığın karenin üzerinde ne olduğunu yok sayması için basılı tutulacak tuş.
 key_letter_a: A
 key_letter_b: B
 key_letter_c: C
@@ -300,9 +270,6 @@ castle_unit_colour_tooltip: |-
 castle_keep_crests: Etkin iç kale armaları
 castle_keep_crests_tooltip: |-
   Her iç kale üzerinde sahibinin armasını gösterir; oyuncunun etkin iç kalesi (lordun, başlangıç birimlerinin ve yeni köylülerin çıktığı yer) çerçeveli görünür. Bir armaya tıklamak o iç kaleyi etkin yapar; etkin olana tıklamak oyuncuyu etkin iç kalesiz bırakır. Yeni bir iç kale artık etkinliği otomatik devralmaz; etkin iç kale kaldırıldığında oyuncunun başka bir iç kalesi devralır. Ana depo her zaman etkin iç kaleyi takip eder (oyun eskiden ilk konulan depoyu tutuyordu, bu yüzden birden fazla iç kalede yapay zekâ kale alanını kapalı bulup kale planı kuramıyordu). «Oyuncu başına birden fazla iç kale» gerektirir.
-castle_keep_crest_tooltip: İç kale arması ipucu
-castle_keep_crest_tooltip_tooltip: |-
-  Bir iç kale armasının üzerine gelindiğinde ne anlama geldiğini ve tıklamanın ne yapacağını gösterir. «Etkin iç kale armaları» gerektirir.
 castle_wall_tools: Sur yükseklikleri ve serbest mazgallar
 castle_wall_tools_tooltip: |-
   Mazgallar tek başına durabilir. Panelleri alçak, yüksek, hasarlı alçak ve hasarlı yüksek seçeneklerini sunar. Sur panelinin üzerindeki kaydırıcı yüksek surların, alçak surların ve mazgalların yüksekliğini (0–255) ve merdiven dikliğini (0–16) ayrı ayrı ayarlar; yanındaki Sıfırla seçili olanı olağan değerine döndürür ve harita düzenleyiciden çıkınca hepsi sıfırlanır.
@@ -315,9 +282,6 @@ trees_spread_outlines_tooltip: |-
 herds_bird_bins: Tüm kargaları / martıları sil düğmeleri
 herds_bird_bins_tooltip: |-
   Hayvanlar menüsünde karga ve martı düğmelerinin sağında kırmızı çöp kutusu düğmeleri: tek tıkla haritadaki tüm kargaları (ağaçlar kalır) veya tüm martıları kaldırır.
-herds_animal_bin: Tüm hayvanları sil düğmesi
-herds_animal_bin_tooltip: |-
-  Hayvanlar menüsünün sağında Alt + E gibi haritadaki tüm hayvanları kaldıran kırmızı çöp kutusu düğmesi. Kargalar ve martılar kalır.
 herds_group_warning: Sürü ve grup uyarısı
 herds_group_warning_tooltip: |-
   Oluşturulabilecek 200'den az sürü ve grup kaldığında ekranın üstündeki bir satır kaç tane kaldığını bildirir — tıpkı oyunun birimler için gösterdiği satır gibi.
@@ -330,9 +294,6 @@ eraser_seagulls_tooltip: |-
 map_settings_show_locked: Kilitli haritaları göster kutusu
 map_settings_show_locked_tooltip: |-
   Düzenleyicinin Yükle penceresinde «Kilitli haritaları göster» onay kutusu. İşaretliyken kilitli haritalar da listelenir ve liste anında güncellenir.
-map_settings_button: Harita Ayarları düğmesi
-map_settings_button_tooltip: |-
-  Haritanın menü ekranında Dengeli / Dengesiz ve İstila / Ekonomi düğmelerinin sağında bir Harita Ayarları düğmesi. Alt + , menüsünü açar.
 map_settings_menu: Genişletilmiş Harita Ayarları menüsü
 map_settings_menu_tooltip: |-
   Alt + , menüsüne bir başlık, Tek Oyunculu ve Çok Oyunculu, dört tek oyunculu harita türü (Kuşatma, İstila, Ekonomi, Serbest İnşa), dört harita boyutu artı Özel ve bir Harita boyutu kaydırıcısı (10 ile 400 arası; bırakıldığında boyut değişir), Dengeli, Tepenin Kralı, Haritayı kilitle ve bir Geri düğmesi ekler.
@@ -348,7 +309,7 @@ eraser_group_descr: |-
 map_settings_group: Harita ayarları
 map_settings_group_descr: |-
   Haritanın ayarları: harita türü, boyutu, kilidi ve bunları gösteren menüler.
-qol: Yaşam kalitesi
+qol: Kullanım kolaylığı
 grid_group: Kaynak ızgarası
 grid_key: Izgara kısayolu (Alt+tuş)
 grid_outside_editor: Oyun sırasında ızgaraya izin ver
@@ -357,11 +318,8 @@ grid_hide_in_v_view: V tuşu görünümünde gizle
 grid_colour: Izgara rengi
 grid_rotation_group: Kale yönü
 grid_rotation_lines: Kale dönüş sınırlarını göster
-grid_rotation_colour: Sınır rengi
 grid_mine_group: Demir madeni alanı
 grid_mine_boxes: Demir madeni alanını göster
-grid_mine_colour: Alan rengi
-grid_mine_size: Alan genişliği (kare)
 grid_key_letter_g: Alt + G
 grid_key_letter_a: Alt + A
 grid_key_letter_b: Alt + B

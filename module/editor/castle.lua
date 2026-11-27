@@ -857,26 +857,29 @@ function C.enable(self, O)
     hooks.registerHookCallback("afterInit", ensure)
   end
   -- Each patch on its own, so that one the game does not match leaves the others working.
-  local function try(wanted, patch, what, ...)
+  local function try(wanted, patch, message, ...)
     if not wanted then return end
     local ok, problem = pcall(patch, self, ...)
-    if not ok then log(WARNING, tostring(problem) .. "; " .. what .. " left out") end
+    if not ok then
+      log(ERROR, message)
+      log(WARNING, tostring(problem))
+    end
   end
-  try(O.towerRuins, C.patchRuinSizes, "tower ruins", G)
-  try(O.severalKeeps or O.looseBuildings, C.patchSeveralBuildings, "several keeps and storage buildings", G, O)
-  try(O.looseBuildings, C.patchEmptyStorage, "any number of empty storage buildings", G)
-  try(O.towerEngines, C.patchTowerEngines, "tower engines anywhere", G)
-  try(O.keepParts, C.patchKeepParts, "the keep choices", G, data)
-  try(O.keepGround, C.patchKeepGround, "keeps leaving the ground as it is", G)
-  try(O.damagedWalls, C.patchDamagedWalls, "damaged walls", G, data)
-  try(O.wallTools, C.patchWallTools, "wall tools", G, data)
-  try(O.allPlayers, C.patchAllPlayers, "all player shields")
-  try(O.allKeeps, C.patchAllKeeps, "all keeps")
-  try(O.hoverTextLeft, C.patchHoverText, "the hover text move")
-  try(O.moatKinds and data ~= nil, C.patchMoatClick, "the moat kinds", data)
-  try(O.moatKinds or O.moatRemoval, C.patchMoatModes, "the moat modes", O.moatKinds, O.moatRemoval)
-  try(O.moatOnMarsh, C.patchMoatMarsh, "moat on marsh")
-  try(O.variantPanels, C.patchVariantLocks, "the variant panels", G)
+  try(O.towerRuins, C.patchRuinSizes, "Placing tower ruins is off.", G)
+  try(O.severalKeeps or O.looseBuildings, C.patchSeveralBuildings, "Placing extra keeps and storage buildings is off.", G, O)
+  try(O.looseBuildings, C.patchEmptyStorage, "Placing extra empty storage buildings is off.", G)
+  try(O.towerEngines, C.patchTowerEngines, "Placing tower engines away from towers is off.", G)
+  try(O.keepParts, C.patchKeepParts, "Placing parts of a keep is off.", G, data)
+  try(O.keepGround, C.patchKeepGround, "Preserving ground when placing keeps is off.", G)
+  try(O.damagedWalls, C.patchDamagedWalls, "Placing damaged walls and stairs is off.", G, data)
+  try(O.wallTools, C.patchWallTools, "Editor wall placement changes are off.", G, data)
+  try(O.allPlayers, C.patchAllPlayers, "Showing all eight player shields is off.")
+  try(O.allKeeps, C.patchAllKeeps, "Manor and stronghold placement on all maps is off.")
+  try(O.hoverTextLeft, C.patchHoverText, "Moving building hover text away from the counts is off.")
+  try(O.moatKinds and data ~= nil, C.patchMoatClick, "Choosing the moat type is off.", data)
+  try(O.moatKinds or O.moatRemoval, C.patchMoatModes, "The moat terrain and placement changes are off.", O.moatKinds, O.moatRemoval)
+  try(O.moatOnMarsh, C.patchMoatMarsh, "Placing moats on marsh is off.")
+  try(O.variantPanels, C.patchVariantLocks, "Locking the chosen building variant is off.", G)
 end
 
 return true

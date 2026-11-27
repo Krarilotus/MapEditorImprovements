@@ -88,7 +88,7 @@ function C.build(G, B, O)
       end
     end
     if shieldGroup == nil then
-      log(WARNING, MODULE_NAME .. ": the player shields were not found; no player 0 shield")
+      log(ERROR, "The neutral player shield is off. The player shields could not be found.")
     else
       insert(shieldGroup, "shieldZeroClick")
       insert(shieldEnd, "shieldZeroDraw")
@@ -384,17 +384,26 @@ function C.build(G, B, O)
   if added.wallSlider ~= nil then
     local ok, problem = pcall(C.wallControls, G, B, data, added.wallSlider, added.wallSliderPaint,
       added.wallSliderReset)
-    if not ok then log(WARNING, tostring(problem) .. "; no wall height slider") end
+    if not ok then
+      log(ERROR, "The wall height slider is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if added.compass ~= nil then
     local ok, problem = pcall(C.compassItem, G, added.compass, O.undo)
-    if not ok then log(WARNING, tostring(problem) .. "; no compass") end
+    if not ok then
+      log(ERROR, "The castle editor compass is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if added.unitColourPanel ~= nil then
     local crests = {}
     for p = 0, K.PLAYERS do crests[p] = added["unitColour" .. p] end
     local ok, problem = pcall(C.unitColours, C.owner, G, B, data, added.unitColourPanel, crests)
-    if not ok then log(WARNING, tostring(problem) .. "; no unit display player") end
+    if not ok then
+      log(ERROR, "Choosing unit colors separately is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if added.rotationHead ~= nil then
     local options = {}
@@ -403,13 +412,17 @@ function C.build(G, B, O)
     if not ok then
       wr16(added.rotationHead + ITEM_HIDDEN, 1)
       for _, option in ipairs(options) do wr16(option + ITEM_HIDDEN, 1) end
-      log(WARNING, tostring(problem) .. "; no building rotation")
+      log(ERROR, "The building rotation list is off.")
+      log(WARNING, tostring(problem))
     end
   end
   if added.keepCrests ~= nil then
     data.crestTooltip = O.crestTooltip
     local ok, problem = pcall(C.keepCrests, G, B, data, added.keepCrests)
-    if not ok then log(WARNING, tostring(problem) .. "; no keep crests") end
+    if not ok then
+      log(ERROR, "Choosing the active keep by its crest is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if O.ruinedCathedral then
     local watch = added.ruinWatch

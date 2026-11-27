@@ -31,14 +31,16 @@ local function enableMenu(self, O)
   if O.variants then
     local ok, problem = pcall(resolveRocks, G)
     if not ok then
-      log(WARNING, tostring(problem) .. "; no rock variant row")
+      log(ERROR, "The rock variant row is off.")
+      log(WARNING, tostring(problem))
       O.variants = false
     end
   end
   if O.herds then
     local ok, problem = pcall(resolveHerds, G)
     if not ok then
-      log(WARNING, tostring(problem) .. "; no herd panel")
+      log(ERROR, "The herd size and behavior panel is off.")
+      log(WARNING, tostring(problem))
       O.herds = false
     end
   end
@@ -50,7 +52,10 @@ local function enableMenu(self, O)
   if O.invisibleRocks then C.patchInvisibleRocks(self, data) end
   if data.mask ~= nil then
     local ok, problem = pcall(C.patchTextureMask, self, G, data)
-    if not ok then log(WARNING, tostring(problem) .. "; the texture mask does nothing") end
+    if not ok then
+      log(ERROR, "The texture mask is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if data.heights ~= nil then
     local ok, problem = pcall(C.patchHeightTools, self, G, data)
@@ -62,15 +67,22 @@ local function enableMenu(self, O)
   end
   if data.heights ~= nil or data.treePreviewDraw ~= nil or data.groupWarning ~= nil then
     local ok, problem = pcall(C.patchFrame, self, G, data)
-    if not ok then log(WARNING, tostring(problem) .. "; the tree preview only shows with the menu") end
+    if not ok then
+      if data.groupWarning ~= nil then log(ERROR, "The herd limit warning is off.") end
+      log(WARNING, tostring(problem))
+    end
   end
   if data.pipette ~= nil then
     local ok, problem = pcall(C.patchPipettePreview, self, data.pipette, data.pipetteRead)
     if not ok then log(WARNING, tostring(problem) .. "; the pipette shows the whole brush while taking a tile") end
   end
-  if O.eraserChoice or O.eraseGulls then
-    local ok, problem = pcall(C.patchEraserChoice, self, G, O.eraserChoice, O.eraseGulls)
-    if not ok then log(WARNING, tostring(problem) .. "; the eraser takes everything as before") end
+  if data.eraserChoice or O.eraseGulls then
+    local ok, problem = pcall(C.patchEraserChoice, self, G, data.eraserChoice, O.eraseGulls)
+    if not ok then
+      if data.eraserChoice then log(ERROR, "The eraser mode choices are off.") end
+      if O.eraseGulls then log(ERROR, "Erasing flying seagulls is off.") end
+      log(WARNING, tostring(problem))
+    end
   end
   self.shownFlag = data.shown
   self.landscape = G

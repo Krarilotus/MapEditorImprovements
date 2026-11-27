@@ -607,7 +607,10 @@ local function buildTable(G, O)
       button = button, moved = moved, newTable = newTable, rows = rows, newButtons = newButtons, places = places,
       tooltips = tooltips, guarded = guarded })
     if not ok then
-      log(WARNING, tostring(problem) .. "; the heights menu and the lost rocks button are left out")
+      if O.maxHeight then log(ERROR, "Max Height is off.") end
+      if O.heightTools then log(ERROR, "The height brush controls are off.") end
+      if O.lostRocks then log(ERROR, "Clearing lost rock records is off.") end
+      log(WARNING, tostring(problem))
       for i = #rows, counts.rows + 1, -1 do rows[i] = nil end
       for i = #places, counts.places + 1, -1 do places[i] = nil end
       for i = #tooltips, counts.tooltips + 1, -1 do tooltips[i] = nil end
@@ -635,13 +638,14 @@ local function buildTable(G, O)
   end
   -- 36, 37, 39: the wastebins, the eraser panel, the tree outlines; each on its own, left out
   -- harmlessly if it fails.
-  local function extra(wanted, fn, kinds, what)
+  local function extra(wanted, fn, kinds, message)
     if not wanted then return end
     local counts = { places = #places, tooltips = #tooltips, guarded = #guarded }
     local ok, problem = pcall(fn, { G = G, O = O, data = data, added = added, button = button, places = places,
       tooltips = tooltips, guarded = guarded })
-    if ok then return end
-    log(WARNING, tostring(problem) .. "; " .. what .. " left out")
+    if ok then return true end
+    log(ERROR, message)
+    log(WARNING, tostring(problem))
     for i = #places, counts.places + 1, -1 do places[i] = nil end
     for i = #tooltips, counts.tooltips + 1, -1 do tooltips[i] = nil end
     for i = #guarded, counts.guarded + 1, -1 do guarded[i] = nil end
@@ -659,21 +663,26 @@ local function buildTable(G, O)
       end
     end
   end
-  extra(O.birdButtons or O.animalBin, C.animalsMenu, { "crowBin", "gullBin", "animalBin" }, "the wastebins")
+  extra(O.birdButtons or O.animalBin, C.animalsMenu, { "crowBin", "gullBin", "animalBin" },
+    "The animal and bird removal buttons are off.")
   local eraserKinds = { "eraserPanel" }
   for i = 1, #K.ERASER_MODES do eraserKinds[#eraserKinds + 1] = "eraserMode" .. i end
-  extra(O.eraserChoice, C.eraserMenu, eraserKinds, "the eraser panel")
-  extra(O.spreadOutlines, C.spreadOutlines, { "spreadOutline" }, "the tree outlines")
+  data.eraserChoice = extra(O.eraserChoice, C.eraserMenu, eraserKinds, "The eraser mode panel is off.")
+  extra(O.spreadOutlines, C.spreadOutlines, { "spreadOutline" }, "Tree spreading outlines are off.")
   if O.groupWarning then
     local ok, problem = pcall(function() data.groupWarning = C.groupWarning(G, data) end)
-    if not ok then log(WARNING, tostring(problem) .. "; no herds and groups line") end
+    if not ok then
+      log(ERROR, "The herd limit warning is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if O.textureMask then
     local counts = { places = #places, tooltips = #tooltips }
     local ok, problem = pcall(C.textureMask, { G = G, O = O, data = data, added = added, moved = moved,
       newTable = newTable, places = places, tooltips = tooltips })
     if not ok then
-      log(WARNING, tostring(problem) .. "; no texture mask")
+      log(ERROR, "The texture mask is off.")
+      log(WARNING, tostring(problem))
       for i = #places, counts.places + 1, -1 do places[i] = nil end
       for i = #tooltips, counts.tooltips + 1, -1 do tooltips[i] = nil end
       data.mask = nil
@@ -853,7 +862,10 @@ local function buildTable(G, O)
   end
   if added.compass ~= nil then
     local ok, problem = pcall(C.compassItem, G, added.compass, O.undo)
-    if not ok then log(WARNING, tostring(problem) .. "; no compass") end
+    if not ok then
+      log(ERROR, "The landscape editor compass is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if O.treePreview then
     local into = added.treePreview
@@ -865,7 +877,10 @@ local function buildTable(G, O)
       wr32(into + ITEM_RENDER, C.luaPad(data.treePreviewDraw, "the tree preview"))
       wr32(into + ITEM_RENDER_TYPE, RENDER_SIMPLE)
     end)
-    if not ok then log(WARNING, tostring(problem) .. "; no tree preview") end
+    if not ok then
+      log(ERROR, "The vegetation preview is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if O.pipette then
     if G.blit == nil then
@@ -877,7 +892,8 @@ local function buildTable(G, O)
     local count = #guarded
     local ok, problem = pcall(C.pipette, G, O, data, added, guarded, places, button)
     if not ok then
-      log(WARNING, tostring(problem) .. "; the pipette is left out")
+      log(ERROR, "The terrain pipette is off.")
+      log(WARNING, tostring(problem))
       for i = #guarded, count + 1, -1 do guarded[i] = nil end
       for _, kind in ipairs(pipetteItems) do      -- harmless: never hit, never drawn, no action
         local into = added[kind]

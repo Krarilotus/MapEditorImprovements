@@ -213,8 +213,7 @@ function M.enable(self, config)
   end
   local S = frame.resolve()
   if not S.firstLoadFree then
-    log(WARNING, "resource grid: another module has changed the map drawing's "
-      .. "first load; the grid is disabled.")
+    log(ERROR, "The map editor resource grid is off. Another module uses the map drawing site.")
     return false
   end
 

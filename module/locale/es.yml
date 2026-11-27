@@ -6,9 +6,6 @@ counts_enabled_tooltip: |-
   Apunta a los botones Animales, Vegetación o Rocas para ver una descripción emergente con el total y el límite del juego, por ejemplo «Árboles y arbustos: 812/1999». La de Animales también muestra manadas y grupos, que tienen su propio límite.
   En el menú Animales, los botones de ciervo, camello, conejo y león muestran cuántos hay de cada uno; en el menú Vegetación, cada botón de árbol y arbusto muestra cuántos ejemplares hay de esa planta.
   Un botón rojo «i» sobre el botón de la llave activa o desactiva todo esto mientras trabajas.
-counts_shown: Mostrar números al abrir el editor
-counts_shown_tooltip: |-
-  Desactivado: los números empiezan ocultos y el botón «i» los muestra.
 trees_group: Árboles y arbustos
 trees_group_descr: |-
   Más opciones al colocar vegetación en el editor de terreno.
@@ -37,9 +34,6 @@ trees_obstacles_tooltip: |-
 trees_rocks_and_water: Casilla para vegetación sobre rocas y agua
 trees_rocks_and_water_tooltip: |-
   Casilla a la derecha del menú Vegetación, debajo de la de árboles junto a obstáculos (desactivada al inicio). Marcada, también permite colocar árboles y arbustos en pantano, río, vado, suelo rocoso, peñascos y grava.
-trees_sorted_rows: Ordenar las filas del menú Vegetación
-trees_sorted_rows_tooltip: |-
-  Mueve el arbusto de la fila superior a la inferior y ordena los arbustos de la fila inferior, de modo que la fila superior agrupa los árboles (con el manzano y la casilla) y la inferior todos los arbustos.
 trees_preview: Vista previa de árbol
 trees_preview_tooltip: |-
   Con un árbol o arbusto seleccionado, muestra en la casilla bajo el ratón el árbol que se plantaría, en la fase del pincel (o talado con sus troncos), tal como lo dibujará el juego. No se muestra con el zoom alejado.
@@ -52,9 +46,6 @@ textures_group_descr: |-
 textures_gravel_and_iron: Grava y hierro en el menú Texturas
 textures_gravel_and_iron_tooltip: |-
   Añade Grava a la fila superior y Hierro a la inferior, y reparte ambas filas de forma uniforme. La imagen de la grava es images/gravel.png (con gravel_hover.png y gravel_selected.png).
-textures_no_heights_iron: Hierro solo en el menú Texturas
-textures_no_heights_iron_tooltip: |-
-  Quita el botón de hierro del menú Alturas, ahora que el menú Texturas dispone de uno.
 textures_mask: Botón de máscara
 textures_mask_tooltip: |-
   Añade un botón de Máscara (un cuadrado medio relleno) en la esquina superior izquierda del menú del editor de terreno. Mientras está activo, las herramientas naturales (alturas, texturas, agua, árboles y arbustos, rocas y cuentagotas) solo modifican casillas con la misma textura que la primera casilla clicada; al soltar el ratón, el siguiente clic elige una nueva textura objetivo.
@@ -82,9 +73,6 @@ rocks_random_preview_tooltip: |-
 rocks_variants: Fila de variantes de roca
 rocks_variants_tooltip: |-
   Una fila sobre el menú Rocas muestra las cuatro variantes del tamaño de roca elegido, giradas tal como se colocarán. Haz clic en una para colocar solo esa variante; vuelve a hacer clic en ella o en cualquier botón del menú Rocas para recuperar el cambio automático.
-rocks_extra_rock: Roca pequeña adicional
-rocks_extra_rock_tooltip: |-
-  Para las rocas más pequeñas, la fila de variantes ofrece una quinta: una roca pequeña presente en el juego que el editor nunca coloca. Se guarda en el mapa como cualquier otra roca.
 rocks_invisible: Casilla de rocas invisibles
 rocks_invisible_tooltip: |-
   Añade una casilla a la derecha de los botones del menú Rocas. Marcada, cada roca que coloques es al instante una «roca invisible», sin tener que poner primero 4000 rocas: las casillas quedan ocupadas (no se puede construir ni caminar) pero no se dibuja ninguna roca, mostrando lo que había antes (el truco de las «2k piedras»). Desmárcala para rocas normales.
@@ -109,9 +97,6 @@ heights_tool_options_tooltip: |-
   - Para subir, bajar e igualar: Ajustar al rango (activado al inicio), Invertir (solo igualar), el rango de altura (8 a 156 al inicio; arrastra ambos extremos) y la intensidad. Con Ajustar al rango activado, las casillas fuera del rango se llevan dentro; desactivado, se dejan intactas. Invertir hace que igualar vuelva el terreno irregular en vez de suavizarlo.
   - Cambio de altura de rocas (Roca entera al inicio): qué hacen las herramientas a una roca tocada. Solo casilla mueve solo las casillas bajo el pincel; Roca entera mueve toda la roca por igual; Borrar roca la elimina, como siempre hizo Altura mínima.
   El rango, Ajustar al rango, Invertir y las casillas de ignorar vuelven a sus valores iniciales al salir del editor.
-heights_invert_key_on: Mantener pulsada para invertir igualar
-heights_invert_key_on_tooltip: |-
-  Mientras se mantiene pulsada esta tecla con la herramienta igualar elegida, vuelve irregular el terreno (como con Invertir marcado); al soltarla vuelve a suavizar.
 heights_invert_key: Tecla para invertir igualar
 heights_invert_key_tooltip: |-
   La tecla que se mantiene pulsada para invertir la herramienta igualar.
@@ -146,9 +131,6 @@ castle_keep_parts: Fortaleza sin hoguera ni almacén
 castle_keep_parts_tooltip: |-
   Con una fortaleza seleccionada, una fila sobre el menú de fortalezas ofrece dos formas más: «Solo fortaleza» (fortaleza y entrada, sin hoguera ni almacén) y «Sin almacén» (fortaleza, entrada y zona de hoguera). Volver a elegirla en el menú coloca la fortaleza completa.
   La vista previa y la comprobación de espacio solo cubren esas partes.
-castle_hover_text: Nombres de edificios más a la izquierda
-castle_hover_text_tooltip: |-
-  El nombre del edificio bajo el ratón («Fortaleza del jugador 1») se desplaza 100 píxeles a la izquierda para no solaparse con los contadores sobre el minimapa.
 castle_damaged_walls: Muros y escaleras dañados
 castle_damaged_walls_tooltip: |-
   Con escaleras, muro bajo, muro alto o almenas seleccionados, una fila sobre el menú de edificios de castillo los ofrece en modo «Dañado»: los muros colocados reciben la coronación de un muro dañado manteniendo su altura. Elegir el muro en el menú coloca de nuevo muros intactos.
@@ -193,24 +175,12 @@ pipette_enabled_tooltip: |-
   Añade el botón del cuentagotas sobre el tamaño del pincel (tamaño del pincel, regla y borrador bajan un poco).
   Al elegirlo aparece una fila sobre el menú —Alturas, Texturas, Objetos, Todo— y encima lo que contiene el cuentagotas. Haz clic en una casilla para tomar muestra (muestra una sola casilla) y luego haz clic o arrastra para aplicarla bajo el pincel. Alturas no altera el suelo, Texturas no altera las alturas. Objetos toma el edificio, muro, árbol o roca de una casilla: edificios y muros se colocan como desde su propio menú para el mismo jugador (se elige su escudo), árboles (mismo tipo y fase, o talado con los mismos troncos) y rocas (mismo tipo y giro) como con sus herramientas, arrastre incluido. Todo también toma un árbol o roca 1×1 y coloca uno en cada casilla bajo el pincel. Volver a elegir el cuentagotas o uno de sus modos lo vacía.
   No se aplican alturas a mar, playa, pantano, foso, rocas, muros ni edificios; ni texturas a rocas, muros o edificios. Las rocas de acantilado en pendientes fuertes se limpian y vuelven donde la pendiente siga siendo fuerte. Deshacer revierte también sus trazos.
-pipette_select_key_on: Tecla del cuentagotas
-pipette_select_key_on_tooltip: |-
-  Una tecla que elige (y vacía) el cuentagotas. Si se pulsa de nuevo con el cuentagotas activo, pasa al siguiente modo: Alturas, Texturas, Objetos, Todo.
 pipette_select_key: Tecla para el cuentagotas
 pipette_select_key_tooltip: |-
   La tecla que selecciona el cuentagotas en el editor de mapas. También mantiene su función habitual.
-pipette_read_key_on: Mantener para tomar muestra de casilla
-pipette_read_key_on_tooltip: |-
-  Mientras se mantiene pulsada esta tecla, un cuentagotas ya cargado vuelve a tomar una casilla (la anterior se conserva hasta hacer clic). Al soltarla vuelve a aplicar, si contiene algo.
 pipette_read_key: Tecla para tomar muestra de casilla
 pipette_read_key_tooltip: |-
   La tecla que se mantiene pulsada para tomar otra casilla mientras el cuentagotas ya contiene algo.
-pipette_any_tile_key_on: Mantener para aplicar a cualquier casilla
-pipette_any_tile_key_on_tooltip: |-
-  Experimental: mientras se mantiene pulsada esta tecla, el cuentagotas aplica alturas y texturas a todas las casillas bajo el pincel, incluidos mar, pantano, rocas (permanecen), muros y edificios (nunca el borde del mapa). No cambia dónde pueden colocarse objetos.
-pipette_any_tile_key: Tecla para aplicar a cualquier casilla
-pipette_any_tile_key_tooltip: |-
-  La tecla que se mantiene pulsada para que el cuentagotas ignore lo que haya en una casilla.
 key_letter_a: A
 key_letter_b: B
 key_letter_c: C
@@ -300,9 +270,6 @@ castle_unit_colour_tooltip: |-
 castle_keep_crests: Escudos de fortaleza activa
 castle_keep_crests_tooltip: |-
   Cada fortaleza muestra encima el escudo de su dueño; la fortaleza activa del jugador (donde aparecen el Señor, las unidades iniciales y los nuevos campesinos) aparece enmarcada. Haz clic en un escudo para activar esa fortaleza, o en el activo para dejar al jugador sin fortaleza activa. Una nueva fortaleza ya no quita el puesto automáticamente a la activa, y si se elimina la activa toma el relevo otra fortaleza del jugador. El almacén principal sigue siempre a la fortaleza activa (el juego conservaba antes el primer almacén colocado, de modo que con varias fortalezas la IA veía bloqueado su solar y no seguía ningún plano de castillo). Requiere «Varias fortalezas por jugador».
-castle_keep_crest_tooltip: Descripción del escudo de fortaleza
-castle_keep_crest_tooltip_tooltip: |-
-  Pasar el ratón sobre un escudo de fortaleza muestra su significado y qué hace un clic. Requiere «Escudos de fortaleza activa».
 castle_wall_tools: Alturas de muros y almenas libres
 castle_wall_tools_tooltip: |-
   Las almenas pueden colocarse solas. Su panel ofrece baja, alta, baja dañada y alta dañada. Un deslizador sobre el panel de muros fija por separado la altura de muros altos, muros bajos y almenas (0–255) y la inclinación de escaleras (0–16); Restablecer devuelve su valor habitual al elegido, y al salir del editor se restablecen todos.
@@ -315,9 +282,6 @@ trees_spread_outlines_tooltip: |-
 herds_bird_bins: Botones Borrar todos los cuervos / gaviotas
 herds_bird_bins_tooltip: |-
   Botones rojos de papelera a la derecha de los botones de cuervo y gaviota en el menú Animales: un clic elimina del mapa todos los cuervos (los árboles se quedan) o todas las gaviotas.
-herds_animal_bin: Botón Borrar todos los animales
-herds_animal_bin_tooltip: |-
-  Botón rojo de papelera a la derecha del menú Animales que elimina todos los animales del mapa, como Alt + E. Cuervos y gaviotas permanecen.
 herds_group_warning: Aviso de manadas y grupos
 herds_group_warning_tooltip: |-
   Cuando quedan menos de 200 manadas y grupos por crear, una línea arriba de la pantalla indica cuántos faltan, como la línea propia del juego para unidades.
@@ -330,9 +294,6 @@ eraser_seagulls_tooltip: |-
 map_settings_show_locked: Casilla Mostrar mapas bloqueados
 map_settings_show_locked_tooltip: |-
   Añade la casilla «Mostrar mapas bloqueados» en el diálogo Cargar del editor. Marcada, los mapas bloqueados aparecen al instante en la lista.
-map_settings_button: Botón Ajustes del mapa
-map_settings_button_tooltip: |-
-  Botón Ajustes del mapa en la pantalla de menú del mapa, a la derecha de Equilibrado / Desequilibrado e Invasión / Economía. Abre el menú Alt + ,.
 map_settings_menu: Menú Ajustes del mapa ampliado
 map_settings_menu_tooltip: |-
   El menú Alt + , recibe título, Un jugador y Multijugador, los cuatro tipos de mapa individual (Asedio, Invasión, Económico, Construcción libre), los cuatro tamaños más Personalizado y un deslizador de tamaño (de 10 a 400; aplica al soltar), Equilibrado, Rey de la colina, Bloquear mapa y un botón Atrás.
@@ -348,7 +309,7 @@ eraser_group_descr: |-
 map_settings_group: Ajustes del mapa
 map_settings_group_descr: |-
   Los ajustes del mapa: tipo, tamaño, bloqueo y los menús que los muestran.
-qol: Calidad de vida
+qol: Comodidad de juego
 grid_group: Cuadrícula de recursos
 grid_key: Atajo de cuadrícula (Alt+tecla)
 grid_outside_editor: Permitir la cuadrícula durante partidas
@@ -357,11 +318,8 @@ grid_hide_in_v_view: Ocultar en la vista de la tecla V
 grid_colour: Color de cuadrícula
 grid_rotation_group: Orientación del castillo
 grid_rotation_lines: Mostrar límites de rotación del castillo
-grid_rotation_colour: Color de límites
 grid_mine_group: Superficie de mina de hierro
 grid_mine_boxes: Mostrar superficie de mina de hierro
-grid_mine_colour: Color de superficie
-grid_mine_size: Anchura de superficie (casillas)
 grid_key_letter_g: Alt + G
 grid_key_letter_a: Alt + A
 grid_key_letter_b: Alt + B

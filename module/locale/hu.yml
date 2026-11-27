@@ -6,9 +6,6 @@ counts_enabled_tooltip: |-
   Vidd az egeret az Állatok, Növényzet vagy Sziklák gombra, hogy tipp mutassa a darabszámot és a játék korlátját, például „Fák és bokrok: 812/1999”. Az Állatok tippje a csordákat és csoportokat is mutatja, amelyeknek saját korlátjuk van.
   Az Állatok menüben a szarvas, teve, nyúl és oroszlán gombokon látható a darabszámuk; a Növényzet menüben minden fa- és bokorgombon szerepel az adott növény száma.
   A kulcs gomb feletti piros „i” gomb munka közben is ki- és bekapcsolja ezt.
-counts_shown: Számok megjelenítése a szerkesztő megnyitásakor
-counts_shown_tooltip: |-
-  Ki: a számok alapból rejtve indulnak, és az „i” gombbal jeleníthetők meg.
 trees_group: Fák és bokrok
 trees_group_descr: |-
   Több választási lehetőség növényzet elhelyezésekor a tájszerkesztőben.
@@ -37,9 +34,6 @@ trees_obstacles_tooltip: |-
 trees_rocks_and_water: Jelölőnégyzet sziklákra és vízre kerülő növényzethez
 trees_rocks_and_water_tooltip: |-
   Jelölőnégyzet a Növényzet menü jobb oldalán, az akadályok melletti fáké alatt (kezdetben kikapcsolva). Bepipálva fák és bokrok mocsárra, folyóra, gázlóra, sziklás talajra, sziklatömbökre és kavicsra is helyezhetők.
-trees_sorted_rows: A Növényzet menü sorainak rendezése
-trees_sorted_rows_tooltip: |-
-  Átteszi a felső sorból a bokrot az alsó sorba, és rendezi az alsó sor bokrait, így felül a fák (az almafával és a jelölőnégyzettel), alul pedig az összes bokor szerepel.
 trees_preview: Fa-előnézet
 trees_preview_tooltip: |-
   Fa vagy bokor kiválasztásakor az egér alatti mezőn megjelenik a lehelyezendő fa az ecset szerinti fokozatban (vagy kidöntve a megfelelő rönkszámmal), pontosan úgy, ahogy a játék kirajzolja. Kicsinyített nézetben nem látszik.
@@ -52,9 +46,6 @@ textures_group_descr: |-
 textures_gravel_and_iron: Kavics és vas a Textúrák menüben
 textures_gravel_and_iron_tooltip: |-
   Kaviccsal bővíti a felső sort és vassal az alsót, egyenletesen elosztva mindkét sort. A kavics képe az images/gravel.png (valamint gravel_hover.png és gravel_selected.png).
-textures_no_heights_iron: Vas csak a Textúrák menüben
-textures_no_heights_iron_tooltip: |-
-  Eltávolítja a vas gombot a Magasságok menüből, mivel a Textúrák menüben már van.
 textures_mask: Maszk gomb
 textures_mask_tooltip: |-
   Maszk gombot (félig kitöltött négyzet) ad a tájszerkesztő menüjének bal felső sarkába. Bekapcsolva a természeti eszközök (magasságok, textúrák, víz, fák és bokrok, sziklák és pipetta) csak azokat a mezőket módosítják, amelyek textúrája megegyezik az először kattintott mezőével; az egérgomb elengedése után a következő kattintás új céltextúrát választ.
@@ -82,9 +73,6 @@ rocks_random_preview_tooltip: |-
 rocks_variants: Sziklavariánsok sora
 rocks_variants_tooltip: |-
   A Sziklák menü feletti sor a választott sziklaméret négy variánsát mutatja a lehelyezési tájolásban. Kattints egyre, hogy csak azt rakja le; újabb kattintás rá vagy bármely Sziklák menügombra visszaállítja a váltakozást.
-rocks_extra_rock: Extra kis szikla
-rocks_extra_rock_tooltip: |-
-  A legkisebb szikláknál a variánssor egy ötödiket is kínál: egy kis sziklát, amely benne van a játékban, de a szerkesztő sosem helyezi le. Úgy mentődik, mint bármely másik szikla.
 rocks_invisible: Láthatatlan sziklák jelölőnégyzet
 rocks_invisible_tooltip: |-
   Jelölőnégyzetet ad a Sziklák menü gombjaitól jobbra. Bepipálva minden lerakott szikla rögtön „láthatatlan szikla” lesz, anélkül hogy előbb 4000 sziklát kellene lerakni: a mezők foglaltak (nem építhető és nem járható), de nem rajzolódik ki szikla, így a korábbi felszín marad látható (a „2k kő trükk”). Vedd ki a pipát a rendes sziklákhoz.
@@ -109,9 +97,6 @@ heights_tool_options_tooltip: |-
   - Emeléshez, süllyesztéshez és kiegyenlítéshez: Tartományhoz igazítás (kezdetben be), Megfordítás (csak kiegyenlítés), magasságtartomány (kezdetben 8–156; mindkét vége húzható) és erősség. Tartományhoz igazítással a tartományon kívüli mezők behúzódnak bele; kikapcsolva érintetlenek maradnak. A Megfordítás simítás helyett érdesíti a talajt.
   - Sziklamagasság változása (kezdetben Egész szikla): mit tegyenek az eszközök egy érintett sziklával. Csak mező csak az ecset alatti mezőket mozgatja; Egész szikla a szikla minden mezőjét együtt; Szikla törlése eltávolítja a sziklát, mint a minimális magasság.
   A tartomány, az igazítás, a megfordítás és a mellőzés dobozok a szerkesztőből kilépve visszaállnak alapértelmezettre.
-heights_invert_key_on: Tartsd lenyomva a kiegyenlítés megfordításához
-heights_invert_key_on_tooltip: |-
-  Ha ezt a billentyűt lenyomva tartod a kiegyenlítés eszköznél, a talajt érdesíti (mintha a Megfordítás be lenne pipálva); elengedve ismét simít.
 heights_invert_key: Billentyű a kiegyenlítés megfordításához
 heights_invert_key_tooltip: |-
   A kiegyenlítés eszköz megfordításához lenyomva tartandó billentyű.
@@ -146,9 +131,6 @@ castle_keep_parts: Vártorony tábortűz vagy raktár nélkül
 castle_keep_parts_tooltip: |-
   Vártorony kiválasztásakor a felette lévő sor két további módot kínál: „Csak vártorony” (vártorony és bejárat, tábortűz és raktár nélkül) és „Raktár nélkül” (vártorony, bejárat és tábortűzhely). A menüből választva ismét a teljes vártorony kerül le.
   Az előnézet és a helyellenőrzés csak ezeket a részeket vizsgálja.
-castle_hover_text: Épületnevek balrább
-castle_hover_text_tooltip: |-
-  Az egér alatti épület neve („1. játékos vártornya”) 100 pixellel balrább kerül, így nem ütközik a minitérkép feletti épületszámlálókkal.
 castle_damaged_walls: Sérült falak és lépcsők
 castle_damaged_walls_tooltip: |-
   Lépcső, alacsony fal, magas fal vagy pártázat kiválasztásakor a várépületek menüje feletti sor felkínálja a „Sérült” változatot: a lerakott falak sérült fal tetejét kapják megőrzött magassággal. A menüből választva ismét ép falak kerülnek le.
@@ -193,24 +175,12 @@ pipette_enabled_tooltip: |-
   Pipetta gombot ad az ecsetméret fölé (az ecsetméret, a vonalzó és a radír kissé lejjebb kerül).
   Kiválasztásakor egy sor jelenik meg a menü felett — Magasságok, Textúrák, Objektumok, Mind — és felette a pipetta tartalma. Kattints egy mezőre a felvételhez (a pipetta egyetlen mezőt mutat), majd kattints vagy húzd az ecsetet az átadáshoz. A Magasságok békén hagyja a textúrát, a Textúrák a magasságot. Az Objektumok felveszi a mező épületét, falát, fáját vagy szikláját: az épületek és falak ugyanúgy rakhatók le az eredeti játékosnak (annak címere kiválasztódik), a fák (azonos fajta és fokozat vagy kidöntött rönkszám) és sziklák (azonos fajta és forgatás) pedig saját eszközeik módján, húzással is. A Mind egy fát vagy 1×1-es sziklát is felvesz és minden ecset alatti mezőre letesz belőle. A pipetta vagy valamelyik módjának újbóli kiválasztása kiüríti azt.
   Magasság nem adható tengerre, partra, mocsárra, várárokra, sziklákra, falakra és épületekre; textúra nem adható sziklákra, falakra és épületekre. A meredek peremeken lévő szirtkövek törlődnek és visszajönnek, ahol a perem meredek marad. A visszavonás a pipettára is működik.
-pipette_select_key_on: Pipettabillentyű
-pipette_select_key_on_tooltip: |-
-  Billentyű, amely kiválasztja (és kiüríti) a pipettát. Ha a pipetta már aktív, újabb lenyomásra a következő módra lép: Magasságok, Textúrák, Objektumok, Mind.
 pipette_select_key: Billentyű a pipettához
 pipette_select_key_tooltip: |-
   A pipettát kiválasztó billentyű a térképszerkesztőben. Szokásos funkcióját is megtartja.
-pipette_read_key_on: Tartsd lenyomva mező felvételéhez
-pipette_read_key_on_tooltip: |-
-  Lenyomva tartva a már feltöltött pipetta újra felvesz egy mezőt (a régi a kattintásig megmarad). Elengedve ismét fest, ha van benne valami.
 pipette_read_key: Billentyű mező felvételéhez
 pipette_read_key_tooltip: |-
   Mező felvételéhez lenyomva tartandó billentyű, amikor a pipettában már van tartalom.
-pipette_any_tile_key_on: Tartsd lenyomva bármely mezőre festéshez
-pipette_any_tile_key_on_tooltip: |-
-  Kísérleti: lenyomva tartva a pipetta az ecset alatti minden mezőre átadja a magasságot és a textúrát, tengerre, mocsárra, sziklákra (amelyek megmaradnak), falakra és épületekre is (sosem a térkép szélére). Nem változtatja meg, hová helyezhetők objektumok.
-pipette_any_tile_key: Billentyű bármely mezőre festéshez
-pipette_any_tile_key_tooltip: |-
-  Billentyű, amellyel a pipetta figyelmen kívül hagyja a mezőn lévő elemeket.
 key_letter_a: A
 key_letter_b: B
 key_letter_c: C
@@ -300,9 +270,6 @@ castle_unit_colour_tooltip: |-
 castle_keep_crests: Aktív vártorony-címerek
 castle_keep_crests_tooltip: |-
   Minden vártorony felett látható a tulajdonosa címere; a játékos aktív vártornyán (ahol a lord, a kezdőegységek és az új parasztok megjelennek) kerettel. Kattints egy címerre a vártorony aktiválásához, vagy az aktívra, hogy ne legyen aktív vártornya a játékosnak. Az új vártorony nem veszi át automatikusan az aktív szerepet, és ha az aktívat törlik, a játékos egy másik vártornya veszi át. A fő raktár mindig követi az aktív vártornyot (különben a játék az elsőként lerakott raktárat őrizte meg, így több vártoronynál az MI blokkolva találta a várhelyét és nem épített terv szerint). A „Több vártorony játékosonként” opciót igényli.
-castle_keep_crest_tooltip: Vártorony-címer tippje
-castle_keep_crest_tooltip_tooltip: |-
-  Vártorony címerére mutatva megjeleníti a jelentését és a kattintás hatását. Az „Aktív vártorony-címerek” opciót igényli.
 castle_wall_tools: Falmagasságok és szabad pártázatok
 castle_wall_tools_tooltip: |-
   A pártázatok önállóan is megállnak. Paneljük alacsony, magas, sérült alacsony és sérült magas változatot kínál. A falpanel feletti csúszka külön állítja a magas falak, alacsony falak és pártázatok magasságát (0–255) és a lépcsők meredekségét (0–16); a melletti Visszaállítás visszaadja a kiválasztott alapértékét, a szerkesztőből kilépve pedig mind visszaáll.
@@ -315,9 +282,6 @@ trees_spread_outlines_tooltip: |-
 herds_bird_bins: Összes varjú / sirály törlése gombok
 herds_bird_bins_tooltip: |-
   Piros kuka gombok a varjú és a sirály gombjától jobbra az Állatok menüben: egy kattintással eltávolítanak minden varjút (a fák maradnak) vagy minden sirályt a térképről.
-herds_animal_bin: Összes állat törlése gomb
-herds_animal_bin_tooltip: |-
-  Piros kuka gomb az Állatok menü jobb oldalán, amely az Alt + E-hez hasonlóan minden állatot töröl a térképről. A varjak és sirályok maradnak.
 herds_group_warning: Csordák és csoportok figyelmeztetés
 herds_group_warning_tooltip: |-
   Ha 200-nál kevesebb csorda és csoport hozható még létre, a képernyő tetején egy sor jelzi a maradék számot, akárcsak a játék egységsora.
@@ -330,9 +294,6 @@ eraser_seagulls_tooltip: |-
 map_settings_show_locked: „Zárolt térképek mutatása” négyzet
 map_settings_show_locked_tooltip: |-
   „Zárolt térképek mutatása” jelölőnégyzet a szerkesztő Betöltés ablakában. Bepipálva a zárolt térképek is megjelennek; a lista azonnal frissül.
-map_settings_button: Térképbeállítások gomb
-map_settings_button_tooltip: |-
-  Térképbeállítások gomb a térkép menüképernyőjén, a Kiegyensúlyozott / Kiegyensúlyozatlan és Invázió / Gazdasági gomboktól jobbra. Az Alt + , menüt nyitja meg.
 map_settings_menu: Nagyobb Térképbeállítások menü
 map_settings_menu_tooltip: |-
   Az Alt + , menü címet, Egyjátékos és Többjátékos választást, a négy egyjátékos térképtípust (Ostrom, Invázió, Gazdasági, Szabad építés), a négy térképméretet plusz Egyénit és egy Térképméret csúszkát (10-től 400-ig; elengedéskor alkalmazódik), Kiegyensúlyozott, Domb királya, Térkép zárolása és Vissza gombot kap.
@@ -357,11 +318,8 @@ grid_hide_in_v_view: Elrejtés a V nézetben
 grid_colour: Rács színe
 grid_rotation_group: Vár tájolása
 grid_rotation_lines: Várforgatási határok mutatása
-grid_rotation_colour: Határ színe
 grid_mine_group: Vasbánya helyigénye
 grid_mine_boxes: Vasbánya helyének mutatása
-grid_mine_colour: Alaprajz színe
-grid_mine_size: Alaprajz szélessége (mező)
 grid_key_letter_g: Alt + G
 grid_key_letter_a: Alt + A
 grid_key_letter_b: Alt + B

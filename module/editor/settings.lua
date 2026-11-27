@@ -238,13 +238,17 @@ function C.enableMapSettings(self, O, G)
           item = item + MENU_ITEM_SIZE
         end
         if not toggle then
-          log(WARNING, MODULE_NAME .. ": could not rebind Show locked maps in the Load dialog")
+          log(ERROR, "Show locked maps is off. The Load control could not be restored.")
         end
       end)
     end)
-    if not ok then log(WARNING, tostring(problem) .. "; the Load dialog has no Show locked maps box") end
+    if not ok then
+      log(ERROR, "Show locked maps is off.")
+      log(WARNING, tostring(problem))
+    end
   end
 
+  local buttonFailed = false
   -- 38.2: the Map Settings button on the map's menu screen.
   if O.settingsButton then
     local ok, problem = pcall(function()
@@ -257,14 +261,22 @@ function C.enableMapSettings(self, O, G)
       ensure()
       hooks.registerHookCallback("afterInit", ensure)
     end)
-    if not ok then log(WARNING, tostring(problem) .. "; the map menu has no Map Settings button") end
+    if not ok then
+      buttonFailed = true
+      log(WARNING, tostring(problem))
+    end
   end
 
   -- 38.3-38.9: the menu itself.
   if O.settingsMenu then
     local ok, problem = pcall(C.settingsMenu, self, G, S, draw, open)
-    if not ok then log(WARNING, tostring(problem) .. "; the Map settings menu is left as it is") end
+    if not ok then
+      log(ERROR, "Expanded Map Settings is off.")
+      log(WARNING, tostring(problem))
+      return
+    end
   end
+  if buttonFailed then log(ERROR, "The Map Settings button is off.") end
 end
 
 function C.settingsMenu(self, G, S, draw, open)

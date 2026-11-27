@@ -150,6 +150,19 @@ end
 -- Enable
 ---------------------------------------------------------------------------------------
 
+local function pairedSettings(config, group, switch, first, second)
+  local value = setting(config, group, switch)
+  if type(value) == "boolean" then return value, value end
+  return setting(config, group, first) == true, setting(config, group, second) == true
+end
+
+local function shortcut(config, group, choice, enabled, key)
+  local value = setting(config, group, choice)
+  if value == "off" then return nil end
+  if value ~= nil and value ~= "configured" then return value end
+  if setting(config, group, enabled) == true then return setting(config, group, key) end
+end
+
 local function enable(self, config)
   config = config or {}
   -- Undo first: its buttons go into the menus below.
@@ -170,6 +183,8 @@ local function enable(self, config)
       log(WARNING, tostring(result))
     end
   end
+  local sortedRows, spreadOrder = pairedSettings(config, "trees", "group_by_spread", "sorted_rows", "spread_order")
+  local variants, extraRock = pairedSettings(config, "rocks", "variant_row", "variants", "extra_rock")
   local O = {
     counts = setting(config, "counts", "enabled") == true,
     shown = setting(config, "counts", "shown") == true,
@@ -179,11 +194,11 @@ local function enable(self, config)
     felled = setting(config, "trees", "felled") == true,
     obstacles = setting(config, "trees", "obstacles") == true,
     rocksAndWater = setting(config, "trees", "rocks_and_water") == true,
-    sortedRows = setting(config, "trees", "sorted_rows") == true,
+    sortedRows = sortedRows,
     randomMix = setting(config, "trees", "random_mix") == true,
     textures = setting(config, "textures", "gravel_and_iron") == true,
-    variants = setting(config, "rocks", "variants") == true,
-    extraRock = setting(config, "rocks", "extra_rock") == true,
+    variants = variants,
+    extraRock = extraRock,
     rockPlaced = rockPlaced,
     herds = setting(config, "herds", "panel") == true,
     invisibleRocks = setting(config, "rocks", "invisible") == true,
@@ -195,7 +210,7 @@ local function enable(self, config)
     maxHeight = setting(config, "heights", "max_height") == true,
     heightTools = setting(config, "heights", "tool_options") == true,
     lostRocks = setting(config, "rocks", "remove_lost") == true,
-    invertKey = setting(config, "heights", "invert_key_on") == true and setting(config, "heights", "invert_key") or nil,
+    invertKey = shortcut(config, "heights", "invert_shortcut", "invert_key_on", "invert_key"),
     textureMask = setting(config, "textures", "mask") == true,
     maskByType = setting(config, "textures", "mask_by_type") == true,
     birdButtons = setting(config, "herds", "bird_bins") == true,
@@ -203,20 +218,26 @@ local function enable(self, config)
     groupWarning = setting(config, "herds", "group_warning") == true,
     eraserChoice = setting(config, "eraser", "choice") == true,
     eraseGulls = setting(config, "eraser", "seagulls") == true,
-    spreadOrder = setting(config, "trees", "spread_order") == true,
+    spreadOrder = spreadOrder,
     spreadOutlines = setting(config, "trees", "spread_outlines") == true,
     compass = setting(config, "menu", "compass") == true,
     undo = self.undo,
   }
   if setting(config, "pipette", "enabled") == true then
+    local selectKey = shortcut(config, "pipette", "select_shortcut", "select_key_on", "select_key")
+    local readKey = shortcut(config, "pipette", "read_shortcut", "read_key_on", "read_key")
     O.pipette = {
-      selectKeyOn = setting(config, "pipette", "select_key_on") == true, selectKey = setting(config, "pipette", "select_key"),
-      readKeyOn = setting(config, "pipette", "read_key_on") == true, readKey = setting(config, "pipette", "read_key"),
+      selectKeyOn = selectKey ~= nil, selectKey = selectKey,
+      readKeyOn = readKey ~= nil, readKey = readKey,
       anyKeyOn = setting(config, "pipette", "any_tile_key_on") == true, anyKey = setting(config, "pipette", "any_tile_key"),
     }
   end
+  local buildingCounts, hoverTextLeft =
+    pairedSettings(config, "castle", "show_building_counts", "building_counts", "hover_text_left")
+  local keepCrests, crestTooltip =
+    pairedSettings(config, "castle", "active_keep_crests", "keep_crests", "keep_crest_tooltip")
   local castle = {
-    buildingCounts = setting(config, "castle", "building_counts") == true,
+    buildingCounts = buildingCounts,
     towerRuins = setting(config, "castle", "tower_ruins") == true,
     armyExtras = setting(config, "castle", "tunnel_and_tents") == true,
     statues = setting(config, "castle", "statues_and_shrines") == true,
@@ -235,10 +256,10 @@ local function enable(self, config)
     allPlayers = setting(config, "castle", "all_players") == true,
     allKeeps = setting(config, "castle", "all_keeps") == true,
     playerZero = setting(config, "castle", "player_zero") == true,
-    keepCrests = setting(config, "castle", "keep_crests") == true,
-    crestTooltip = setting(config, "castle", "keep_crest_tooltip") == true,
+    keepCrests = keepCrests,
+    crestTooltip = crestTooltip,
     wallTools = setting(config, "castle", "wall_tools") == true,
-    hoverTextLeft = setting(config, "castle", "hover_text_left") == true,
+    hoverTextLeft = hoverTextLeft,
     moatKinds = setting(config, "castle", "moat_kinds") == true,
     moatOnMarsh = setting(config, "castle", "moat_on_marsh") == true,
     moatRemoval = setting(config, "castle", "moat_removal_keeps_ground") == true,
@@ -256,10 +277,11 @@ local function enable(self, config)
       log(WARNING, tostring(problem))
     end
   end
+  local settingsButton, settingsMenu = pairedSettings(config, "map_settings", "expanded", "button", "menu")
   local settings = {
     lockedMaps = setting(config, "map_settings", "show_locked") == true,
-    settingsButton = setting(config, "map_settings", "button") == true,
-    settingsMenu = setting(config, "map_settings", "menu") == true,
+    settingsButton = settingsButton,
+    settingsMenu = settingsMenu,
   }
   if settings.lockedMaps or settings.settingsButton or settings.settingsMenu then
     local ok, problem = pcall(function()
@@ -308,8 +330,8 @@ local function enable(self, config)
       log(WARNING, tostring(problem))
     end
   end
-  for _, entry in ipairs({ { "size_refresh", C.patchSizeRefresh, "smaller map sizes need a reload" },
-      { "camera_edge", C.patchCameraEdge, "the camera stops short of the map edge" } }) do
+  for _, entry in ipairs({ { "size_refresh", C.patchSizeRefresh, "Immediate updates for smaller maps are off." },
+      { "camera_edge", C.patchCameraEdge, "Full map-edge scrolling is off." } }) do
     if setting(config, "map_settings", entry[1]) == true then
       local ok, problem = pcall(function()
         local G = self.landscape
@@ -320,7 +342,10 @@ local function enable(self, config)
         end
         entry[2](self, G)
       end)
-      if not ok then log(WARNING, tostring(problem) .. "; " .. entry[3]) end
+      if not ok then
+        log(ERROR, entry[3])
+        log(WARNING, tostring(problem))
+      end
     end
   end
   if setting(config, "menu", "compass_turn") == true then
@@ -366,9 +391,10 @@ local function enable(self, config)
   end
   if not gridOn then frame.remove("grid") end
   -- Last: the map drawing's patch site with every routine the features above added.
-  frame.commit(self, function(problem)
-    log(WARNING, tostring(problem) .. (gridOn and "; no resource grid, " or "; ")
-      .. "the tree preview only shows with the menu")
+  frame.commit(self, function(problem, editorOverlay)
+    if gridOn then log(ERROR, "The map editor resource grid is off. Map drawing could not be installed.") end
+    if editorOverlay then log(ERROR, "Map editor previews and warnings over the map are off.") end
+    log(WARNING, tostring(problem))
   end)
 end
 

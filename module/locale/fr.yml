@@ -6,9 +6,6 @@ counts_enabled_tooltip: |-
   Survolez les boutons Animaux, Végétation ou Rochers pour afficher une infobulle indiquant le total et la limite du jeu, par exemple « Arbres et buissons : 812/1999 ». L'infobulle Animaux indique également les troupeaux et groupes, qui ont leur propre limite.
   Dans le menu Animaux, les boutons cerf, chameau, lapin et lion affichent leur nombre ; dans le menu Végétation, chaque bouton d'arbre et de buisson affiche le nombre de plantes de ce type.
   Un bouton « i » rouge au-dessus du bouton clé permet d'activer ou de masquer tout cela en cours d'édition.
-counts_shown: Afficher les compteurs à l'ouverture de l'éditeur
-counts_shown_tooltip: |-
-  Désactivé : les compteurs sont masqués au départ et le bouton « i » permet de les afficher.
 trees_group: Arbres et buissons
 trees_group_descr: |-
   Plus de choix lors du placement de la végétation dans l'éditeur de paysage.
@@ -37,9 +34,6 @@ trees_obstacles_tooltip: |-
 trees_rocks_and_water: Case à cocher pour la végétation sur rochers et eau
 trees_rocks_and_water_tooltip: |-
   Case à cocher à droite du menu Végétation, sous celle des arbres près des obstacles (décochée au départ). Cochée, les arbres et buissons peuvent aussi être placés sur les marais, rivières, gués, sols rocheux, blocs et graviers.
-trees_sorted_rows: Ranger les rangées du menu Végétation
-trees_sorted_rows_tooltip: |-
-  Déplace le buisson de la rangée du haut vers celle du bas et trie les buissons du bas, afin que la rangée du haut regroupe les arbres (avec le pommier et la case à cocher) et celle du bas tous les buissons.
 trees_preview: Aperçu d'arbre
 trees_preview_tooltip: |-
   Lorsqu'un arbre ou un buisson est sélectionné, l'arbre qui serait planté s'affiche sur la case sous la souris, au stade du pinceau (ou abattu avec ses rondins), tel que le jeu le dessinera. Désactivé en vue dézoomée.
@@ -52,9 +46,6 @@ textures_group_descr: |-
 textures_gravel_and_iron: Gravier et fer dans le menu Textures
 textures_gravel_and_iron_tooltip: |-
   Ajoute le Gravier à la rangée supérieure et le Fer à la rangée inférieure, et répartit les deux rangées uniformément. L'image du gravier est images/gravel.png (avec gravel_hover.png et gravel_selected.png).
-textures_no_heights_iron: Fer uniquement dans le menu Textures
-textures_no_heights_iron_tooltip: |-
-  Retire le bouton Fer du menu Reliefs, maintenant que le menu Textures en possède un.
 textures_mask: Bouton Masque
 textures_mask_tooltip: |-
   Ajoute un bouton Masque (un carré à moitié rempli) en haut à gauche du menu de l'éditeur de paysage. Lorsqu'il est actif, les outils naturels (reliefs, textures, eau, arbres et buissons, rochers et pipette) ne modifient que les cases ayant la même texture que la première case cliquée ; une fois le bouton de souris relâché, le clic suivant choisit une nouvelle texture cible.
@@ -82,9 +73,6 @@ rocks_random_preview_tooltip: |-
 rocks_variants: Rangée de variantes de rochers
 rocks_variants_tooltip: |-
   Une rangée au-dessus du menu Rochers affiche les quatre variantes de la taille de rocher choisie, orientées telles qu'elles seront posées. Cliquez sur l'une d'elles pour ne placer que cette variante ; cliquez de nouveau dessus ou sur un bouton du menu Rochers pour revenir à l'alternance normale du jeu.
-rocks_extra_rock: Petit rocher supplémentaire
-rocks_extra_rock_tooltip: |-
-  Pour les plus petits rochers, la rangée de variantes en propose un cinquième : un petit rocher présent dans le jeu mais que l'éditeur ne place jamais. Il est sauvegardé dans la carte comme n'importe quel autre rocher.
 rocks_invisible: Case à cocher pour les rochers invisibles
 rocks_invisible_tooltip: |-
   Ajoute une case à cocher à droite des boutons du menu Rochers. Cochée, chaque rocher placé est immédiatement un « rocher invisible » sans avoir à poser 4000 rochers d'abord : les cases sont occupées (impossible d'y bâtir ou d'y marcher) mais aucun rocher n'est dessiné, laissant visible ce qui s'y trouvait (l'astuce des « 2k pierres »). Décochez pour poser des rochers normaux.
@@ -109,9 +97,6 @@ heights_tool_options_tooltip: |-
   - Pour élever, abaisser et égaliser : Ajuster à la plage (activé au départ), Inverser (égaliser uniquement), la plage de hauteur (8 à 156 au départ ; faites glisser chaque extrémité) et la force. Avec Ajuster à la plage activé, les cases hors plage y sont ramenées comme dans le jeu ; désactivé, elles restent intactes. Inverser fait qu'égaliser rend le terrain plus accidenté au lieu de le lisser.
   - Changement de hauteur des rochers (Rocher entier au départ) : comportement sur un rocher touché. Case seule ne déplace que les cases sous le pinceau ; Rocher entier déplace toutes les cases du rocher d'un bloc ; Effacer le rocher le supprime, comme le faisait Hauteur minimale.
   La plage, Ajuster à la plage, Inverser et les cases d'exclusion reviennent par défaut en quittant l'éditeur de cartes.
-heights_invert_key_on: Maintenir pour inverser l'égalisation
-heights_invert_key_on_tooltip: |-
-  Tant que cette touche est maintenue avec l'outil égaliser sélectionné, celui-ci rend le sol accidenté (comme avec Inverser coché) ; relâchez-la pour lisser de nouveau.
 heights_invert_key: Touche pour inverser l'égalisation
 heights_invert_key_tooltip: |-
   La touche à maintenir pour inverser l'outil égaliser.
@@ -146,9 +131,6 @@ castle_keep_parts: Donjon sans feu de camp ni réserve
 castle_keep_parts_tooltip: |-
   Lorsqu'un donjon est sélectionné, une rangée au-dessus du menu des donjons propose deux variantes supplémentaires : « Donjon seul » (donjon et entrée, sans feu de camp ni réserve) et « Sans réserve » (donjon, entrée et aire du feu de camp). Sélectionner un donjon dans le menu replace le donjon complet.
   L'aperçu et la vérification d'espace ne portent que sur ces éléments.
-castle_hover_text: Noms de bâtiments plus à gauche
-castle_hover_text_tooltip: |-
-  Le nom du bâtiment sous la souris (« Donjon du joueur 1 ») est décalé de 100 pixels vers la gauche afin de ne plus chevaucher les compteurs de bâtiments au-dessus de la minicarte.
 castle_damaged_walls: Murs et escaliers endommagés
 castle_damaged_walls_tooltip: |-
   Lorsque les escaliers, le mur bas, le mur haut ou les créneaux sont choisis, une rangée au-dessus du menu des bâtiments de château les propose en version « Endommagé » : les murs posés prennent l'aspect crénelé endommagé tout en gardant leur hauteur. Resélectionner le mur dans le menu replace des murs intacts.
@@ -193,24 +175,12 @@ pipette_enabled_tooltip: |-
   Ajoute le bouton pipette au-dessus de la taille du pinceau (taille du pinceau, règle et gomme descendent légèrement).
   Lorsqu'elle est choisie, une rangée apparaît au-dessus du menu — Reliefs, Textures, Objets, Tout — avec au-dessus ce que contient la pipette. Cliquez sur une case pour prélever (la pipette affiche une seule case), puis cliquez ou glissez pour appliquer aux cases sous le pinceau. Reliefs laisse le sol intact, Textures laisse les hauteurs intactes. Objets prélève le bâtiment, mur, arbre ou rocher d'une case : bâtiments et murs se placent alors comme depuis leur propre menu pour le même joueur (son écusson est sélectionné), arbres (même type et stade, ou abattu avec le même nombre de rondins) et rochers (même type et rotation) comme avec leurs outils respectifs, glisser compris. Tout prélève aussi un arbre ou un rocher 1×1 pour en placer un sur chaque case sous le pinceau. Resélectionner la pipette ou l'un de ses modes la vide.
   Les hauteurs ne sont pas appliquées à mer, plage, marais, douves, rochers, murs ou bâtiments ; les textures non plus aux rochers, murs ou bâtiments. Les rochers de falaise sur pentes raides sont effacés puis recréés là où la pente reste raide. Annuler fonctionne aussi pour la pipette.
-pipette_select_key_on: Touche de la pipette
-pipette_select_key_on_tooltip: |-
-  Une touche qui sélectionne la pipette (et la vide). Pressée de nouveau quand la pipette est active, elle passe au mode suivant : Reliefs, Textures, Objets, Tout.
 pipette_select_key: Touche pour la pipette
 pipette_select_key_tooltip: |-
   La touche qui sélectionne la pipette dans l'éditeur de cartes. Elle conserve aussi son rôle habituel.
-pipette_read_key_on: Maintenir pour prélever une case
-pipette_read_key_on_tooltip: |-
-  Tant que cette touche est maintenue, une pipette déjà remplie prélève de nouveau une case (l'ancienne reste en mémoire jusqu'au clic). Relâchez pour appliquer de nouveau, si elle contient quelque chose.
 pipette_read_key: Touche pour prélever une case
 pipette_read_key_tooltip: |-
   La touche à maintenir pour prélever une case alors que la pipette est déjà remplie.
-pipette_any_tile_key_on: Maintenir pour appliquer à n'importe quelle case
-pipette_any_tile_key_on_tooltip: |-
-  Expérimental : tant que cette touche est maintenue, la pipette applique hauteurs et textures à toutes les cases sous le pinceau, y compris mer, marais, rochers (qui restent), murs et bâtiments (jamais le bord de la carte). Ne change pas les règles de placement des objets.
-pipette_any_tile_key: Touche pour appliquer à toute case
-pipette_any_tile_key_tooltip: |-
-  La touche à maintenir pour que la pipette ignore ce qui se trouve sur une case.
 key_letter_a: A
 key_letter_b: B
 key_letter_c: C
@@ -300,9 +270,6 @@ castle_unit_colour_tooltip: |-
 castle_keep_crests: Écussons de donjon actif
 castle_keep_crests_tooltip: |-
   Chaque donjon affiche l'écusson de son propriétaire au-dessus de lui ; le donjon actif du joueur (où apparaissent le seigneur, les unités de départ et les nouveaux paysans) est encadré. Cliquez sur un écusson pour activer ce donjon, ou sur l'écusson actif pour laisser le joueur sans donjon actif. Un nouveau donjon ne remplace plus automatiquement l'actif, et si l'actif est supprimé, un autre donjon du joueur prend le relais. La réserve principale suit toujours le donjon actif (sinon le jeu gardait la première réserve posée, bloquant l'emplacement de l'IA avec plusieurs donjons). Nécessite « Plusieurs donjons par joueur ».
-castle_keep_crest_tooltip: Infobulle des écussons de donjon
-castle_keep_crest_tooltip_tooltip: |-
-  Survoler un écusson de donjon indique sa signification et l'effet d'un clic. Nécessite « Écussons de donjon actif ».
 castle_wall_tools: Hauteurs de murs et créneaux libres
 castle_wall_tools_tooltip: |-
   Les créneaux peuvent tenir seuls. Leur panneau propose Bas, Haut, Bas endommagé et Haut endommagé. Un curseur au-dessus du panneau des murs règle séparément la hauteur des murs hauts, murs bas et créneaux (0 à 255) ainsi que la pente des escaliers (0 à 16) ; Réinitialiser à côté rend la valeur habituelle au type choisi, et quitter l'éditeur les réinitialise tous.
@@ -315,9 +282,6 @@ trees_spread_outlines_tooltip: |-
 herds_bird_bins: Boutons Effacer tous les corbeaux / mouettes
 herds_bird_bins_tooltip: |-
   Boutons corbeille rouges à droite des boutons corbeau et mouette dans le menu Animaux : un clic retire de la carte tous les corbeaux (les arbres restent) ou toutes les mouettes.
-herds_animal_bin: Bouton Effacer tous les animaux
-herds_animal_bin_tooltip: |-
-  Un bouton corbeille rouge à droite du menu Animaux qui retire tous les animaux de la carte, comme Alt + E. Les corbeaux et les mouettes restent.
 herds_group_warning: Avertissement troupeaux et groupes
 herds_group_warning_tooltip: |-
   Lorsqu'il reste moins de 200 troupeaux et groupes disponibles, une ligne en haut de l'écran indique combien il en reste, comme la ligne du jeu pour les unités.
@@ -330,9 +294,6 @@ eraser_seagulls_tooltip: |-
 map_settings_show_locked: Case « Afficher les cartes verrouillées »
 map_settings_show_locked_tooltip: |-
   Ajoute une case « Afficher les cartes verrouillées » dans la fenêtre Charger de l'éditeur. Cochée, les cartes verrouillées apparaissent dans la liste immédiatement.
-map_settings_button: Bouton Paramètres de la carte
-map_settings_button_tooltip: |-
-  Ajoute un bouton Paramètres de la carte sur l'écran de menu de la carte, à droite des boutons Équilibrée / Déséquilibrée et Invasion / Économie. Ouvre le menu Alt + ,.
 map_settings_menu: Menu Paramètres de la carte étendu
 map_settings_menu_tooltip: |-
   Le menu Alt + , reçoit un titre, Solo et Multijoueur, les quatre types de cartes solo (Siège, Invasion, Économique, Construction libre), les quatre tailles plus Personnalisée et un curseur de taille de carte (10 à 400 ; appliqué au relâchement), Équilibrée, Roi de la colline, Verrouiller la carte et un bouton Retour.
@@ -357,11 +318,8 @@ grid_hide_in_v_view: Masquer dans la vue V
 grid_colour: Couleur de la grille
 grid_rotation_group: Orientation du château
 grid_rotation_lines: Afficher les limites de rotation du château
-grid_rotation_colour: Couleur des limites
 grid_mine_group: Emprise de la mine de fer
 grid_mine_boxes: Afficher l'emprise de la mine de fer
-grid_mine_colour: Couleur de l'emprise
-grid_mine_size: Largeur de l'emprise (cases)
 grid_key_letter_g: Alt + G
 grid_key_letter_a: Alt + A
 grid_key_letter_b: Alt + B

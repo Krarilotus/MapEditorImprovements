@@ -95,7 +95,10 @@ local function patchTrees(self, G, O, data)
         BACK = site + K.TREE_GROUND.size,
       }))
     end)
-    if not ok then log(WARNING, tostring(problem) .. "; vegetation stays off rocks and water") end
+    if not ok then
+      log(ERROR, "Planting vegetation on rocks and water is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if O.noStacking then C.patchEraseStacks(self, G) end
   if O.waterDecorations then C.patchRiverDecorations(self) end

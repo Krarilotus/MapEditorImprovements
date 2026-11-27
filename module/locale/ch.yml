@@ -6,9 +6,6 @@ counts_enabled_tooltip: |-
   将鼠标指向“动物”、“植被”或“岩石”按钮即可看到当前数量和游戏上限提示，例如“树木和灌木：812/1999”。“动物”提示还会显示兽群与编队数量（它们有单独上限）。
   在“动物”菜单中，鹿、骆驼、兔子和狮子按钮会各自显示数量；在“植被”菜单中，每个树木和灌木按钮都会显示对应植物的数量。
   钥匙按钮上方的红色“i”按钮可在编辑过程中随时开关此显示。
-counts_shown: 打开编辑器时默认显示数字
-counts_shown_tooltip: |-
-  关闭：数字初始为隐藏状态，可通过“i”按钮呼出。
 trees_group: 树木与灌木
 trees_group_descr: |-
   在地形编辑器中放置植被时提供更多选择。
@@ -37,9 +34,6 @@ trees_obstacles_tooltip: |-
 trees_rocks_and_water: 允许植被放置在岩石和水面上的勾选框
 trees_rocks_and_water_tooltip: |-
   位于植被菜单右侧、“紧贴障碍物”勾选框下方（默认关闭）。勾选后，树木和灌木也可放置在沼泽、河流、浅滩、岩石地面、巨石和碎石上。
-trees_sorted_rows: 整理植被菜单排列
-trees_sorted_rows_tooltip: |-
-  将顶行的灌木移至底行并整理底行灌木顺序，使顶行统一放置树木（含苹果树和勾选框），底行统一放置全部灌木。
 trees_preview: 树木预览
 trees_preview_tooltip: |-
   选中树木或灌木时，会在鼠标所在格子上按游戏实际绘制效果预览即将种植的树木，包含笔刷生长阶段（或所选原木数的倒伏状态）。缩小地图视图时不显示。
@@ -52,9 +46,6 @@ textures_group_descr: |-
 textures_gravel_and_iron: 在纹理菜单中添加碎石和铁矿
 textures_gravel_and_iron_tooltip: |-
   在顶行添加碎石、在底行添加铁矿，并将两行按钮均匀排布。碎石图片为 images/gravel.png（及 gravel_hover.png、gravel_selected.png）。
-textures_no_heights_iron: 仅在纹理菜单保留铁矿
-textures_no_heights_iron_tooltip: |-
-  既然纹理菜单已有铁矿按钮，便将其从高度菜单中移除。
 textures_mask: 蒙版按钮
 textures_mask_tooltip: |-
   在地形编辑器菜单左上角添加一个蒙版按钮（半填充正方形）。开启时，自然工具（高度、纹理、水域、树木灌木、岩石和吸管）只会修改与首次点击格子相同纹理的格子；松开鼠标后，下一次点击会重新选定目标纹理。
@@ -82,9 +73,6 @@ rocks_random_preview_tooltip: |-
 rocks_variants: 岩石外观变体栏
 rocks_variants_tooltip: |-
   岩石菜单上方的一排按钮会按即将放置的朝向展示所选尺寸的四种岩石变体。点击某一种即可固定只放该变体；再次点击或点击岩石菜单中的任意按钮即可恢复游戏原有的轮换。
-rocks_extra_rock: 额外小型岩石
-rocks_extra_rock_tooltip: |-
-  对于最小尺寸的岩石，变体栏会额外提供第五种变体：游戏内置但编辑器从未放置过的小岩石。它会像其他岩石一样保存到地图中。
 rocks_invisible: 隐形岩石勾选框
 rocks_invisible_tooltip: |-
   在岩石菜单按钮右侧添加勾选框。勾选后，每次放置的岩石都会立刻成为“隐形岩石”，无需先放满 4000 块岩石：格子会被占用（不可建造也不可通行），但不绘制岩石模型，从而保留原有地表外观（即“2k 石头技巧”）。取消勾选恢复普通岩石。
@@ -109,9 +97,6 @@ heights_tool_options_tooltip: |-
   - 适用于抬升、降低与平整：吸附到范围（默认开启）、反转（仅平整）、高度范围（默认 8 到 156，两端可拖动）和强度。开启“吸附到范围”时范围外的格子会被拉回范围内；关闭时保持不动。“反转”使平整工具变为制造起伏而非平滑地形。
   - 岩石高度变化（默认“整块岩石”）：高度工具对触及岩石的处理方式。“仅单格”只移动笔刷下的格子；“整块岩石”将整块岩石同步升降；“擦除岩石”直接删除岩石（同“最小高度”）。
   离开地图编辑器时，范围、吸附、反转和忽略勾选框会恢复默认。
-heights_invert_key_on: 按住快捷键反转平整工具
-heights_invert_key_on_tooltip: |-
-  使用平整工具时按住此键会使地面变得崎岖（等同勾选“反转”），松开后恢复平滑。
 heights_invert_key: 反转平整工具的按键
 heights_invert_key_tooltip: |-
   用于按住反转平整工具的按键。
@@ -146,9 +131,6 @@ castle_keep_parts: 无篝火或无储藏区的主堡
 castle_keep_parts_tooltip: |-
   选中任意主堡时，主堡菜单上方额外提供两种模式：“仅主堡”（主堡与入口，无篝火区和储藏区）和“无储藏区”（主堡、入口与篝火区）。重新在菜单中点击主堡即恢复完整主堡。
   预览与空间检查仅针对所选部件。
-castle_hover_text: 建筑名称左移
-castle_hover_text_tooltip: |-
-  鼠标悬停的建筑名称（如“玩家 1 的主堡”）向左移动 100 像素，不再与小地图上方的建筑计数重叠。
 castle_damaged_walls: 受损城墙与阶梯
 castle_damaged_walls_tooltip: |-
   选中阶梯、矮墙、高墙或城垛时，城堡建筑菜单上方提供“受损”选项：放置的城墙会使用受损顶部外观（高度不变）。重新在菜单中选择城墙即恢复完好城墙。
@@ -193,24 +175,12 @@ pipette_enabled_tooltip: |-
   在笔刷大小上方添加吸管按钮（笔刷大小、标尺和橡皮擦会略微下移）。
   选中后菜单上方出现选项栏——高度、纹理、对象、全部——上方显示吸管当前内容。点击格子即可吸取（吸管仅显示单格），再点击或拖动即可应用到笔刷范围。“高度”不改纹理，“纹理”不改高度。“对象”会吸取格子上的建筑、城墙、树木或岩石：建筑和城墙按对应菜单方式为原所属玩家放置（自动切换其盾徽），树木（同种类与阶段，或同原木数倒伏树）和岩石（同种类与旋转）按各自工具方式放置且支持拖动。“全部”还会额外吸取树木或 1×1 岩石并铺满笔刷下每个空位。再次点击吸管或其模式即可清空。
   高度不会应用于海洋、沙滩、沼泽、护城河、岩石、城墙或建筑；纹理不会应用于岩石、城墙或建筑。陡坡边缘的悬崖岩石会自动清理并在仍陡峭处重新生成。撤销同样支持吸管操作。
-pipette_select_key_on: 吸管快捷键
-pipette_select_key_on_tooltip: |-
-  用于选中（并清空）吸管的按键。吸管已选中时再次按下会循环切换模式：高度、纹理、对象、全部。
 pipette_select_key: 选择吸管的按键
 pipette_select_key_tooltip: |-
   在地图编辑器中选择吸管的按键，仍会保留该按键原本的功能。
-pipette_read_key_on: 按住重新吸取格子
-pipette_read_key_on_tooltip: |-
-  按住此键时，已装有内容的吸管可以重新吸取新格子（点击前保留旧内容）；松开后恢复涂抹。
 pipette_read_key: 吸取格子的按键
 pipette_read_key_tooltip: |-
   吸管已装有内容时，按住以重新吸取格子的按键。
-pipette_any_tile_key_on: 按住应用到任意格子
-pipette_any_tile_key_on_tooltip: |-
-  实验性：按住此键时，吸管会将高度和纹理强制应用到笔刷下的所有格子，包括海洋、沼泽、岩石（保留）、城墙和建筑（绝不影响地图边缘）。不改变对象的放置规则。
-pipette_any_tile_key: 应用到任意格子的按键
-pipette_any_tile_key_tooltip: |-
-  按住后使吸管无视格子上已有内容的按键。
 key_letter_a: A
 key_letter_b: B
 key_letter_c: C
@@ -300,9 +270,6 @@ castle_unit_colour_tooltip: |-
 castle_keep_crests: 活跃主堡盾徽
 castle_keep_crests_tooltip: |-
   每座主堡上方都会显示所属玩家的盾徽，其中玩家的活跃主堡（领主、初始部队和新农民出现处）带有边框。点击盾徽可将该主堡设为活跃，点击已活跃盾徽可使该玩家无活跃主堡。新建主堡不再自动接管活跃状态，移除活跃主堡时会由该玩家的另一座主堡接替。主储藏区始终跟随活跃主堡（否则游戏保留最早的储藏区，导致多主堡时 AI 认为建城点被占而不建城）。需开启“每位玩家可放置多个主堡”。
-castle_keep_crest_tooltip: 主堡盾徽提示
-castle_keep_crest_tooltip_tooltip: |-
-  悬停在主堡盾徽上时显示其含义与点击效果。需开启“活跃主堡盾徽”。
 castle_wall_tools: 城墙高度与自由城垛
 castle_wall_tools_tooltip: |-
   城垛可独立放置。其面板提供矮、高、受损矮、受损高四种样式。城墙面板上方的滑块可分别设置高墙、矮墙和城垛高度（0–255）以及阶梯坡度（0–16）；旁边的“重置”可将当前所选恢复默认，离开地图编辑器时全部重置。
@@ -315,9 +282,6 @@ trees_spread_outlines_tooltip: |-
 herds_bird_bins: 清除所有乌鸦 / 海鸥按钮
 herds_bird_bins_tooltip: |-
   动物菜单中乌鸦和海鸥按钮右侧的红色垃圾桶按钮：一键移除地图上的全部乌鸦（树木保留）或全部海鸥。
-herds_animal_bin: 清除所有动物按钮
-herds_animal_bin_tooltip: |-
-  动物菜单右侧的红色垃圾桶按钮，效果同 Alt + E，一键移除地图上全部动物。乌鸦和海鸥保留。
 herds_group_warning: 兽群与编队数量警告
 herds_group_warning_tooltip: |-
   当剩余可创建的兽群与编队少于 200 个时，屏幕顶部会像游戏单位上限一样显示剩余数量提示。
@@ -330,9 +294,6 @@ eraser_seagulls_tooltip: |-
 map_settings_show_locked: “显示锁定地图”勾选框
 map_settings_show_locked_tooltip: |-
   在编辑器的加载对话框中添加“显示锁定地图”勾选框。勾选后列表立即显示被锁定的地图。
-map_settings_button: “地图设置”按钮
-map_settings_button_tooltip: |-
-  在地图菜单界面“平衡/不平衡”和“入侵/经济”按钮右侧添加“地图设置”按钮，用于打开 Alt + , 菜单。
 map_settings_menu: 扩展“地图设置”菜单
 map_settings_menu_tooltip: |-
   为 Alt + , 菜单补全标题、单人与多人、四种单人地图类型（攻城、入侵、经济、自由建造）、四种尺寸加自定义与 10–400 尺寸滑块（松开时生效）、平衡、山丘之王、锁定地图和返回按钮。
@@ -348,7 +309,7 @@ eraser_group_descr: |-
 map_settings_group: 地图设置
 map_settings_group_descr: |-
   地图类型、尺寸、锁定状态以及对应的菜单界面。
-qol: 体验优化
+qol: 便利性改进
 grid_group: 资源网格
 grid_key: 网格快捷键（Alt+按键）
 grid_outside_editor: 允许游戏中显示网格
@@ -357,11 +318,8 @@ grid_hide_in_v_view: 在 V 键视图隐藏
 grid_colour: 网格颜色
 grid_rotation_group: 城堡朝向
 grid_rotation_lines: 显示城堡旋转分界线
-grid_rotation_colour: 分界线颜色
 grid_mine_group: 铁矿占地
 grid_mine_boxes: 显示铁矿占地
-grid_mine_colour: 占地颜色
-grid_mine_size: 占地宽度（格）
 grid_key_letter_g: Alt + G
 grid_key_letter_a: Alt + A
 grid_key_letter_b: Alt + B
