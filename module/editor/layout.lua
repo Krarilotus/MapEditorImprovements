@@ -488,8 +488,7 @@ K.AOB_KEEP_TURN = "68 C8 00 00 00 8D 50 D5 68 C8 00 00 00 51 89 56 28 8D 51 D5 8
 K.KEEP_TURN = { this = 25, call = 35, result = 41 }
 K.MAP_CENTRE = 200
 -- placeBuilding: `cmp eax,0xF / jne / mov [esi+rotation],edx / jmp / cdq / sub eax,edx / sar eax,1 /
--- mov [esi+rotation],eax`: TileMapState's placement rotation (orientation / 2), which the placement
--- check - and so the cursor preview with the keep's parts - reads.
+-- mov [esi+rotation],eax`: TileMapState's placement rotation (orientation / 2).
 -- The keep layout tables (3 keep types x 4 orientations): doors etc. 24 bytes a row (the preview's
 -- `movsx edx,ax / add edx,-0x3C / lea ecx,[edx+edx*2] / shl ecx,5 / add ecx,TABLE`), the campfire
 -- area and the stockpile 8 bytes a row (placeKeep's `add ebx,[eax*8+..]` / `mov edi,[eax*8+..]`);
@@ -497,7 +496,7 @@ K.MAP_CENTRE = 200
 -- mov ecx,TileMapState / call setConstructionGFXLayerBasedOnPlacementChecks`.
 K.AOB_KEEP_TABLE_A = "0F BF D0 83 C2 C4 8D 0C 52 C1 E1 05 81 C1 ? ? ? ?"
 K.AOB_KEEP_PREVIEW_CALL = "8B 0D ? ? ? ? 8B 15 ? ? ? ? 51 56 50 52 B9 ? ? ? ? E8"
-K.KEEP_TABLES = { a = 14, b = 18, c = 7, call = 21, rows = 3 }
+K.KEEP_TABLES = { a = 14, b = 18, c = 7, call = 21, rows = 3, margin = 18 } -- 12-tile offset plus a 7-tile part
 -- Only buildings placed as several parts turn (placeBuilding's own placers, by building type):
 -- barracks 8/9, engineers' guild 24, tunnellers' guild 25, oil smelter 28, keeps 40-44. The chosen
 -- tool: TriggerPlaceBuilding `mov ecx,[tool] / cmp ecx,0x65 / mov edx,..`.
@@ -506,6 +505,29 @@ K.ROTATING_TYPES = { [8] = true, [9] = true, [24] = true, [25] = true, [28] = tr
 K.AOB_CHOSEN_TOOL = "8B 0D ? ? ? ? 83 F9 65 8B 15"
 K.AOB_PLACE_ROTATION = "83 F8 0F 75 08 89 96 ? ? ? ? EB 0B 99 2B C2 D1 F8 89 86 ? ? ? ?"
 K.PLACE_ROTATION = 7
+K.AOB_PREVIEW_ROTATION_RESET = "83 3D ? ? ? ? 0C 89 1D ? ? ? ? 89 0D ? ? ? ? 89 15 ? ? ? ?"
+K.PREVIEW_ROTATION_RESET = 7
+K.AOB_BUILDING_VALIDATOR = "83 EC 2C 53 55 8B 6C 24 40 56 33 C0 39 44 24 4C 57 8B 7C 24 44 8B F1"
+-- The placement validator reads three (x,y) pairs per barracks turn and one per oil smelter turn.
+-- Both guilds use the barracks row's second pair.
+K.AOB_BARRACKS_ROWS = "5F 5E 5D 5B 83 C4 2C C2 14 00 8B 86 B4 49 55 00 8D 04 40 03 C0 03 C0 03 BC 00 ? ? ? ? 03 C0 03 A8"
+K.AOB_OIL_ROWS = "8B 86 B4 49 55 00 03 C0 03 C0 03 BC 00 ? ? ? ? 03 C0 03 A8 ? ? ? ? C7 44 24 44 00 00 00 00"
+K.PREVIEW_PART_ROWS = { barracks = 26, oil = 13 }
+-- Footprint iterator calls for each extra part. Offsets are relative to the signature and the
+-- call, respectively. X and Y locate the part's unrotated origin after the call.
+K.PREVIEW_PART_CALLS = {
+  { "8B 5C 24 30 83 C5 05 89 6C 24 34 33 ED 6A 05 55 8B CE E8 ? ? ? ? 8B 86 90 49 55 00", 18, 73, "[esp+0x48]", "edi", 0 },
+  { "8D 6F 05 33 FF 6A 05 57 8B CE E8 ? ? ? ? 8B 86 90 49 55 00 66 8B 8E 94 49 55 00 66 03 0D ? ? ? ? 03 C5", 10, 73, "[esp+0x24]", "ebp", 1 },
+  { "83 C7 01 3B BE 84 49 55 00 7C A7 33 FF 6A 05 57 8B CE E8 ? ? ? ? 8B 86 90 49 55 00 66 8B 8E 94 49 55 00", 18, 73, "[esp+0x48]", "ebp", 2 },
+  { "66 3D 58 00 75 6A 83 C7 05 33 DB 6A 05 53 8B CE E8 ? ? ? ? 8B 86 90 49 55 00 66 8B 96", 16, 75, "ebp", "edi", 1 },
+  { "66 3D 59 00 75 6A 83 C7 05 33 DB 6A 05 53 8B CE E8 ? ? ? ? 8B 86 90 49 55 00 66 8B 8E", 16, 75, "ebp", "edi", 1 },
+  { "66 3D B4 00 75 6A 83 C7 04 33 DB 6A 04 53 8B CE E8 ? ? ? ? 8B 86 90 49 55 00 66 8B 8E", 16, 75, "ebp", "edi" },
+  { "8B 44 24 10 8B 6C 24 18 83 C0 05 89 44 24 30 33 DB 6A 05 53 8B CE E8 ? ? ? ?", 22, 86, "[esp+0x44]", "ebp", 0 },
+  { "83 C5 05 33 DB 8D 49 00 6A 05 53 8B CE E8 ? ? ? ? 8B 86 90 49 55 00 03 C5", 13, 86, "[esp+0x24]", "ebp", 1 },
+  { "83 C3 01 3B 9E 84 49 55 00 7C 9A 33 DB 6A 05 53 8B CE E8 ? ? ? ? 8B 86 90 49 55 00 03 C5", 18, 86, "[esp+0x44]", "ebp", 2 },
+  { "8B 6C 24 18 83 C5 05 33 DB 8D A4 24 00 00 00 00 6A 05 53 8B CE E8 ? ? ? ? 8B 86 90 49 55 00", 21, 87, "[esp+0x24]", "ebp", 1 },
+  { "8B 6C 24 18 83 C5 04 33 DB 8D 64 24 00 6A 04 53 8B CE E8 ? ? ? ? 8B 86 90 49 55 00", 18, 86, "[esp+0x24]", "ebp" },
+}
 K.ROTATIONS = { { "Default" }, { "90\xB0", 2 }, { "180\xB0", 4 }, { "270\xB0", 6 }, { "Location based", "location" } }
 K.ROTATION_BOX = { x = 12, y = 420, width = 150, height = 22, option = 20 }
 -- The right-click ring's compass (45): `cmp eax,3 / jne / mov edx,[next] / push edx / mov ecx,

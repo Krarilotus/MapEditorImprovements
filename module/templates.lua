@@ -1081,23 +1081,63 @@ mov eax,[ORIENTATION]
 jmp BACK
 ]]
 
--- The cursor preview (setConstructionGFXLayerBasedOnPlacementChecks, thiscall, 4 arguments)
--- reads the keep layout tables (doors / campfire / stockpile, per keep type and orientation)
--- always at orientation 0. In the map editor with a turn chosen (ROTATION: orientation / 2), the
--- chosen orientation's rows are swapped into the first slot for the call and swapped back after.
+-- The cursor's orientation reset, between the comparison and the branch using its flags.
+templates.previewRotationReset = [[
+pushfd
+push eax
+mov eax,ebx
+cmp dword [GAME_MODE],MAP_EDITOR
+jne preview_rotation_store
+mov eax,[TOOL]
+cmp eax,[WANTED_TOOL]
+jne preview_rotation_plain
+mov eax,[WANTED]
+cmp eax,6
+ja preview_rotation_plain
+shr eax,1
+jmp preview_rotation_store
+preview_rotation_plain:
+mov eax,ebx
+preview_rotation_store:
+mov [ROTATION],eax
+pop eax
+popfd
+jmp BACK
+]]
+
+-- The validator and cursor renderer both read keep parts from row zero.
 templates.keepPreviewTurn = [[
 cmp dword [GAME_MODE],MAP_EDITOR
 jne preview_plain
 cmp dword [ROTATION],0
 je preview_plain
+cmp dword [ROTATION],3
+ja preview_plain
+cmp word [esp+ARG_BYTES-4],0x3C
+jb preview_plain
+cmp word [esp+ARG_BYTES-4],0x3E
+ja preview_plain
+; The rejected preview can read raw row indices even for tiles outside the map.
+if ARG_BYTES = 16
+  cmp dword [ecx+0x554934],0
+  je preview_turn
+  cmp dword [esp+4],KEEP_MARGIN
+  jb preview_plain
+  cmp dword [esp+4],MAP_SIZE-KEEP_MARGIN
+  jae preview_plain
+  cmp dword [esp+8],KEEP_MARGIN
+  jb preview_plain
+  cmp dword [esp+8],MAP_SIZE-KEEP_MARGIN
+  jae preview_plain
+end if
+preview_turn:
 call preview_swap
-push dword [esp+0x10]
-push dword [esp+0x10]
-push dword [esp+0x10]
-push dword [esp+0x10]
+repeat ARG_BYTES/4
+  push dword [esp+ARG_BYTES]
+end repeat
 call PREVIEW
 call preview_swap
-ret 0x10
+ret ARG_BYTES
 preview_plain:
 jmp PREVIEW
 preview_swap:
@@ -1158,6 +1198,50 @@ cmp ebp,KEEP_ROWS
 jb preview_type
 popad
 ret
+]]
+
+-- Translate the native footprint iterator's offsets by the change in the part's origin.
+templates.rotatedPreviewPart = [[
+cmp dword [GAME_MODE],MAP_EDITOR
+jne part_plain
+cmp dword [ROTATION],0
+je part_plain
+cmp dword [ROTATION],3
+ja part_plain
+push dword [esp+8]
+push dword [esp+8]
+call WALK
+push eax
+push edx
+imul ecx,[ROTATION],ROW_SIZE
+mov eax,[ecx+PART]
+sub eax,[PART]
+add eax,[esi+TILE_X]
+mov edx,[ecx+PART+4]
+sub edx,[PART+4]
+add edx,[esi+TILE_Y]
+mov ecx,Y_ORIGIN
+add ecx,edx
+cmp ecx,MAP_SIZE
+jae part_skip
+imul ecx,MAP_SIZE
+add ecx,X_ORIGIN
+add ecx,eax
+mov [esi+TILE_X],eax
+mov [esi+TILE_Y],edx
+add eax,X_ORIGIN
+cmp eax,MAP_SIZE
+jae part_skip
+cmp byte [VALID+ecx],0
+jne part_done
+part_skip:
+mov dword [esp+8],SKIP
+part_done:
+pop edx
+pop eax
+ret 8
+part_plain:
+jmp WALK
 ]]
 
 -- placeKeep's ground painter (thiscall, 6 arguments): in the map editor the ground stays as it is.

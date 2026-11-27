@@ -400,7 +400,11 @@ function C.build(G, B, O)
     local options = {}
     for i = 1, #K.ROTATIONS do options[i] = added["rotation" .. i] end
     local ok, problem = pcall(C.buildingRotation, C.owner, G, B, data, added.rotationHead, options)
-    if not ok then log(WARNING, tostring(problem) .. "; no building rotation") end
+    if not ok then
+      wr16(added.rotationHead + ITEM_HIDDEN, 1)
+      for _, option in ipairs(options) do wr16(option + ITEM_HIDDEN, 1) end
+      log(WARNING, tostring(problem) .. "; no building rotation")
+    end
   end
   if added.keepCrests ~= nil then
     data.crestTooltip = O.crestTooltip

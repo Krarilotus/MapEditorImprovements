@@ -255,26 +255,56 @@ function C.buildingRotation(self, G, B, data, head, options)
     if tool <= 0 or tool > 0x200 then return false end
     return K.ROTATING_TYPES[typeOf(B.buildings, tool) & 0xFFFF] == true
   end
-  -- the keep's preview: its parts where the chosen orientation puts them
-  do
-    local KT = K.KEEP_TABLES
-    local ok, problem = pcall(function()
-      local previewSite = scanUnique(K.AOB_KEEP_PREVIEW_CALL, "the building preview") + KT.call
-      C.patchCall(self, previewSite, core.allocateAssembly(templates.keepPreviewTurn, {
-        GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
-        PREVIEW = readCallTarget(previewSite, 0, "the building preview"),
-        TABLE_A = rd32(scanUnique(K.AOB_KEEP_TABLE_A, "the keep layout") + KT.a),
-        TABLE_B = rd32(scanUnique(K.AOB_KEEP_CAMPFIRE, "the keep's campfire area") + KT.b),
-        TABLE_C = rd32(scanUnique(K.AOB_KEEP_STOCKPILE, "the keep's stockpile") + KT.c),
-        KEEP_ROWS = KT.rows,
-      }))
-    end)
-    if not ok then log(WARNING, tostring(problem) .. "; the keep's preview keeps its first orientation") end
+  local reset = scanUnique(K.AOB_PREVIEW_ROTATION_RESET, "the cursor's orientation reset") + K.PREVIEW_ROTATION_RESET
+  if rd32(reset + 2) ~= placeRotation then
+    error(MODULE_NAME .. ": the cursor and placement do not use the same rotation word")
   end
-  patchJump(self, site, 5, core.allocateAssembly(templates.rotationRead, {
+  local resetStub = core.allocateAssembly(templates.previewRotationReset, {
+    GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
+    TOOL = chosenTool, WANTED = wanted, WANTED_TOOL = wantedTool, BACK = reset + 6,
+  })
+  local KT = K.KEEP_TABLES
+  local previewSite = scanUnique(K.AOB_KEEP_PREVIEW_CALL, "the building preview") + KT.call
+  local validator = scanUnique(K.AOB_BUILDING_VALIDATOR, "the building placement validator")
+  local keepLayout = {
+    GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
+    TABLE_A = rd32(scanUnique(K.AOB_KEEP_TABLE_A, "the keep layout") + KT.a),
+    TABLE_B = rd32(scanUnique(K.AOB_KEEP_CAMPFIRE, "the keep's campfire area") + KT.b),
+    TABLE_C = rd32(scanUnique(K.AOB_KEEP_STOCKPILE, "the keep's stockpile") + KT.c),
+    KEEP_ROWS = KT.rows, MAP_SIZE = K.MAP_SIZE, KEEP_MARGIN = KT.margin,
+    PREVIEW = readCallTarget(previewSite, 0, "the building preview"), ARG_BYTES = 16,
+  }
+  local previewStub = core.allocateAssembly(templates.keepPreviewTurn, keepLayout)
+  keepLayout.PREVIEW = core.allocateAssembly("sub esp,0x2C\npush ebx\npush ebp\njmp BACK", { BACK = validator + 5 })
+  keepLayout.ARG_BYTES = 20
+  local validatorStub = core.allocateAssembly(templates.keepPreviewTurn, keepLayout)
+
+  local barracks = rd32(scanUnique(K.AOB_BARRACKS_ROWS, "the barracks layouts") + K.PREVIEW_PART_ROWS.barracks)
+  local oil = rd32(scanUnique(K.AOB_OIL_ROWS, "the oil smelter layouts") + K.PREVIEW_PART_ROWS.oil)
+  local parts = {}
+  for _, entry in ipairs(K.PREVIEW_PART_CALLS) do
+    local pattern, offset, skip, x, y, part = table.unpack(entry)
+    local call = scanUnique(pattern, "a building preview part") + offset
+    expectBytes(call + skip + 2, { 0x01, 0x3B }, "the building preview part loop")
+    local source = templates.rotatedPreviewPart:gsub("X_ORIGIN", x):gsub("Y_ORIGIN", y)
+    parts[#parts + 1] = {
+      call, core.allocateAssembly(source, {
+        GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, ROTATION = placeRotation,
+        WALK = readCallTarget(call, 0, "the preview footprint iterator"), SKIP = call + skip,
+        TILE_X = K.TILE_MAP.tileX, TILE_Y = K.TILE_MAP.tileY, VALID = R.validTiles, MAP_SIZE = K.MAP_SIZE,
+        PART = part and (barracks + part * 8) or oil, ROW_SIZE = part and 24 or 8,
+      }),
+    }
+  end
+  local placementStub = core.allocateAssembly(templates.rotationRead, {
     GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, WANTED = wanted,
     TOOL = chosenTool, WANTED_TOOL = wantedTool, ORIENTATION = nativeOrientation, BACK = site + 5,
-  }))
+  })
+  for _, part in ipairs(parts) do C.patchCall(self, part[1], part[2]) end
+  C.patchCall(self, previewSite, previewStub)
+  patchJump(self, validator, 5, validatorStub)
+  patchJump(self, reset, 6, resetStub)
+  patchJump(self, site, 5, placementStub)
   local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
   local colourBox = core.exposeCode(G.colourBox, 6, 1)
   local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
@@ -326,10 +356,8 @@ function C.buildingRotation(self, G, B, data, head, options)
     local tool = rd32(chosenTool)
     if turns(tool) then
       local o = orientation()
-      wr32(nativeOrientation, o)
       wr32(wanted, o)
       wr32(wantedTool, tool)
-      wr32(placeRotation, (o == 0xF) and 0 or (o // 2))
       editorRotation = true
     else
       clearRotation()
