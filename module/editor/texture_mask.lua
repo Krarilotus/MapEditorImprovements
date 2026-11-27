@@ -242,6 +242,8 @@ function C.patchFrame(self, G, data)
     DEFAULT_MIN = K.HEIGHT_RANGE_DEFAULT[1], DEFAULT_MAX = K.HEIGHT_RANGE_DEFAULT[2], SNAP = H.snap,
     INVERT = H.invert, IGNORE_WATER = H.ignoreWater, IGNORE_FARMLAND = H.ignoreFarmland, SUBTYPE = G.subtype,
     PLANT_TOOLS = K.PLANT_TOOLS, PLANTS = plants, PAD = pad,
+    MENU_RENDER = data.treePreviewItem and data.treePreviewItem + ITEM_RENDER_TYPE or plants,
+    RENDER_NONE = layout.RENDER_NONE,
     GROUP_ON = data.groupOn, FIRST_GROUP = G.firstGroup, GROUP_SLOTS = G.groupSlots, GROUP_SIZE = G.groupSize,
     GROUP_COUNT = data.groupCount or data.groupOn, GROUP_MARGIN = K.GROUP_MARGIN, GROUP_PAD = groupPad,
   }))

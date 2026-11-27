@@ -109,11 +109,17 @@ end
 ---enabled: that module reads the whole call site, the second load included, when it is enabled
 ---and stays off if it has changed, so the site goes in after it in either load order.
 ---@param self table the module
----@param onComplete fun(ok: boolean, result: any) called after the install attempt
+---@param handoff fun() called after the drawing hook is installed
+---@param onProblem fun(problem: any, installed: boolean) reports installation or handoff failure
 ---@return string when "now" or "afterInit"
-function M.commit(self, onComplete)
+function M.commit(self, handoff, onProblem)
   local function run()
-    onComplete(pcall(M.install, self))
+    local installed = false
+    local ok, problem = pcall(function()
+      installed = M.install(self)
+      if installed then handoff() end
+    end)
+    if not ok then onProblem(problem, installed) end
   end
   if modules ~= nil and modules["resource-grid-overlay"] ~= nil then
     hooks.registerHookCallback("afterInit", run)

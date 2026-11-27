@@ -2438,6 +2438,8 @@ cmp eax,PLANT_TOOLS
 jae frame_done
 cmp byte [PLANTS+eax],0
 je frame_done
+cmp dword [MENU_RENDER],RENDER_NONE
+jne frame_done
 call PAD
 frame_done:
 popad

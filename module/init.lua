@@ -394,16 +394,21 @@ local function enable(self, config)
   end
   if not gridOn then frame.remove("grid") end
   -- Last: the map drawing's patch site with every routine the features above added.
-  frame.commit(self, function(ok, problem)
-    if not ok then
-      if gridOn then log(ERROR, "The map editor resource grid is off. Map drawing could not be installed.") end
-      if frameData ~= nil then
-        landscape.reportFrameFailure(frameData, problem)
-      else
-        log(WARNING, tostring(problem))
-      end
-    elseif frameData ~= nil and frameData.treePreviewItem ~= nil then
+  frame.commit(self, function()
+    if frameData ~= nil and frameData.treePreviewItem ~= nil then
       wr32(frameData.treePreviewItem + layout.ITEM_RENDER_TYPE, layout.RENDER_NONE)
+    end
+  end, function(problem, installed)
+    if installed then
+      log(ERROR, "The vegetation preview renderer could not be updated.")
+      log(WARNING, tostring(problem))
+      return
+    end
+    if gridOn then log(ERROR, "The map editor resource grid is off. Map drawing could not be installed.") end
+    if frameData ~= nil then
+      landscape.reportFrameFailure(frameData, problem)
+    else
+      log(WARNING, tostring(problem))
     end
   end)
 end
