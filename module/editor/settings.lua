@@ -32,6 +32,7 @@ local rd8 = memory.rd8
 local wr32 = memory.wr32
 local wr16 = memory.wr16
 local patchJump = require("editor.menu_install").patchJump
+local native = require("editor.native")
 
 ---------------------------------------------------------------------------------------
 -- Map settings (38): locked maps in the Load dialog, the map menu's Map Settings button and the
@@ -39,7 +40,7 @@ local patchJump = require("editor.menu_install").patchJump
 ---------------------------------------------------------------------------------------
 
 -- A copy of a menu's item table with items of the module's own before its end marker; the
--- constructor's push is pointed at the copy and the menu built again if it was built already.
+-- constructor's push can be pointed at the copy after its new items are ready.
 -- `site` is the `push table / mov ecx, menu / call Menu::Menu` in the constructor. Returns the new
 -- items. Whatever the push names now is copied, so a module that extended the table first keeps
 -- its items.
@@ -57,14 +58,17 @@ function C.appendItems(self, site, count, purpose)
   core.writeBytes(new + (n + count) * MENU_ITEM_SIZE, core.readBytes(old + n * MENU_ITEM_SIZE, MENU_ITEM_SIZE))
   local items = {}
   for i = 1, count do items[i] = new + (n + i - 1) * MENU_ITEM_SIZE end
-  self.saved = self.saved or {}
-  table.insert(self.saved, { address = site + 1, bytes = core.readBytes(site + 1, 4) })
-  core.writeCodeInteger(site + 1, new)
+  local original = core.readBytes(site + 1, 4)
   local construct = core.exposeCode(constructor, 2, 1)
+  local function install()
+    self.saved = self.saved or {}
+    table.insert(self.saved, { address = site + 1, bytes = original })
+    core.writeCodeInteger(site + 1, new)
+  end
   local function ensure()
     if rd32(menu) == old then construct(menu, new) end
   end
-  return items, ensure, new, menu
+  return items, install, ensure
 end
 
 -- An item that is clicked and drawn by lua functions.
@@ -82,35 +86,37 @@ function C.luaItem(into, x, y, width, height, action, render, what)
   wr16(into + ITEM_CONTROL, 0)
 end
 
--- What the menus here draw with: the Map settings menu's own button drawing (the button
--- background, then its text), the item rect it reads, the modal manager and its opener.
-function C.resolveSettings(G)
-  if C.settings ~= nil then return C.settings end
-  local S = {}
-  local modal = scan(K.AOB_SETTINGS_MODAL, "the Map settings menu")
-  S.modalSite = modal
-  S.menu = rd32(modal + K.SETTINGS_MODAL.menu)
-  S.record = rd32(modal + K.SETTINGS_MODAL.record)
-  S.table = memory.scanData(K.AOB_SETTINGS_TABLE, "the Map settings menu's items") - MENU_ITEM_SIZE
-  if rd32(S.table + ITEM_TYPE) ~= TYPE_GROUP_START then
-    error(MODULE_NAME .. ": the Map settings menu is not the one this module knows")
-  end
-  S.action = rd32(S.table + ITEM_ACTION)
-  S.render = rd32(S.table + ITEM_RENDER)
-  S.site = scan("68 " .. bytesOf(S.table) .. " B9 " .. bytesOf(S.menu) .. " E8", "the Map settings menu's constructor")
+-- The stock button renderer supplies the shared button background, text and rectangle.
+local function resolveSettingsDrawing()
+  local S = { render = scan(K.AOB_SETTINGS_RENDER, "the Map Settings button renderer") }
   -- The render: `mov ebx,[hover]` first; the item rect is the four words before the hover flag.
-  expectBytes(S.render + K.SETTINGS_HOVER[1], K.SETTINGS_HOVER[2], "the Map settings buttons")
-  S.hover = rd32(S.render + K.SETTINGS_HOVER[1] + #K.SETTINGS_HOVER[2])
+  S.hover = rd32(S.render + K.SETTINGS_HOVER)
   S.rect = S.hover - K.RECT_BEFORE_HOVER
-  local okB, background = pcall(core.scanForAOB, K.AOB_BUTTON_BACKGROUND, S.render, S.render + K.SETTINGS_RENDER_SIZE)
-  local okT, text = pcall(core.scanForAOB, K.AOB_BUTTON_TEXT, S.render, S.render + K.SETTINGS_RENDER_SIZE)
-  if not okB or not okT or background == nil or text == nil or background == 0 or text == 0 then
+  local background, text = S.render + K.SETTINGS_DRAW.background, S.render + K.SETTINGS_DRAW.text
+  if not core.matchesAOB(K.AOB_BUTTON_BACKGROUND, background) or not core.matchesAOB(K.AOB_BUTTON_TEXT, text) then
     error(MODULE_NAME .. ": the Map settings buttons are not drawn as the module expects")
   end
   S.buttons = rd32(background + K.BUTTON_BACKGROUND.this)
   S.buttonBackground = readCallTarget(background, K.BUTTON_BACKGROUND.call, "the button background")
   S.textManager = rd32(text + 1)
   S.renderText = readCallTarget(text, 5, "the text drawing")
+  return S
+end
+
+local function resolveSettings(render)
+  local S = {}
+  local modal = scan(K.AOB_SETTINGS_MODAL, "the Map settings menu")
+  S.modalSite = modal
+  S.menu = rd32(modal + K.SETTINGS_MODAL.menu)
+  S.record = rd32(modal + K.SETTINGS_MODAL.record)
+  S.site = scan("68 ? ? ? ? B9 " .. bytesOf(S.menu) .. " E8 ? ? ? ? C3", "the Map settings menu's constructor")
+  local itemTable, _, constructor = memory.menuTable(S.site, 1, K.SETTINGS_SINGLE_RECORD, "the Map Settings menu")
+  S.table, S.constructor = itemTable, constructor
+  S.action = rd32(S.table + ITEM_ACTION)
+  S.render = rd32(S.table + ITEM_RENDER)
+  if rd32(S.table + ITEM_TYPE) ~= TYPE_GROUP_START or S.render ~= render then
+    error(MODULE_NAME .. ": the Map settings menu is not the one this module knows")
+  end
   local labels = scan(K.AOB_SETTINGS_LABELS, "the Map settings labels")
   S.singleLabel = labels + K.SETTINGS_LABELS.single
   S.multiLabel = labels + K.SETTINGS_LABELS.multi
@@ -121,7 +127,6 @@ function C.resolveSettings(G)
   S.lock = rd32(scan(K.AOB_SETTINGS_ACTION, "the map lock") + K.SETTINGS_LOCK)
   S.size = rd32(scan(K.AOB_SETTINGS_SIZE, "the map size") + K.SETTINGS_SIZE_VAR)
   S.sizeEntry = scan(K.AOB_SETTINGS_SIZE_ENTRY, "the map size change")
-  C.settings = S
   return S
 end
 
@@ -132,7 +137,6 @@ local function resolveSettingsControls()
     local modal = rd32(alt + K.ALT_COMMA.modal)
     local manager = rd32(alt + K.ALT_COMMA.manager)
     local entry = readCallTarget(alt, K.ALT_COMMA.open, "the modal opener")
-    expectBytes(entry + K.OPENER_STATE, { 0xB9 }, "the modal opener")
     local open = core.exposeCode(entry, 3, 1)
     local function openSettings()
       if rd32(modal) ~= -1 then return false end
@@ -140,7 +144,6 @@ local function resolveSettingsControls()
       return true
     end
     settingsControls = {
-      modal = modal, listState = rd32(entry + K.OPENER_STATE + 1),
       openSettings = openSettings,
       closeSettings = function() open(manager, -1, 0) end,
     }
@@ -153,7 +156,6 @@ end
 function C.buttonDrawer(S, G)
   local background = core.exposeCode(S.buttonBackground, 3, 1)
   local renderText = core.exposeCode(S.renderText, 9, 1)
-  local colourBox = core.exposeCode(G.colourBox, 6, 1)
   local buffers = {}
   local function buffer(text)
     if buffers[text] == nil then
@@ -177,11 +179,11 @@ function C.buttonDrawer(S, G)
       local white = rd32(G.pixelFormat) == 0x565 and 0xFFFF or 0x7FFF
       local l, t = x + K.CHECK_INSET, y + K.CHECK_INSET
       local s = K.CHECK_SIZE
-      colourBox(G.pencil, l, t, l + s, t + 1, white)
-      colourBox(G.pencil, l, t + s - 1, l + s, t + s, white)
-      colourBox(G.pencil, l, t, l + 1, t + s, white)
-      colourBox(G.pencil, l + s - 1, t, l + s, t + s, white)
-      if box then colourBox(G.pencil, l + 3, t + 3, l + s - 3, t + s - 3, white) end
+      G.colourBoxFn(G.pencil, l, t, l + s, t + 1, white)
+      G.colourBoxFn(G.pencil, l, t + s - 1, l + s, t + s, white)
+      G.colourBoxFn(G.pencil, l, t, l + 1, t + s, white)
+      G.colourBoxFn(G.pencil, l + s - 1, t, l + s, t + s, white)
+      if box then G.colourBoxFn(G.pencil, l + 3, t + 3, l + s - 3, t + s - 3, white) end
       textX = textX + (K.CHECK_INSET + s) // 2
     end
     renderText(S.textManager, buffer(text), textX, y + K.BUTTON_TEXT_DOWN, 1,
@@ -195,101 +197,109 @@ function C.buttonDrawer(S, G)
   return D
 end
 
-function C.enableMapSettings(self, O, G)
-  local S = C.resolveSettings(G)
-  local draw = C.buttonDrawer(S, G)
-  local controls = resolveSettingsControls()
-  local done = {}
+function C.enableMapSettings(self, O)
+  local G = self.landscape or {}
+  local drawingOK, drawing, draw = pcall(function()
+    local S = resolveSettingsDrawing()
+    return S, C.buttonDrawer(S, G)
+  end)
+  local controlsOK, controls
+  if O.settingsButton or O.settingsMenu then controlsOK, controls = pcall(resolveSettingsControls) end
+  local boxesOK, boxesProblem
+  if O.lockedMaps or O.settingsMenu then
+    boxesOK, boxesProblem = pcall(function()
+      native.resolveButtonDrawing(G)
+      G.colourBoxFn = core.exposeCode(G.colourBox, 6, 1)
+    end)
+  end
+  local function install(wanted, name, fn)
+    if not wanted then return end
+    local ok, problem = pcall(function()
+      if not drawingOK then error(drawing, 0) end
+      fn()
+    end)
+    if not ok then log(ERROR, name .. " is off. " .. tostring(problem)) end
+  end
 
   -- 38.1: Show locked maps, in the Load dialog while it lists maps.
-  if O.lockedMaps then
-    local ok, problem = pcall(function()
-      local anchor, reason = core.AOBScanUnique(K.AOB_LOAD_MODAL)
-      if not anchor then error(MODULE_NAME .. ": Load dialog anchor " .. reason) end
-      local menu = rd32(anchor + 1)
-      local init, problem = core.AOBScanUnique("68 ? ? ? ? B9 " .. bytesOf(menu) .. " E8")
-      if not init then error(MODULE_NAME .. ": Load dialog constructor " .. problem) end
-      local show = core.allocate(4, true)
-      local site = scan(K.AOB_LOCK_FILTER, "the locked map filter")
-      expectBytes(site + K.LOCK_FILTER.jump, { 0x75 }, "the locked map filter")
-      local drop = site + K.LOCK_FILTER.size + (rd8(site + K.LOCK_FILTER.jump + 1) & 0xFF)
-      local stub = C.assemble("lockedMaps", { SHOW = show, LOCK_STATE = rd32(site + 2), KEEP = site + K.LOCK_FILTER.size,
-        DROP = drop })
-      local opener = core.exposeCode(scan(K.AOB_MAP_OPENER, "the map list"), 2, 1)
-      local items, ensure = C.appendItems(self, init, 1, "the Load dialog")
-      local toggle = items[1]
-      local function listingMaps() return rd32(controls.listState) == K.MAP_LIST_KIND end
-      C.luaItem(toggle, K.LOCKED_TOGGLE.x, K.LOCKED_TOGGLE.y, K.LOCKED_TOGGLE.width, K.LOCKED_TOGGLE.height,
-        function()
-          if not toggle or not listingMaps() then return end
-          wr32(show, rd32(show) ~= 0 and 0 or 1)
-          opener(controls.listState, rd32(controls.modal))
-        end,
-        function()
-          if not toggle then return end
-          local on = listingMaps()
-          wr32(toggle + ITEM_WIDTH, on and K.LOCKED_TOGGLE.width or 0)
-          wr32(toggle + ITEM_HEIGHT, on and K.LOCKED_TOGGLE.height or 0)
-          if on then draw.button("Show locked maps", false, rd32(show) ~= 0) end
-        end, "the Show locked maps box")
-      patchJump(self, site, K.LOCK_FILTER.size, stub)
+  install(O.lockedMaps, "Show locked maps", function()
+    if not boxesOK then error(boxesProblem, 0) end
+    local anchor = scan(K.AOB_LOAD_MODAL, "the Load dialog")
+    local menu = rd32(anchor + 1)
+    local init = scan("68 ? ? ? ? B9 " .. bytesOf(menu) .. " E8", "the Load dialog constructor")
+    local show = core.allocate(4, true)
+    local site = scan(K.AOB_LOCK_FILTER, "the locked map filter")
+    expectBytes(site + K.LOCK_FILTER.jump, { 0x75 }, "the locked map filter")
+    local drop = site + K.LOCK_FILTER.size + (rd8(site + K.LOCK_FILTER.jump + 1) & 0xFF)
+    local stub = C.assemble("lockedMaps", { SHOW = show, LOCK_STATE = rd32(site + 2), KEEP = site + K.LOCK_FILTER.size,
+      DROP = drop })
+    local action = scan(K.AOB_LOAD_ACTION, "the Load maps action")
+    local listState = rd32(action + K.LOAD_ACTION.listState)
+    local modal = rd8(action + K.LOAD_ACTION.modal)
+    local opener = core.exposeCode(readCallTarget(action, K.LOAD_ACTION.open, "the map list"), 2, 1)
+    local items, publish, ensure = C.appendItems(self, init, 1, "the Load dialog")
+    local toggle = items[1]
+    local function listingMaps() return rd32(listState) == K.MAP_LIST_KIND end
+    C.luaItem(toggle, K.LOCKED_TOGGLE.x, K.LOCKED_TOGGLE.y, K.LOCKED_TOGGLE.width, K.LOCKED_TOGGLE.height,
+      function()
+        if not toggle or not listingMaps() then return end
+        wr32(show, rd32(show) ~= 0 and 0 or 1)
+        opener(listState, modal)
+      end,
+      function()
+        if not toggle then return end
+        local on = listingMaps()
+        wr32(toggle + ITEM_WIDTH, on and K.LOCKED_TOGGLE.width or 0)
+        wr32(toggle + ITEM_HEIGHT, on and K.LOCKED_TOGGLE.height or 0)
+        if on then draw.button("Show locked maps", false, rd32(show) ~= 0) end
+      end, "the Show locked maps box")
+    publish()
+    patchJump(self, site, K.LOCK_FILTER.size, stub)
+    ensure()
+    local render = rd32(toggle + ITEM_RENDER)
+    hooks.registerHookCallback("afterInit", function()
       ensure()
-      local render = rd32(toggle + ITEM_RENDER)
-      hooks.registerHookCallback("afterInit", function()
-        ensure()
-        -- Another extension may have copied the item into its replacement table.
-        local item = rd32(init + 1)
-        local match
-        toggle = nil
-        -- The checkbox and Autosave's three buttons may extend the table.
-        for _ = 0, K.MOST_DIALOG_ITEMS + 4 do
-          if rd32(item + ITEM_TYPE) == TYPE_END then
-            toggle = match
-            break
-          end
-          if not match and rd32(item + ITEM_RENDER) == render then match = item end
-          item = item + MENU_ITEM_SIZE
+      -- Another extension may have copied the item into its replacement table.
+      local item = rd32(init + 1)
+      local match
+      toggle = nil
+      -- The checkbox and Autosave's three buttons may extend the table.
+      for _ = 0, K.MOST_DIALOG_ITEMS + 4 do
+        if rd32(item + ITEM_TYPE) == TYPE_END then
+          toggle = match
+          break
         end
-        if not toggle then
-          log(ERROR, "Show locked maps is off. The Load control could not be restored.")
-        end
-      end)
+        if not match and rd32(item + ITEM_RENDER) == render then match = item end
+        item = item + MENU_ITEM_SIZE
+      end
+      if not toggle then
+        log(ERROR, "Show locked maps is off. The Load control could not be restored.")
+      end
     end)
-    if not ok then
-      log(ERROR, "Show locked maps is off.")
-      log(WARNING, tostring(problem))
-    end
-  end
+  end)
 
-  local buttonFailed = false
   -- 38.2: the Map Settings button on the map's menu screen.
-  if O.settingsButton then
-    local ok, problem = pcall(function()
-      local props = memory.scanData(K.AOB_PROPERTIES_TABLE, "the map menu's items") - K.PROPERTIES_ITEM * MENU_ITEM_SIZE
-      local init = scan("68 " .. bytesOf(props) .. " B9 ? ? ? ? E8", "the map menu's constructor")
-      local items, ensure = C.appendItems(self, init, 1, "the map menu")
-      local b = K.SETTINGS_BUTTON
-      C.luaItem(items[1], b.x, b.y, b.width, b.height, controls.openSettings,
-        function() draw.button("Map Settings", false) end, "the Map Settings button")
-      ensure()
-      hooks.registerHookCallback("afterInit", ensure)
-    end)
-    if not ok then
-      buttonFailed = true
-      log(WARNING, tostring(problem))
-    end
-  end
+  install(O.settingsButton, "The Map Settings button", function()
+    if not controlsOK then error(controls, 0) end
+    local init = memory.menuInitializer(0x1E0)
+    memory.menuTable(init, K.PROPERTIES_ITEM, K.PROPERTIES_RECORD, "the map menu")
+    local items, publish, ensure = C.appendItems(self, init, 1, "the map menu")
+    local b = K.SETTINGS_BUTTON
+    C.luaItem(items[1], b.x, b.y, b.width, b.height, controls.openSettings,
+      function() draw.button("Map Settings", false) end, "the Map Settings button")
+    publish()
+    ensure()
+    hooks.registerHookCallback("afterInit", ensure)
+  end)
 
   -- 38.3-38.9: the menu itself.
-  if O.settingsMenu then
-    local ok, problem = pcall(C.settingsMenu, self, G, S, draw, controls.closeSettings)
-    if not ok then
-      log(ERROR, "Expanded Map Settings is off.")
-      log(WARNING, tostring(problem))
-      return
-    end
-  end
-  if buttonFailed then log(ERROR, "The Map Settings button is off.") end
+  install(O.settingsMenu, "Expanded Map Settings", function()
+    if not controlsOK then error(controls, 0) end
+    if not boxesOK then error(boxesProblem, 0) end
+    local S = resolveSettings(drawing.render)
+    native.resolveMouse(G)
+    C.settingsMenu(self, G, S, draw, controls.closeSettings)
+  end)
 end
 
 function C.settingsMenu(self, G, S, draw, closeSettings)
@@ -368,9 +378,7 @@ function C.settingsMenu(self, G, S, draw, closeSettings)
       local t = (math.min(math.max(value, low), high) - low) / (high - low)
       local x = sliderRect.x + K.SLIDER_INSET + math.floor(t * (sliderRect.w - 2 * K.SLIDER_INSET) + 0.5)
       local white = rd32(G.pixelFormat) == 0x565 and 0xFFFF or 0x7FFF
-      local colourBox = C.colourBoxFn or core.exposeCode(G.colourBox, 6, 1)
-      C.colourBoxFn = colourBox
-      colourBox(G.pencil, x - 2, sliderRect.y + 2, x + 2, sliderRect.y + h - 2, white)
+      G.colourBoxFn(G.pencil, x - 2, sliderRect.y + 2, x + 2, sliderRect.y + h - 2, white)
     end, "the map size slider")
   wr32(at.sliderTick + ITEM_TYPE, TYPE_EVERY_FRAME)
   wr32(at.sliderTick + ITEM_ACTION, C.luaPad(function()
@@ -391,12 +399,16 @@ function C.settingsMenu(self, G, S, draw, closeSettings)
     closeSettings, function() draw.button("Back", false) end, "the Back button")
 
   -- Texts: Singleplayer and Multiplayer.
+  local labels = { { site = S.singleLabel, text = "Singleplayer" }, { site = S.multiLabel, text = "Multiplayer" } }
+  for _, label in ipairs(labels) do
+    label.address = core.allocate(#label.text + 1, true)
+    writeCString(label.address, label.text)
+  end
+  local construct = core.exposeCode(S.constructor, 2, 1)
   self.saved = self.saved or {}
-  for _, label in ipairs({ { S.singleLabel, "Singleplayer" }, { S.multiLabel, "Multiplayer" } }) do
-    local text = core.allocate(#label[2] + 1, true)
-    writeCString(text, label[2])
-    table.insert(self.saved, { address = label[1], bytes = core.readBytes(label[1], 4) })
-    core.writeCodeInteger(label[1], text)
+  for _, label in ipairs(labels) do
+    table.insert(self.saved, { address = label.site, bytes = core.readBytes(label.site, 4) })
+    core.writeCodeInteger(label.site, label.address)
   end
   -- Size: the constructor's pushes, and the record if it was built already.
   local m = K.SETTINGS_MODAL
@@ -415,7 +427,6 @@ function C.settingsMenu(self, G, S, draw, closeSettings)
   -- The table.
   table.insert(self.saved, { address = S.site + 1, bytes = core.readBytes(S.site + 1, 4) })
   core.writeCodeInteger(S.site + 1, new)
-  local construct = core.exposeCode(readCallTarget(S.site, 10, "the Menu constructor"), 2, 1)
   local function ensure()
     if rd32(S.menu) == S.table then construct(S.menu, new) end
   end

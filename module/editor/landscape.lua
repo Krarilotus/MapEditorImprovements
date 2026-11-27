@@ -11,7 +11,6 @@ local rd32 = memory.rd32
 local native = require("editor.native")
 local resolveMenu = native.resolveMenu
 local resolveDrawing = native.resolveDrawing
-local resolveCounters = native.resolveCounters
 local resolveRocks = native.resolveRocks
 local resolveHerds = native.resolveHerds
 local buildTable = require("editor.landscape_menu").buildTable
@@ -29,12 +28,54 @@ local function reportFrameFailure(data, problem)
   log(WARNING, tostring(problem))
 end
 
+local function hasMenuOptions(O)
+  return O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.rocksAndWater or O.sortedRows
+    or O.textures or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
+    or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks
+    or O.textureMask or O.birdButtons or O.animalBin or O.groupWarning or O.eraserChoice or O.eraseGulls
+    or O.spreadOrder or O.spreadOutlines or O.compass or O.rockPlaced
+end
+
 local function enableMenu(self, O)
+  if not hasMenuOptions(O) then return end
   local G = {}
   resolveMenu(G)
   resolveDrawing(G)
-  resolveCounters(G)
-  C.gameModeOf(G)                          -- the landscape patches test it too
+  local checked = {}
+  local function requireBindings(option, name, ...)
+    if not O[option] then return end
+    for _, bind in ipairs({ ... }) do
+      if checked[bind] == nil then
+        local ok, problem = pcall(bind, G)
+        checked[bind] = ok and true or tostring(problem)
+      end
+      if checked[bind] ~= true then
+        log(ERROR, name .. " is off. " .. checked[bind])
+        O[option] = false
+        return
+      end
+    end
+  end
+  local placement, treeSlots, rockSlots = native.resolveTreePlacement, native.resolveTreeSlots, native.resolveRockSlots
+  local plantTypes, treePictures = native.resolvePlantTypes, native.resolveTreePictures
+  requireBindings("counts", "Landscape counts", native.resolveUnitLimits, native.resolveCounts,
+    placement, treeSlots, rockSlots, native.resolveGroupSlots, plantTypes)
+  requireBindings("groupWarning", "The herd limit warning", native.resolveUnitLimits, native.resolveGroupSlots)
+  requireBindings("birdButtons", "The bird removal buttons", placement, treeSlots)
+  requireBindings("eraserChoice", "The eraser mode panel", placement, treeSlots)
+  requireBindings("eraseGulls", "Erasing flying seagulls", C.resolveBirds)
+  requireBindings("treePreview", "The vegetation preview", placement, treeSlots, plantTypes, treePictures)
+  requireBindings("pipette", "The terrain pipette", placement, treeSlots, rockSlots, plantTypes)
+  requireBindings("shrubs", "The shrub picker", placement, plantTypes, treePictures)
+  requireBindings("felled", "The felled tree panel", placement, plantTypes, treePictures)
+  requireBindings("apple", "The apple tree button", placement, plantTypes)
+  requireBindings("growth", "Tree growth from the brush", placement)
+  requireBindings("obstacles", "Planting near obstacles", placement)
+  requireBindings("noStacking", "Preventing shrub stacking", placement, treeSlots)
+  requireBindings("rocksAndWater", "Planting vegetation on rocks and water", placement, C.gameModeOf)
+  requireBindings("textureMask", "The texture mask", C.gameModeOf)
+  requireBindings("heightTools", "The height brush controls", rockSlots)
+  requireBindings("lostRocks", "Clearing lost rock records", rockSlots)
   if O.variants then
     local ok, problem = pcall(resolveRocks, G)
     if not ok then
@@ -51,7 +92,10 @@ local function enableMenu(self, O)
       O.herds = false
     end
   end
-  local newTable, data = buildTable(G, O)
+  local bins = C.resolveAnimalBins(G, O)
+  if #bins == 0 then O.birdButtons, O.animalBin = false, false end
+  if not hasMenuOptions(O) then return end
+  local newTable, data = buildTable(G, O, bins)
   installTable(G, newTable)
   patchTrees(self, G, O, data)
   if data.rockTabs > 0 then patchRocks(self, G, data) end

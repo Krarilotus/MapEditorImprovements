@@ -84,9 +84,8 @@ local makeLayout = ui.makeLayout
 
 -- Copies the item table with the module's items inserted (in front of the original item
 -- whose index they are listed under) and fills them in.
-local function buildTable(G, O)
+local function buildTable(G, O, bins)
   local data = {}
-  local bins = C.resolveAnimalBins(G, O)
   C.guardRects(data)
   local pictures = {}
   if O.apple then pictures.apple = buttonPictures("apple") end

@@ -244,7 +244,8 @@ function C.patchFrame(self, G, data)
     PLANT_TOOLS = K.PLANT_TOOLS, PLANTS = plants, PAD = pad,
     MENU_RENDER = data.treePreviewItem and data.treePreviewItem + ITEM_RENDER_TYPE or plants,
     RENDER_NONE = layout.RENDER_NONE,
-    GROUP_ON = data.groupOn, FIRST_GROUP = G.firstGroup, GROUP_SLOTS = G.groupSlots, GROUP_SIZE = G.groupSize,
+    GROUP_ON = data.groupOn, FIRST_GROUP = G.firstGroup or 0, GROUP_SLOTS = G.groupSlots or 0,
+    GROUP_SIZE = G.groupSize or 0,
     GROUP_COUNT = data.groupCount or data.groupOn, GROUP_MARGIN = K.GROUP_MARGIN, GROUP_PAD = groupPad,
   }))
 end

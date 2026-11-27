@@ -120,11 +120,12 @@ K.AOB_SETTINGS_MODAL = "68 ? ? ? ? 68 ? ? ? ? 50 68 00 02 00 00 68 ? ? ? ? 68 ? 
 K.SETTINGS_MODAL = { menu = 1, height = 17, width = 22, record = 33 }
 K.SETTINGS_MODAL_ID = 0x1F
 K.MODAL_WIDTH, K.MODAL_HEIGHT = 0x0C, 0x10
-K.AOB_SETTINGS_TABLE = "03 00 00 02 19 00 00 00 14 00 00 00 96 00 00 00 1B 00 00 00 00 00 00 00 0A 00 00 00"
+K.SETTINGS_SINGLE_RECORD = "03 00 00 02 19 00 00 00 14 00 00 00 96 00 00 00 1B 00 00 00 00 00 00 00 0A 00 00 00"
 K.SETTINGS_ITEMS = 7
-K.SETTINGS_HOVER = { 1, { 0x8B, 0x1D } }   -- push ebx / mov ebx, [hover]
+K.SETTINGS_HOVER = 3                    -- mov ebx, [hover]
 K.RECT_BEFORE_HOVER = 0x10
-K.SETTINGS_RENDER_SIZE = 0x200
+K.AOB_SETTINGS_RENDER = "53 8B 1D ? ? ? ? 56 8B 74 24 0C 83 FE 03 57 C7 05 ? ? ? ? 00 00 00 00 BF 01 00 00 00 7D 11"
+K.SETTINGS_DRAW = { background = 0xD8, text = 0x19B }
 K.AOB_BUTTON_BACKGROUND = "6A FF 6A 00 B9 ? ? ? ? E8"
 K.BUTTON_BACKGROUND = { this = 5, call = 9 }
 K.AOB_BUTTON_TEXT = "B9 ? ? ? ? E8 ? ? ? ? 5F 5E 5B C3"
@@ -142,7 +143,6 @@ K.SETTINGS_SIZE_VAR = 18
 K.AOB_SETTINGS_SIZE_ENTRY = "B9 ? ? ? ? E8 ? ? ? ? 83 FE 14 75 07 B8 A0 00 00 00"
 K.AOB_ALT_COMMA = "83 3D ? ? ? ? 11 0F 85 ? ? ? ? A1 ? ? ? ? 83 F8 1F 75 13 6A 00 6A FF B9 ? ? ? ? E8"
 K.ALT_COMMA = { modal = 14, manager = 28, open = 32 }
-K.OPENER_STATE = 0x18                    -- the modal opener's `mov ecx, list state`
 K.MAP_TYPE_PARAMS = { 3, 4, 5, 6 }       -- Siege, Invasion, Economic, Just Build
 K.MAP_SIZE_PARAMS = { 0x14, 0x15, 0x16, 0x17 }
 K.MAP_SIZES = { 160, 200, 300, 400 }
@@ -168,7 +168,7 @@ K.BUTTON_TEXT_DOWN = 4
 K.CHECK_INSET, K.CHECK_SIZE = 7, 13
 -- The map menu (MapEditorProperties) table, found by its Balanced button (item 10); the Map
 -- Settings button goes right of Balanced / Unbalanced and Invasion / Economy.
-K.AOB_PROPERTIES_TABLE = "03 00 00 02 F0 00 00 00 EA 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FD FF FF FF "
+K.PROPERTIES_RECORD = "03 00 00 02 F0 00 00 00 EA 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FD FF FF FF "
   .. "00 00 00 00 06 02 00 40 03 00 00 00"
 K.PROPERTIES_ITEM = 10
 K.SETTINGS_BUTTON = { x = 520, y = 474, width = 160, height = 27 }
@@ -177,8 +177,8 @@ K.MOST_DIALOG_ITEMS = 200
 K.AOB_LOCK_FILTER = "83 3D ? ? ? ? 00 75 0E 53 56 8B CF E8"
 K.LOCK_FILTER = { size = 9, jump = 7 }
 K.AOB_LOAD_MODAL = "68 ? ? ? ? 68 ? ? ? ? 50 68 00 02 00 00 68 8D 01 00 00 68 BC 02 00 00 6A FF 6A FF 6A 09 B9"
-K.AOB_MAP_OPENER = "55 56 57 8B F1 C7 05 ? ? ? ? 01 00 00 00 E8 ? ? ? ? 68 80 38 01 00 33 FF 57 68 ? ? ? ? E8 "
-  .. "? ? ? ? 83 C4 0C 68"
+K.AOB_LOAD_ACTION = "6A 09 B9 ? ? ? ? 89 1D ? ? ? ? E8 ? ? ? ? 5B 5E 5D C3 39 2D ? ? ? ? 74"
+K.LOAD_ACTION = { modal = 1, listState = 3, open = 13 }
 K.MAP_LIST_KIND = 2
 K.LOCKED_TOGGLE = { x = 55, y = 408, width = 200, height = 27 }
 
@@ -416,7 +416,7 @@ end
 function C.patchEraserChoice(self, G, choice, gulls)
   pcall(C.eraseTables)                     -- before this patch hides them from the search
   local E = C.eraserWords()
-  local D = C.resolveBirds(G)
+  local D = gulls and C.resolveBirds(G)
   local sites = C.eraseSites()
   local buildings = memory.scanAll(K.AOB_ERASE_BUILDING, K.ERASE_SITES + 1)
   local units = memory.scanAll(K.AOB_ERASE_UNIT, K.ERASE_SITES + 1)

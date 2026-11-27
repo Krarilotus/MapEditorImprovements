@@ -47,13 +47,6 @@ local function sectionEnd(inside)
   return nil
 end
 
--- Static game data lies outside the executable sections.
-local function scanData(pattern, purpose)
-  local address = core.AOBScan(pattern)
-  if address == nil then error(MODULE_NAME .. ": could not find " .. purpose, 0) end
-  return address
-end
-
 local function scanUnique(pattern, purpose)
   local address, problem = core.AOBScanUnique(pattern)
   if address == nil then
@@ -92,6 +85,30 @@ end
 local function readCallTarget(base, offset, purpose)
   expectBytes(base + offset, { 0xE8 }, purpose)
   return base + offset + 5 + rd32(base + offset + 1)
+end
+
+-- The native menu initializers that follow registration of modal 0x3E.
+local menuInitializers, menuInitializersProblem
+local function menuInitializer(offset)
+  if menuInitializers == nil and menuInitializersProblem == nil then
+    menuInitializers, menuInitializersProblem = core.AOBScanUnique(
+      "68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 6A 3E B9 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 59 C3 CC CC CC CC CC CC CC CC CC")
+  end
+  if not menuInitializers then error("the menu initializer sequence " .. menuInitializersProblem) end
+  return menuInitializers + offset
+end
+
+local function menuTable(site, index, pattern, purpose)
+  if not core.matchesAOB("68 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? C3", site) then
+    error(purpose .. " initializer has unexpected instructions")
+  end
+  local constructor = readCallTarget(site, 10, purpose)
+  local address = rd32(site + 1)
+  if not core.matchesAOB("51 53 8B D9 33 C9 56 8B 74 24 10 89 33", constructor)
+      or not core.matchesAOB(pattern, address + index * MENU_ITEM_SIZE) then
+    error(purpose .. " initializer references an unexpected constructor or item table")
+  end
+  return address, rd32(site + 6), constructor
 end
 
 local function setting(config, group, name)
@@ -147,7 +164,8 @@ end
 
 return {
   scan = scanUnique,
-  scanData = scanData,
+  menuInitializer = menuInitializer,
+  menuTable = menuTable,
   scanUnique = scanUnique,
   scanAll = scanAll,
   expectBytes = expectBytes,

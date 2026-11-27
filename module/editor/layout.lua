@@ -40,7 +40,7 @@ local DEFAULTS = {
 -- The landscape editor's item table, found by its key button (item 11: a group member placed
 -- by user control 146, command 152). The bytes in between are its action, 0 until the Menu
 -- constructor has copied the group's action in.
-local AOB_ITEM_TABLE = "03 00 00 02 00 00 00 80 92 00 00 00 00 00 00 00 00 00 00 00 ? ? ? ? 98 00 00 00"
+local LANDSCAPE_KEY_RECORD = "03 00 00 02 00 00 00 80 92 00 00 00 00 00 00 00 00 00 00 00 ? ? ? ? 98 00 00 00"
 local KEY_BUTTON_ITEM = 11
 local ITEM_COUNT = 99                    -- items before the end marker
 local MAP_CLICK_ITEM = 1                 -- every frame: the game's map click handler
@@ -180,7 +180,7 @@ K.RANDOM_LABEL = "?"
 -- edi,edi / add eax, 2000 / mov [esp+0x20],eax` (the rock number the tiles get: 2000 + slot,
 -- 2000 when the list is full). createRock takes 5 arguments.
 K.AOB_CREATE_ROCK_CALL = "52 B9 ? ? ? ? E8 ? ? ? ? 33 FF 05 D0 07 00 00 89 44 24 20"
-K.CREATE_ROCK_CALL = 6
+K.CREATE_ROCK_CALL, K.CREATE_ROCK_LANDSCAPE = 6, 2
 K.CREATE_ROCK_ARGUMENTS = 0x14
 K.CHECK_BOX_GAP = 8
 -- Tooltips of the check boxes sit higher than the category tooltips (clear of the menu's top).
@@ -288,7 +288,7 @@ K.HOVER_TEXT_SIZE, K.HOVER_TEXT_PLAYER, K.HOVER_TEXT_SHIFT = 10, 6, 100
 
 -- Castle mode: the build menu (found by its minimap item, item 17), its tabs (the menu
 -- category values) and the commands (placement ids) the module adds.
-K.AOB_BUILD_MINIMAP = "02 00 80 00 3B 02 00 00 D1 01 00 00 7E 00 00 00 7E 00 00 00 ? ? ? ? 39 30 00 00"
+K.BUILD_MINIMAP_RECORD = "02 00 80 00 3B 02 00 00 D1 01 00 00 7E 00 00 00 7E 00 00 00 ? ? ? ? 39 30 00 00"
 K.BUILD_MINIMAP_ITEM = 17
 K.BUILD_MOST_ITEMS = 1000
 K.MAP_EDITOR = 1                         -- GameMode2
@@ -313,9 +313,12 @@ K.BARRIER_COMMAND, K.BARRIER_LABEL = 58, "Barrier"
 -- floats_new, picture 80; pictures 65 .. 80 turn it round). The gm number is checked against
 -- the gm list (records of 1000 bytes, by name) and the check boxes' gm, interface_icons3.
 K.NO_WORKERS_GM, K.NO_WORKERS_PICTURE = 172, 80
-K.AOB_GM_NO_WORKERS = "66 6C 6F 61 74 73 5F 6E 65 77 00"           -- "floats_new"
-K.AOB_GM_CHECK_BOXES = "69 6E 74 65 72 66 61 63 65 5F 69 63 6F 6E 73 33 00"   -- "interface_icons3"
+K.GM_NO_WORKERS_NAME = "66 6C 6F 61 74 73 5F 6E 65 77 00"           -- "floats_new"
+K.GM_CHECK_BOXES_NAME = "69 6E 74 65 72 66 61 63 65 5F 69 63 6F 6E 73 33 00"   -- "interface_icons3"
 K.GM_RECORD_SIZE = 1000
+K.GM_CHECK_BOXES_ID = 156
+K.AOB_GM_LIST = "6A 08 B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 53 6A 03"
+K.GM_LIST = { address = 23, call = 32 }
 K.SCREEN_LAYER = 0
 K.BUILD_NEEDED = {
   { 11, 110 }, { 11, 111 }, { 11, 112 }, { 11, 113 }, { 11, 114 }, { 14, 88 }, { 14, 89 }, { 15, 313 }, { 15, 318 },
@@ -1200,7 +1203,7 @@ return {
   MODULE_NAME = MODULE_NAME,
   MODULE_FOLDERS = MODULE_FOLDERS,
   DEFAULTS = DEFAULTS,
-  AOB_ITEM_TABLE = AOB_ITEM_TABLE,
+  LANDSCAPE_KEY_RECORD = LANDSCAPE_KEY_RECORD,
   KEY_BUTTON_ITEM = KEY_BUTTON_ITEM,
   ITEM_COUNT = ITEM_COUNT,
   MAP_CLICK_ITEM = MAP_CLICK_ITEM,

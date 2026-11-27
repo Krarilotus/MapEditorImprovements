@@ -181,6 +181,16 @@ function M.validateChoices(config)
     config[field] = memory.choice(value, type(value) == "string" and choices[value] ~= nil,
       defaults[field], "grid." .. field)
   end
+  local width = config.mine_size
+  if type(width) == "table" then width = width.sliderValue end
+  if type(width) ~= "number" then
+    log(ERROR, "map-editor-improvements.grid.mine_size expects a number. Using four tiles.")
+    width = V.MINE_FOOTPRINT
+  elseif not (width >= 1 and width < math.huge) then
+    log(WARNING, "map-editor-improvements.grid.mine_size is invalid. Using four tiles.")
+    width = V.MINE_FOOTPRINT
+  end
+  config.mine_size = floor(width)
 end
 
 ---------------------------------------------------------------------------------------
@@ -231,7 +241,7 @@ function M.enable(self, config)
   local tune = {
     withRotation = withRotation,
     mineBoxes = config.mine_boxes == true,
-    mineSize = number(config.mine_size, V.MINE_FOOTPRINT),
+    mineSize = config.mine_size,
     originX = number(config.origin_x, V.DEFAULT_ROTATION_ORIGIN),
     originY = number(config.origin_y, V.DEFAULT_ROTATION_ORIGIN),
     boundaryX = number(config.boundary_x, 0),

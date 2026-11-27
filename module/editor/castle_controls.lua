@@ -1,7 +1,6 @@
 local layout = require("editor.layout")
 local templates = layout.templates
 local MODULE_NAME = layout.MODULE_NAME
-local MENU_ITEM_SIZE = layout.MENU_ITEM_SIZE
 local ITEM_TYPE = layout.ITEM_TYPE
 local ITEM_X = layout.ITEM_X
 local ITEM_Y = layout.ITEM_Y
@@ -44,14 +43,11 @@ local TEXTURES_MODE = layout.TEXTURES_MODE
 local TEXTURES_DATA = layout.TEXTURES_DATA
 local PANEL_BOTTOM = layout.PANEL_BOTTOM
 local PANEL_GAP = layout.PANEL_GAP
-local AOB_GAME_MODE = layout.AOB_GAME_MODE
-local GAME_MODE_OPERAND = layout.GAME_MODE_OPERAND
 local memory = require("editor.memory")
 local scan = memory.scan
 local scanUnique = memory.scanUnique
 local readOperand = memory.readOperand
 local readCallTarget = memory.readCallTarget
-local bytesOf = memory.bytesOf
 local item = memory.item
 local writeCString = memory.writeCString
 local rd32 = memory.rd32
@@ -73,16 +69,15 @@ local makeRockPictures = sprites.makeRockPictures
 -- buttons, and what the building counts need.
 function C.resolve(G)
   local B = {}
-  B.table = memory.scanData(K.AOB_BUILD_MINIMAP, "the build menu") - K.BUILD_MINIMAP_ITEM * MENU_ITEM_SIZE
+  B.site = memory.menuInitializer(0x330)
+  B.table, B.menu, B.constructor = memory.menuTable(B.site, K.BUILD_MINIMAP_ITEM, K.BUILD_MINIMAP_RECORD,
+    "the build menu")
   local count = 0
   while rd32(item(B.table, count, ITEM_TYPE)) ~= TYPE_END do
     count = count + 1
     if count > K.BUILD_MOST_ITEMS then error(MODULE_NAME .. ": the build menu is not the one this module knows") end
   end
   B.count = count
-  B.site = scan("68 " .. bytesOf(B.table) .. " B9 ? ? ? ? E8", "the build menu's constructor")
-  B.menu = rd32(B.site + 6)
-  B.constructor = readCallTarget(B.site, 10, "the Menu constructor")
   local minimap = item(B.table, K.BUILD_MINIMAP_ITEM)
   B.minimapX, B.minimapWidth = rd32(minimap + ITEM_X), rd32(minimap + ITEM_WIDTH)
 
@@ -117,7 +112,7 @@ function C.resolve(G)
   -- Every building button's group hands its command to the same toolbar action.
   B.toolbar = B.buttons[K.TAB_TOWERS][K.FIRST_TOWER].action
 
-  G.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
+  C.gameModeOf(G)
   local buildingTable = scanUnique(K.AOB_BUILDING_TABLE, "the building table setup")
   B.buildings = rd32(buildingTable + K.BUILDING_TABLE.state)
   B.typeOfCommand = readCallTarget(buildingTable, K.BUILDING_TABLE.convert, "the building types")
@@ -197,21 +192,28 @@ function C.makeCounts(G, B, counts, data)
   end
 end
 
--- The Barrier button in the Ruins tab: the game's "no workers" sign, on the screen like the
--- tab's other buttons, on a box while under the mouse; its name in a box if the sign cannot
--- be had.
-function C.makeBarrier(G)
+-- The graphics loader passes the first 1000-byte name record, for GM 1.
+function C.resolveBarrierPicture(G)
+  local site = scan(K.AOB_GM_LIST, "the GM table loader")
+  local loader = readCallTarget(site, K.GM_LIST.call, "the GM table loader")
+  local names = rd32(site + K.GM_LIST.address)
+  local boxes = rd32(G.buttonImages + K.CHECKED_IMAGE * IMAGE_SIZE)
+  if not core.matchesAOB("83 C0 01 BF ? ? ? ? 8B F5 B9 05 00 00 00 33 D2 F3 A6 74 10 81 C5 E8 03 00 00", loader + 0x10)
+      or boxes ~= K.GM_CHECK_BOXES_ID
+      or not core.matchesAOB(K.GM_CHECK_BOXES_NAME, names + (boxes - 1) * K.GM_RECORD_SIZE)
+      or not core.matchesAOB(K.GM_NO_WORKERS_NAME, names + (K.NO_WORKERS_GM - 1) * K.GM_RECORD_SIZE) then
+    error("the barrier picture's GM table has unexpected records")
+  end
+  return K.NO_WORKERS_GM
+end
+
+-- The Barrier button in the Ruins tab uses the game's "no workers" sign.
+function C.makeBarrier(G, gm)
   local roundedBox = core.exposeCode(G.roundedBox, 6, 1)
   local textWidth = core.exposeCode(G.textWidth, 4, 1)
   local shadowedText = core.exposeCode(G.shadowedText, 10, 1)
   local blit = core.exposeCode(G.blit, 3, 0)
   local buffer = core.allocate(32, true)
-  local gm = nil
-  local ok, names = pcall(function()
-    return { memory.scanData(K.AOB_GM_NO_WORKERS, "the gm list"), memory.scanData(K.AOB_GM_CHECK_BOXES, "the gm list") }
-  end)
-  local boxes = rd32(G.buttonImages + K.CHECKED_IMAGE * IMAGE_SIZE)
-  if ok and (names[1] - names[2]) == (K.NO_WORKERS_GM - boxes) * K.GM_RECORD_SIZE then gm = K.NO_WORKERS_GM end
   local sign = nil                         -- the sign, cut out of its picture once it is loaded
 
   -- The picture's pixels (16-bit TGX: n literal pixels, a repeated pixel, n see-through, new
@@ -269,7 +271,7 @@ function C.makeBarrier(G)
   return function(barrier)
     local x, y = rd32(G.itemX), rd32(G.itemY)
     local width, height = rd32(barrier + ITEM_WIDTH), rd32(barrier + ITEM_HEIGHT)
-    if gm ~= nil and sign == nil then sign = cut() end
+    if sign == nil then sign = cut() end
     local target = rd32(G.pencil + PENCIL_TARGET)
     wr32(G.pencil + PENCIL_TARGET, K.SCREEN_LAYER)
     if sign == nil or rd32(G.hover) ~= 0 then roundedBox(G.pencil, x, y, x + width - 1, y + height - 1, BOX_BLEND) end

@@ -86,51 +86,79 @@ function C.patchCall(self, site, stub)
   core.writeCode(site, { 0xE8, core.itob(core.getRelativeAddress(site, stub, -5)) })
 end
 
--- In the map editor, any number of empty stockpiles, granaries and armouries.
-function C.patchEmptyStorage(self, G)
+-- Empty stockpiles, granaries and armouries can exceed their game limits in the editor.
+local function prepareEmptyStorage(gameMode)
   local E = K.EMPTY_STORAGE
   local sites = memory.scanAll(K.AOB_EMPTY_STORAGE, E.sites + 1)
   if #sites ~= E.sites then error(MODULE_NAME .. ": the empty storage limits are not the ones this module knows") end
+  local patches = {}
   for _, base in ipairs(sites) do
     local site = base + E.site
-    patchJump(self, site, E.size, core.allocateAssembly(templates.storageLimit, {
-      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, LIMIT = rd8(base + E.limit) & 0xFF,
+    patches[#patches + 1] = { site = site, stub = core.allocateAssembly(templates.storageLimit, {
+      GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, LIMIT = rd8(base + E.limit) & 0xFF,
       FAIL = base + E.failRel + 4 + rd32(base + E.failRel), BACK = site + E.size,
-    }))
+    }) }
   end
+  return patches
 end
 
--- In the map editor, a player's new keep (and unique buildings: barracks, guilds, ...) no longer
--- destroys the earlier one, and further storage buildings need not touch the first.
-function C.patchSeveralBuildings(self, G, O)
+-- Replacing a keep or a unique building leaves its earlier instance in the editor.
+local function prepareEarlierBuildings()
+  local gameMode = C.gameModeOf()
   local start = scan(K.AOB_EARLIER_BUILDING, "the earlier building removal")
   local calls, from = {}, start
-  while #calls < 3 do
-    local ok, found = pcall(core.scanForAOB, K.EARLIER_DESTROY, from, start + K.EARLIER_SEARCH)
-    if not ok or found == nil or found == 0 then break end
-    calls[#calls + 1] = found + K.EARLIER_DESTROY_CALL
-    from = found + 1
+  for i = 1, 3 do
+    local found = core.scanForAOB(K.EARLIER_DESTROY, from, start + K.EARLIER_SEARCH)
+    if not found or found == 0 then error(MODULE_NAME .. ": unexpected earlier building removal") end
+    calls[i], from = found + K.EARLIER_DESTROY_CALL, found + 1
   end
-  if #calls ~= 3 then error(MODULE_NAME .. ": the earlier building removal is not the one this module knows") end
+  local target = readCallTarget(calls[1], 0, "destroyBuilding")
+  for i = 2, #calls do
+    if readCallTarget(calls[i], 0, "destroyBuilding") ~= target then
+      error(MODULE_NAME .. ": the building removal calls have different targets")
+    end
+  end
   local stub = core.allocateAssembly(templates.keepEarlier, {
-    GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, DESTROY = readCallTarget(calls[1], 0, "destroyBuilding"),
+    GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, DESTROY = target,
     DESTROY_ARGUMENTS = K.DESTROY_ARGUMENTS,
   })
-  local which = {}
-  if O.severalKeeps then for _, i in ipairs(K.EARLIER_KEEP_CALLS) do which[#which + 1] = i end end
-  if O.looseBuildings then for _, i in ipairs(K.EARLIER_UNIQUE_CALLS) do which[#which + 1] = i end end
-  for _, i in ipairs(which) do C.patchCall(self, calls[i], stub) end
-  if O.looseBuildings then
+  return calls, stub, gameMode
+end
+
+function C.enableExtraBuildings(self, O)
+  local bound, calls, stub, gameMode = pcall(prepareEarlierBuildings)
+  local function install(option, name, patch)
+    if not O[option] then return end
+    local ok, problem = pcall(function()
+      if not bound then error(calls, 0) end
+      patch()
+    end)
+    if not ok then
+      O[option] = false
+      log(ERROR, name .. " is off. " .. tostring(problem))
+    end
+  end
+  install("severalKeeps", "Placing extra keeps", function()
+    for _, i in ipairs(K.EARLIER_KEEP_CALLS) do C.patchCall(self, calls[i], stub) end
+  end)
+  install("looseBuildings", "Placing extra storage and recruitment buildings", function()
     local sites = {}
+    local target
     for i, pattern in ipairs(K.AOB_STORAGE_NEIGHBOURS) do
-      sites[i] = scan(pattern, "the storage placement test") + K.STORAGE_NEIGHBOUR_CALL
+      local site = scan(pattern, "the storage placement test") + K.STORAGE_NEIGHBOUR_CALL
+      local callee = readCallTarget(site, 0, "the neighbour test")
+      if target ~= nil and callee ~= target then error("the storage placement calls have different targets") end
+      sites[i], target = site, callee
     end
     local neighbour = core.allocateAssembly(templates.anyNeighbour, {
-      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, HAS_NEIGHBOUR = readCallTarget(sites[1], 0, "the neighbour test"),
+      GAME_MODE = gameMode, MAP_EDITOR = K.MAP_EDITOR, HAS_NEIGHBOUR = target,
       NEIGHBOUR_ARGUMENTS = K.NEIGHBOUR_ARGUMENTS,
     })
+    local limits = prepareEmptyStorage(gameMode)
+    for _, i in ipairs(K.EARLIER_UNIQUE_CALLS) do C.patchCall(self, calls[i], stub) end
     for _, site in ipairs(sites) do C.patchCall(self, site, neighbour) end
-  end
+    for _, limit in ipairs(limits) do patchJump(self, limit.site, K.EMPTY_STORAGE.size, limit.stub) end
+  end)
 end
 
 local function towerEngineClicks(G)
@@ -656,14 +684,11 @@ end
 -- Callers without a menu context share the checked game mode binding.
 local checkedGameMode
 function C.gameModeOf(G)
-  if G == nil then
-    if checkedGameMode == nil then
-      checkedGameMode = rd32(scanUnique(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
-    end
-    return checkedGameMode
+  if checkedGameMode == nil then
+    checkedGameMode = rd32(scanUnique(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND)
   end
-  if G.gameMode == nil then G.gameMode = rd32(scan(AOB_GAME_MODE, "the game mode") + GAME_MODE_OPERAND) end
-  return G.gameMode
+  if G then G.gameMode = checkedGameMode end
+  return checkedGameMode
 end
 
 -- 47.1: a smaller map size takes the cut-off tiles away at once (no reload needed).
@@ -860,12 +885,20 @@ function C.enable(self, O)
     resolveDrawing(G)
   end
   local B = C.resolve(G)
-  local data = nil
-  if O.buildingCounts or O.towerRuins or O.armyExtras or O.statues or O.barrier or O.keepParts or O.damagedWalls
+  local data, barrierGM
+  if O.barrier then
+    local ok, result = pcall(C.resolveBarrierPicture, G)
+    if ok then
+      barrierGM = result
+    else
+      log(ERROR, "The Barrier button is off. " .. tostring(result))
+    end
+  end
+  if O.buildingCounts or O.towerRuins or O.armyExtras or O.statues or barrierGM or O.keepParts or O.damagedWalls
       or O.undo or O.moatKinds or O.ruinedCathedral or O.rotation then
     local newTable
     C.owner = self                         -- for patches made while the table is built
-    newTable, data = C.build(G, B, O)
+    newTable, data = C.build(G, B, O, barrierGM)
     core.writeCodeInteger(B.site + 1, newTable)
     local construct = core.exposeCode(B.constructor, 2, 1)
     local function ensure()
@@ -884,8 +917,6 @@ function C.enable(self, O)
     end
   end
   try(O.towerRuins, C.patchRuinSizes, "Placing tower ruins is off.", G)
-  try(O.severalKeeps or O.looseBuildings, C.patchSeveralBuildings, "Placing extra keeps and storage buildings is off.", G, O)
-  try(O.looseBuildings, C.patchEmptyStorage, "Placing extra empty storage buildings is off.", G)
   try(O.towerEngines, C.patchTowerEngines, "Placing tower engines away from towers is off.", G)
   try(O.keepParts, C.patchKeepParts, "Placing parts of a keep is off.", G, data)
   try(O.keepGround, C.patchKeepGround, "Preserving ground when placing keeps is off.", G)

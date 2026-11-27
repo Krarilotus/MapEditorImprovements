@@ -1,10 +1,9 @@
 local layout = require("editor.layout")
 local MODULE_NAME = layout.MODULE_NAME
-local AOB_ITEM_TABLE = layout.AOB_ITEM_TABLE
+local LANDSCAPE_KEY_RECORD = layout.LANDSCAPE_KEY_RECORD
 local KEY_BUTTON_ITEM = layout.KEY_BUTTON_ITEM
 local ITEM_COUNT = layout.ITEM_COUNT
 local MAP_CLICK_ITEM = layout.MAP_CLICK_ITEM
-local MENU_ITEM_SIZE = layout.MENU_ITEM_SIZE
 local ITEM_TYPE = layout.ITEM_TYPE
 local ITEM_X = layout.ITEM_X
 local ITEM_Y = layout.ITEM_Y
@@ -87,7 +86,6 @@ local scan = memory.scan
 local expectBytes = memory.expectBytes
 local readOperand = memory.readOperand
 local readCallTarget = memory.readCallTarget
-local bytesOf = memory.bytesOf
 local item = memory.item
 local rd32 = memory.rd32
 local rd16 = memory.rd16
@@ -98,7 +96,9 @@ local rd8 = memory.rd8
 ---------------------------------------------------------------------------------------
 
 local function resolveMenu(G)
-  G.table = memory.scanData(AOB_ITEM_TABLE, "the landscape editor's menu") - KEY_BUTTON_ITEM * MENU_ITEM_SIZE
+  G.site = memory.menuInitializer(0x5B0)
+  G.table, G.menu, G.constructor = memory.menuTable(G.site, KEY_BUTTON_ITEM, LANDSCAPE_KEY_RECORD,
+    "the landscape editor's menu")
   local index = 0
   while rd32(item(G.table, index, ITEM_TYPE)) ~= TYPE_END do
     index = index + 1
@@ -113,10 +113,6 @@ local function resolveMenu(G)
       or rd32(item(G.table, MAP_CLICK_ITEM, ITEM_TYPE)) ~= TYPE_EVERY_FRAME then
     error(MODULE_NAME .. ": the landscape editor's menu is not laid out as the module expects")
   end
-
-  G.site = scan("68 " .. bytesOf(G.table) .. " B9 ? ? ? ? E8", "the landscape editor menu's constructor")
-  G.menu = rd32(G.site + 6)
-  G.constructor = readCallTarget(G.site, 10, "the Menu constructor")
 
   -- The buttons by command, the render function their groups give them, the block each one
   -- is in (the tab id of the 0x64 marker before it, 0 for the part that is always shown), and
@@ -202,7 +198,26 @@ local function resolveMenu(G)
   G.imageButton = scan(AOB_IMAGE_BUTTON, "the image button renderer")
 end
 
+local nameBox
+local function resolveButtonDrawing(G)
+  if G.colourBox then return end
+  nameBox = nameBox or scan(AOB_NAME_BOX, "the Save dialog's name box")
+  local pencil = readOperand(nameBox, NAME_BOX.pencil, "the name box")
+  local colourBox = readCallTarget(nameBox, NAME_BOX.colourBox, "the colour box")
+  local pixelFormat = rd32(scan(AOB_PIXEL_FORMAT, "the pixel format") + PIXEL_FORMAT_OPERAND)
+  G.pencil, G.colourBox, G.pixelFormat = pencil, colourBox, pixelFormat
+end
+
+local function resolveMouse(G)
+  if G.isMouseInside then return end
+  local menuItem = scan(AOB_MENU_ITEM, "the menu's mouse test")
+  G.mouse = readOperand(menuItem, MENU_ITEM_MOUSE, "the menu's mouse test")
+  G.isMouseInside = readCallTarget(menuItem, MENU_ITEM_IS_INSIDE, "the menu's mouse test")
+end
+
 local function resolveDrawing(G)
+  resolveButtonDrawing(G)
+  resolveMouse(G)
   local ammo = scan(AOB_AMMO_COUNT, "the ammunition count")
   if readOperand(ammo, AMMO_WIDTH, "the ammunition count") ~= G.itemX + BUTTON_WIDTH then
     error(MODULE_NAME .. ": the item position globals are not laid out as the module expects")
@@ -210,8 +225,6 @@ local function resolveDrawing(G)
   G.textManager = readOperand(ammo, AMMO_TEXT_MANAGER, "the ammunition count")
   G.renderNumber = readCallTarget(ammo, AMMO_RENDER_NUMBER, "the number drawing")
 
-  local nameBox = scan(AOB_NAME_BOX, "the Save dialog's name box")
-  G.pencil = readOperand(nameBox, NAME_BOX.pencil, "the name box")
   G.roundedBox = readCallTarget(nameBox, NAME_BOX.roundedBox, "the name box background")
   local untilCursor = readCallTarget(nameBox, NAME_BOX.widthUntilCursor, "the name box cursor")
   G.textWidth = readCallTarget(untilCursor, WIDTH_UNTIL_CURSOR_CALL, "the text width")
@@ -219,17 +232,11 @@ local function resolveDrawing(G)
     error(MODULE_NAME .. ": the text manager is not the one this module knows")
   end
   G.shadowedText = readCallTarget(nameBox, NAME_BOX.shadowedText, "the text drawing")
-  G.colourBox = readCallTarget(nameBox, NAME_BOX.colourBox, "the colour box")
   G.setupSurface = readCallTarget(G.colourBox, COLOUR_BOX_SURFACE, "the drawing surface")
   G.setupPencil = readCallTarget(G.colourBox, COLOUR_BOX_CLIP, "the drawing clip")
-  G.pixelFormat = rd32(scan(AOB_PIXEL_FORMAT, "the pixel format") + PIXEL_FORMAT_OPERAND)
   local screenSize = memory.scanUnique(AOB_SCREEN_SIZE, "the screen size")
   G.screenWidth = rd32(screenSize + SCREEN_WIDTH_OPERAND)
   G.screenHeight = rd32(screenSize + SCREEN_HEIGHT_OPERAND)
-
-  local menuItem = scan(AOB_MENU_ITEM, "the menu's mouse test")
-  G.mouse = readOperand(menuItem, MENU_ITEM_MOUSE, "the menu's mouse test")
-  G.isMouseInside = readCallTarget(menuItem, MENU_ITEM_IS_INSIDE, "the menu's mouse test")
 
   local renderGM = scan(AOB_RENDER_GM, "the picture renderer")
   G.renderGM = renderGM
@@ -242,10 +249,13 @@ local function resolveDrawing(G)
   G.sprite = readOperand(animation, ANIMATION.sprite, "the sprite renderer")
 end
 
-local function resolveCounters(G)
+local function resolveUnitLimits(G)
   local unitTest = scan(K.AOB_UNITS, "the unit count")
   G.units = rd32(unitTest + K.UNITS_OPERAND)
   G.unitLimit = rd32(unitTest + K.UNITS_LIMIT)
+end
+
+local function resolveCounts(G)
   local ok, found = pcall(scan, K.AOB_UNIT_MAX, "the unit limit")
   if ok then G.unitMax = rd32(found + K.UNIT_MAX) end
   G.animals = {
@@ -254,16 +264,23 @@ local function resolveCounters(G)
     [RABBIT] = rd32(scan(K.AOB_RABBITS, "the rabbit count") + K.RABBITS_OPERAND),
     [CAMEL] = rd32(scan(K.AOB_CAMELS, "the camel count") + K.CAMELS_OPERAND),
   }
+end
 
+local function resolveTreePlacement(G)
   local placeTree = scan(AOB_PLACE_TREE, "the tree placement")
   G.placeTree = placeTree
   G.landscape = rd32(placeTree + PLACE_TREE.landscape)
   G.createTree = readCallTarget(placeTree, PLACE_TREE.create, "createTree")
   G.treeSize = rd32(placeTree + PLACE_TREE.created + 4)
+end
+
+local function resolveTreePictures(G)
   G.logs = readOperand(G.createTree, CREATE_TREE.logs, "createTree")
   G.typeGm = readOperand(G.createTree, CREATE_TREE.gm, "createTree")
   G.updateTree = readOperand(G.createTree, CREATE_TREE.update, "createTree")
+end
 
+local function resolveTreeSlots(G)
   local newTree = scan(AOB_NEW_TREE, "the tree slot search")
   if newTree ~= G.createTree then
     error(MODULE_NAME .. ": createTree is not where the module expects it")
@@ -273,12 +290,21 @@ local function resolveCounters(G)
   if readOperand(newTree, NEW_TREE.size, "the tree slot search") ~= G.treeSize then
     error(MODULE_NAME .. ": the tree size is not the one this module knows")
   end
+end
+
+local function resolveRockSlots(G)
   local newRock = scan(AOB_NEW_ROCK, "the rock slot search")
-  G.firstRock = G.landscape + rd32(newRock + NEW_ROCK.first)
+  local call = scan(K.AOB_CREATE_ROCK_CALL, "the rock placement")
+  if readCallTarget(call, K.CREATE_ROCK_CALL, "createRock") ~= newRock then
+    error(MODULE_NAME .. ": createRock is not where the module expects it")
+  end
+  G.firstRock = rd32(call + K.CREATE_ROCK_LANDSCAPE) + rd32(newRock + NEW_ROCK.first)
   G.rockSlots = rd32(newRock + NEW_ROCK.last)
   expectBytes(newRock + NEW_ROCK.size[1], NEW_ROCK.size[2], "the rock slot search")
   G.rockSize = rd8(newRock + NEW_ROCK.size[1] + 2) & 0xFF
+end
 
+local function resolveGroupSlots(G)
   local newGroup = scan(AOB_NEW_GROUP, "the group slot search")
   local groupsCall = scan(AOB_GROUPS, "the group array")
   if readCallTarget(groupsCall, GROUPS_CALL, "the group array") ~= newGroup then
@@ -287,8 +313,10 @@ local function resolveCounters(G)
   G.groupSize = rd32(newGroup + NEW_GROUP.size)
   G.firstGroup = rd32(groupsCall + GROUPS_OBJECT) + G.groupSize + (rd8(newGroup + NEW_GROUP.inUse) & 0xFF)
   G.groupSlots = rd32(newGroup + NEW_GROUP.limit) - 1
+end
 
-  -- Which tree type each tool places, asked of the game itself (before the apple tree hook).
+local function resolvePlantTypes(G)
+  -- Tree types for the vegetation tools before the apple tree hook.
   G.treeTypeOf = scan(AOB_TREE_TYPE, "the plant types")
   expectBytes(G.treeTypeOf, TREE_TYPE_START, "the plant types")
   local treeType = core.exposeCode(G.treeTypeOf, 2, 1)
@@ -349,7 +377,16 @@ end
 return {
   resolveMenu = resolveMenu,
   resolveDrawing = resolveDrawing,
-  resolveCounters = resolveCounters,
+  resolveButtonDrawing = resolveButtonDrawing,
+  resolveMouse = resolveMouse,
+  resolveUnitLimits = resolveUnitLimits,
+  resolveCounts = resolveCounts,
+  resolveTreePlacement = resolveTreePlacement,
+  resolveTreePictures = resolveTreePictures,
+  resolveTreeSlots = resolveTreeSlots,
+  resolveRockSlots = resolveRockSlots,
+  resolveGroupSlots = resolveGroupSlots,
+  resolvePlantTypes = resolvePlantTypes,
   resolveRocks = resolveRocks,
   resolveHerds = resolveHerds,
 }

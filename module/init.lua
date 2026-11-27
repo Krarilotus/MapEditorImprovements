@@ -314,20 +314,13 @@ local function enable(self, config)
     moatRemoval = setting(config, "castle", "moat_removal_keeps_ground") == true,
     undo = self.undo,
   }
+  local landscapeOK, result = pcall(enableMenu, self, O)
   local frameData
-  if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.rocksAndWater or O.sortedRows
-      or O.textures
-      or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
-      or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks
-      or O.textureMask or O.birdButtons or O.animalBin or O.groupWarning or O.eraserChoice or O.eraseGulls
-      or O.spreadOrder or O.spreadOutlines or O.compass or O.rockPlaced then
-    local ok, result = pcall(enableMenu, self, O)
-    if ok then
-      frameData = result
-    else
-      log(ERROR, "Landscape menu changes are off.")
-      log(WARNING, tostring(result))
-    end
+  if landscapeOK then
+    frameData = result
+  else
+    log(ERROR, "Landscape menu changes are off.")
+    log(WARNING, tostring(result))
   end
   local settings = {
     lockedMaps = setting(config, "map_settings", "show_locked") == true,
@@ -335,22 +328,11 @@ local function enable(self, config)
     settingsMenu = settingsMenu,
   }
   if settings.lockedMaps or settings.settingsButton or settings.settingsMenu then
-    local ok, problem = pcall(function()
-      local G = self.landscape
-      if G == nil then
-        G = {}
-        resolveMenu(G)
-        resolveDrawing(G)
-      end
-      C.enableMapSettings(self, settings, G)
-    end)
-    if not ok then
-      log(ERROR, "Map settings changes are off.")
-      log(WARNING, tostring(problem))
-    end
+    C.enableMapSettings(self, settings)
   end
+  if castle.severalKeeps or castle.looseBuildings then C.enableExtraBuildings(self, castle) end
   if castle.buildingCounts or castle.towerRuins or castle.armyExtras or castle.statues or castle.barrier
-      or castle.severalKeeps or castle.looseBuildings or castle.towerEngines or castle.keepParts
+      or castle.towerEngines or castle.keepParts
       or castle.damagedWalls or castle.hoverTextLeft or castle.undo or castle.moatKinds or castle.moatOnMarsh
       or castle.moatRemoval or castle.ruinedCathedral or castle.allPlayers or castle.allKeeps or castle.playerZero or castle.keepCrests or castle.wallTools
       or castle.keepGround or castle.rotation or castle.compass or castle.unitColour then

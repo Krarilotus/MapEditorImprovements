@@ -42,7 +42,7 @@ local makeLayout = ui.makeLayout
 local lane = require("editor.lane")
 
 -- Copies the build menu's item table with the module's items added, like buildTable.
-function C.build(G, B, O)
+function C.build(G, B, O, barrierGM)
   local data = { shown = core.allocate(4, true) }
   C.guardRects(data)
   local inserts = {}
@@ -245,7 +245,7 @@ function C.build(G, B, O)
     for i = 1, most do insert(B.blockEnd[panel.tab], "panel" .. p .. "/" .. i) end
     insert(B.blockEnd[panel.tab], "painter" .. p)
   end
-  if O.barrier then insert(B.blockEnd[K.TAB_RUINS], "barrier") end
+  if barrierGM then insert(B.blockEnd[K.TAB_RUINS], "barrier") end
   if O.wallTools then
     insert(B.blockEnd[K.TAB_CASTLE], "wallSlider")
     insert(B.blockEnd[K.TAB_CASTLE], "wallSliderReset")
@@ -326,7 +326,7 @@ function C.build(G, B, O)
 
   -- The barrier: a copy of the first ruin button with the barrier's command, placed in the
   -- free spot at the end of the ruins' grid once the menu has placed them.
-  if O.barrier then
+  if barrierGM then
     local barrier = added.barrier
     local model = B.buttons[K.TAB_RUINS][K.FIRST_RUIN]
     core.writeBytes(barrier, core.readBytes(item(B.table, model.index), MENU_ITEM_SIZE))
@@ -337,7 +337,7 @@ function C.build(G, B, O)
     wr32(barrier + ITEM_RENDER_TYPE, RENDER_SIMPLE)
     wr16(barrier + ITEM_CONTROL, -1)
     wr16(barrier + ITEM_HIDDEN, 1)
-    local draw = C.makeBarrier(G)
+    local draw = C.makeBarrier(G, barrierGM)
     wr32(barrier + ITEM_RENDER, C.luaPad(function() draw(barrier) end, "the barrier button"))
     local ruins = {}
     for _, button in pairs(B.buttons[K.TAB_RUINS]) do ruins[#ruins + 1] = item(newTable, movedTo[button.index]) end
