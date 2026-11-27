@@ -834,19 +834,17 @@ local function buildTable(G, O)
       local asyncKey = core.exposeCode(core.allocateAssembly(templates.undoKeyState, { IMPORT = R.keyState }), 1, 0)
       local wasDown, placedAtPress = false, nil
       local pad = C.luaPad(function()
-        local tool = rd32(G.subtype)
-        if tool < K.FIRST_ROCK_COMMAND or tool > K.LAST_ROCK_COMMAND or rd32(mode) ~= K.ROCK_TURN_MODE
-            or rd32(gameMode) ~= K.MAP_EDITOR then
-          wasDown, placedAtPress = false, nil
-          return
-        end
         local down = (asyncKey(K.LEFT_BUTTON) & 0x8000) ~= 0
-        if down and not wasDown then
-          placedAtPress = rd32(G.onMap) ~= 0 and rd32(O.rockPlaced) or nil
-        elseif wasDown and not down and placedAtPress == rd32(O.rockPlaced) then
+        if down == wasDown then return end
+        wasDown = down
+        local tool = rd32(G.subtype)
+        local eligible = rd32(gameMode) == K.MAP_EDITOR and tool >= K.FIRST_ROCK_COMMAND
+          and tool <= K.LAST_ROCK_COMMAND and rd32(mode) == K.ROCK_TURN_MODE
+        if down then
+          placedAtPress = eligible and rd32(G.onMap) ~= 0 and rd32(O.rockPlaced) or nil
+        elseif eligible and placedAtPress ~= nil and placedAtPress == rd32(O.rockPlaced) then
           wr32(rotation, (rd32(rotation) + 2 * math.random(1, 3)) % 8)
         end
-        wasDown = down
       end, "the rock click turn")
       wr32(added.rockTick + ITEM_TYPE, TYPE_EVERY_FRAME)
       wr32(added.rockTick + ITEM_ACTION, pad)
