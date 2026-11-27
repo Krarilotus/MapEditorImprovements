@@ -42,7 +42,7 @@ rocks_signpost: Signpost in skirmish maps
 rocks_signpost_tooltip: Open Rocks on a skirmish map and choose Signpost.
 rocks_random_preview: Random rock angle per placement
 rocks_random_preview_tooltip: In Landscape → Rocks, choose a size and click Random rotation. The preview picks another angle after each placement attempt.
-rocks_variants: Choose a rock variant
+rocks_variants: Choose rock variants, including a fifth small rock
 rocks_variants_tooltip: Choose a rock size, then click a variant in the row above Rocks. Click it again or change tools to unlock it.
 rocks_invisible: Place invisible rocks
 rocks_invisible_tooltip: Tick the box to the right of Rocks before placing. Invisible rocks block movement and building.
@@ -60,7 +60,7 @@ heights_invert_key: Hold to reverse Equalize
 heights_invert_key_tooltip: With Equalize selected, hold this key to roughen the ground and release it to smooth again.
 castle_group: Castle mode
 castle_group_descr: Place buildings and units in Castle mode.
-castle_building_counts: Building counts above the minimap
+castle_building_counts: Building counts with room for hover text
 castle_building_counts_tooltip: See building counts above the minimap in Castle mode.
 castle_tower_ruins: Tower ruins
 castle_tower_ruins_tooltip: Choose a ruin in the variant row above Towers.
@@ -189,11 +189,11 @@ castle_rotation: Building rotation list
 castle_rotation_tooltip: In Castle mode, click Rotation just above the lower-left menu and choose an angle before placing a supported building.
 castle_unit_colour: Choose unit colors separately from ownership
 castle_unit_colour_tooltip: Choose a crest above the European or Arabian unit menu to change how the unit looks.
-castle_keep_crests: Choose the active keep by its crest
+castle_keep_crests: Choose the active keep by its crest with hover help
 castle_keep_crests_tooltip: With multiple keeps enabled, click a keep’s crest to make it active or click the active crest to clear the selection.
 castle_wall_tools: Wall heights and freestanding crenellations
 castle_wall_tools_tooltip: Select walls or stairs and use the controls above the menu. Click the adjacent Reset to restore their settings.
-trees_spread_order: Group trees by spreading ground
+trees_spread_order: Group trees by spreading ground and separate shrubs
 trees_spread_order_tooltip: Arrange trees by the ground they spread on and put shrubs in a separate row in Vegetation.
 trees_spread_outlines: Mark where trees spread
 trees_spread_outlines_tooltip: In Vegetation, green marks trees that spread on fertile ground and beige marks those that spread on infertile ground.
@@ -204,10 +204,10 @@ herds_group_warning_tooltip: See the remaining slots when herds and troop groups
 eraser_choice: Choose what the eraser removes
 eraser_choice_tooltip: Select Eraser, then choose All, Animals, Units, Buildings, Vegetation or Rocks above the menu.
 eraser_seagulls: Erase flying seagulls
-eraser_seagulls_tooltip: Use the landscape eraser in Animals or All mode to remove gulls from the painted tiles.
+eraser_seagulls_tooltip: Use Eraser to remove flying gulls. With eraser modes enabled, choose Animals or All.
 map_settings_show_locked: Show locked maps in Load
 map_settings_show_locked_tooltip: Tick Show locked maps below the file list in the editor’s Load dialog.
-map_settings_menu: Expanded Map Settings
+map_settings_menu: Expanded Map Settings and button
 map_settings_menu_tooltip: Click Map Settings above To Map or press Alt+, in the editor. Drag Custom size and release to apply the new size.
 eraser_group: Eraser
 eraser_group_descr: Choose what the landscape eraser clears.

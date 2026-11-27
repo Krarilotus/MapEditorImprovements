@@ -359,16 +359,16 @@ Set these URLs under `map-editor-improvements` in a preset or profile.
 | `grid.rotation_colour`, `grid.mine_colour`, `grid.mine_size` | Set the keep rotation line color, the iron mine outline color, and the mine footprint width in tiles. |
 | `herds.animal_bin` | Retain the All Animals button for a profile that supplies it. Alt+E clears all land animals in the editor. |
 
-When a profile leaves a combined switch unset, the two component settings supply its
-behavior. Setting the combined switch turns both on or off together.
+The author setting follows its launcher switch when it is unset. An explicit
+author setting controls that part independently.
 
-| Combined switch | Component settings |
+| Launcher switch | Author setting |
 | --- | --- |
-| `trees.group_by_spread` | `trees.sorted_rows`, `trees.spread_order` |
-| `rocks.variant_row` | `rocks.variants`, `rocks.extra_rock` |
-| `castle.show_building_counts` | `castle.building_counts`, `castle.hover_text_left` |
-| `castle.active_keep_crests` | `castle.keep_crests`, `castle.keep_crest_tooltip` |
-| `map_settings.expanded` | `map_settings.button`, `map_settings.menu` |
+| `trees.spread_order` | `trees.sorted_rows` |
+| `rocks.variants` | `rocks.extra_rock` |
+| `castle.building_counts` | `castle.hover_text_left` |
+| `castle.keep_crests` | `castle.keep_crest_tooltip` |
+| `map_settings.menu` | `map_settings.button` |
 
 Use configured key reads the profile’s separate enable and key settings for
 `heights.invert_shortcut`, `pipette.select_shortcut` and `pipette.read_shortcut`.

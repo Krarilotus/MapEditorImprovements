@@ -14,7 +14,6 @@ local ITEM_CONTROL = layout.ITEM_CONTROL
 local ITEM_HIDDEN = layout.ITEM_HIDDEN
 local TYPE_EVERY_FRAME = layout.TYPE_EVERY_FRAME
 local TYPE_CLICKABLE = layout.TYPE_CLICKABLE
-local RENDER_NONE = layout.RENDER_NONE
 local RENDER_SIMPLE = layout.RENDER_SIMPLE
 local TEXTURES = layout.TEXTURES
 local VEGETATION = layout.VEGETATION
@@ -246,8 +245,6 @@ function C.patchFrame(self, G, data)
     GROUP_ON = data.groupOn, FIRST_GROUP = G.firstGroup, GROUP_SLOTS = G.groupSlots, GROUP_SIZE = G.groupSize,
     GROUP_COUNT = data.groupCount or data.groupOn, GROUP_MARGIN = K.GROUP_MARGIN, GROUP_PAD = groupPad,
   }))
-  -- The menu's own drawing of the preview is no longer needed.
-  if data.treePreviewItem ~= nil then wr32(data.treePreviewItem + ITEM_RENDER_TYPE, RENDER_NONE) end
 end
 
 -- Whether the mask would let a tile be changed, without starting a stroke (for previews).

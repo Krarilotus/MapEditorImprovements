@@ -39,7 +39,7 @@ config-sparse:
           rocks_and_water:
             contents:
               suggested-value: true
-          group_by_spread:
+          spread_order:
             contents:
               suggested-value: true
           spread_outlines:
@@ -72,7 +72,7 @@ config-sparse:
           random_preview:
             contents:
               suggested-value: true
-          variant_row:
+          variants:
             contents:
               suggested-value: true
           invisible:
@@ -95,7 +95,7 @@ config-sparse:
             contents:
               suggested-value: true
         castle:
-          show_building_counts:
+          building_counts:
             contents:
               suggested-value: true
           tower_ruins:
@@ -137,7 +137,7 @@ config-sparse:
           unit_colour:
             contents:
               suggested-value: true
-          active_keep_crests:
+          keep_crests:
             contents:
               suggested-value: true
           wall_tools:
@@ -206,7 +206,7 @@ config-sparse:
           show_locked:
             contents:
               suggested-value: true
-          expanded:
+          menu:
             contents:
               suggested-value: true
           size_refresh:

@@ -8,46 +8,12 @@ config-sparse:
           shown:
             contents:
               suggested-value: false
-        trees:
-          sorted_rows:
-            contents:
-              suggested-value: false
-          spread_order:
-            contents:
-              suggested-value: false
         textures:
           no_heights_iron:
             contents:
               suggested-value: false
-        rocks:
-          variants:
-            contents:
-              suggested-value: false
-          extra_rock:
-            contents:
-              suggested-value: false
-        castle:
-          building_counts:
-            contents:
-              suggested-value: false
-          hover_text_left:
-            contents:
-              suggested-value: false
-          keep_crests:
-            contents:
-              suggested-value: false
-          keep_crest_tooltip:
-            contents:
-              suggested-value: false
         herds:
           animal_bin:
-            contents:
-              suggested-value: false
-        map_settings:
-          menu:
-            contents:
-              suggested-value: false
-          button:
             contents:
               suggested-value: false
         heights:

@@ -95,13 +95,13 @@ options:
       type: boolean
       value: false
     header: '{{trees_rocks_and_water}}'
-  - url: map-editor-improvements.trees.group_by_spread
-    name: map-editor-improvements-trees-group-by-spread
+  - url: map-editor-improvements.trees.spread_order
+    name: map-editor-improvements-trees-spread-order
     text: '{{trees_spread_order_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: null
+      value: false
     header: '{{trees_spread_order}}'
   - url: map-editor-improvements.trees.spread_outlines
     name: map-editor-improvements-trees-spread-outlines
@@ -193,13 +193,13 @@ options:
       type: boolean
       value: false
     header: '{{rocks_random_preview}}'
-  - url: map-editor-improvements.rocks.variant_row
-    name: map-editor-improvements-rocks-variant-row
+  - url: map-editor-improvements.rocks.variants
+    name: map-editor-improvements-rocks-variants
     text: '{{rocks_variants_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: null
+      value: false
     header: '{{rocks_variants}}'
   - url: map-editor-improvements.rocks.invisible
     name: map-editor-improvements-rocks-invisible
@@ -361,13 +361,13 @@ options:
   text: '{{castle_group_descr}}'
   hasHeader: true
   children:
-  - url: map-editor-improvements.castle.show_building_counts
-    name: map-editor-improvements-castle-show-building-counts
+  - url: map-editor-improvements.castle.building_counts
+    name: map-editor-improvements-castle-building-counts
     text: '{{castle_building_counts_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: null
+      value: false
     header: '{{castle_building_counts}}'
   - url: map-editor-improvements.castle.tower_ruins
     name: map-editor-improvements-castle-tower-ruins
@@ -473,13 +473,13 @@ options:
     contents:
       type: boolean
       value: false
-  - url: map-editor-improvements.castle.active_keep_crests
-    name: map-editor-improvements-castle-active-keep-crests
+  - url: map-editor-improvements.castle.keep_crests
+    name: map-editor-improvements-castle-keep-crests
     text: '{{castle_keep_crests_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: null
+      value: false
     header: '{{castle_keep_crests}}'
   - url: map-editor-improvements.castle.wall_tools
     name: map-editor-improvements-castle-wall-tools
@@ -883,13 +883,13 @@ options:
       type: boolean
       value: false
     header: '{{map_settings_show_locked}}'
-  - url: map-editor-improvements.map_settings.expanded
-    name: map-editor-improvements-map-settings-expanded
+  - url: map-editor-improvements.map_settings.menu
+    name: map-editor-improvements-map-settings-menu
     text: '{{map_settings_menu_tooltip}}'
     display: UCP2Switch
     contents:
       type: boolean
-      value: null
+      value: false
     header: '{{map_settings_menu}}'
 - display: GroupBox
   category:

@@ -150,10 +150,10 @@ end
 -- Enable
 ---------------------------------------------------------------------------------------
 
-local function pairedSettings(config, group, switch, first, second)
-  local value = setting(config, group, switch)
-  if type(value) == "boolean" then return value, value end
-  return setting(config, group, first) == true, setting(config, group, second) == true
+local function pairedSettings(config, group, primary, companion)
+  local enabled = setting(config, group, primary) == true
+  local override = setting(config, group, companion)
+  return enabled, override == true or (override == nil and enabled)
 end
 
 local function shortcut(config, group, choice, enabled, key)
@@ -183,8 +183,8 @@ local function enable(self, config)
       log(WARNING, tostring(result))
     end
   end
-  local sortedRows, spreadOrder = pairedSettings(config, "trees", "group_by_spread", "sorted_rows", "spread_order")
-  local variants, extraRock = pairedSettings(config, "rocks", "variant_row", "variants", "extra_rock")
+  local spreadOrder, sortedRows = pairedSettings(config, "trees", "spread_order", "sorted_rows")
+  local variants, extraRock = pairedSettings(config, "rocks", "variants", "extra_rock")
   local O = {
     counts = setting(config, "counts", "enabled") == true,
     shown = setting(config, "counts", "shown") == true,
@@ -233,9 +233,9 @@ local function enable(self, config)
     }
   end
   local buildingCounts, hoverTextLeft =
-    pairedSettings(config, "castle", "show_building_counts", "building_counts", "hover_text_left")
+    pairedSettings(config, "castle", "building_counts", "hover_text_left")
   local keepCrests, crestTooltip =
-    pairedSettings(config, "castle", "active_keep_crests", "keep_crests", "keep_crest_tooltip")
+    pairedSettings(config, "castle", "keep_crests", "keep_crest_tooltip")
   local castle = {
     buildingCounts = buildingCounts,
     towerRuins = setting(config, "castle", "tower_ruins") == true,
@@ -265,19 +265,22 @@ local function enable(self, config)
     moatRemoval = setting(config, "castle", "moat_removal_keeps_ground") == true,
     undo = self.undo,
   }
+  local frameData
   if O.counts or O.growth or O.apple or O.shrubs or O.felled or O.obstacles or O.rocksAndWater or O.sortedRows
       or O.textures
       or O.variants or O.herds or O.invisibleRocks or O.noStacking or O.noHeightsIron or O.waterDecorations
       or O.undo or O.pipette or O.treePreview or O.maxHeight or O.heightTools or O.lostRocks
       or O.textureMask or O.birdButtons or O.animalBin or O.groupWarning or O.eraserChoice or O.eraseGulls
       or O.spreadOrder or O.spreadOutlines or O.compass or O.rockPlaced then
-    local ok, problem = pcall(enableMenu, self, O)
-    if not ok then
+    local ok, result = pcall(enableMenu, self, O)
+    if ok then
+      frameData = result
+    else
       log(ERROR, "Landscape menu changes are off.")
-      log(WARNING, tostring(problem))
+      log(WARNING, tostring(result))
     end
   end
-  local settingsButton, settingsMenu = pairedSettings(config, "map_settings", "expanded", "button", "menu")
+  local settingsMenu, settingsButton = pairedSettings(config, "map_settings", "menu", "button")
   local settings = {
     lockedMaps = setting(config, "map_settings", "show_locked") == true,
     settingsButton = settingsButton,
@@ -391,10 +394,17 @@ local function enable(self, config)
   end
   if not gridOn then frame.remove("grid") end
   -- Last: the map drawing's patch site with every routine the features above added.
-  frame.commit(self, function(problem, editorOverlay)
-    if gridOn then log(ERROR, "The map editor resource grid is off. Map drawing could not be installed.") end
-    if editorOverlay then log(ERROR, "Map editor previews and warnings over the map are off.") end
-    log(WARNING, tostring(problem))
+  frame.commit(self, function(ok, problem)
+    if not ok then
+      if gridOn then log(ERROR, "The map editor resource grid is off. Map drawing could not be installed.") end
+      if frameData ~= nil then
+        landscape.reportFrameFailure(frameData, problem)
+      else
+        log(WARNING, tostring(problem))
+      end
+    elseif frameData ~= nil and frameData.treePreviewItem ~= nil then
+      wr32(frameData.treePreviewItem + layout.ITEM_RENDER_TYPE, layout.RENDER_NONE)
+    end
   end)
 end
 

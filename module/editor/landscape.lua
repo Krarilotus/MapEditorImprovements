@@ -22,6 +22,13 @@ local patchTrees = require("editor.vegetation").patchTrees
 local patchRocks = require("editor.terrain_patches").patchRocks
 local patchHerds = require("editor.landscape_controls").patchHerds
 
+local function reportFrameFailure(data, problem)
+  if data.groupWarning ~= nil then log(ERROR, "The herd limit warning is off.") end
+  if data.treePreviewItem ~= nil then log(WARNING, "Vegetation preview is only available while the editor menu is open.") end
+  if data.heights ~= nil then log(WARNING, "Height brush settings will stay set when leaving the editor.") end
+  log(WARNING, tostring(problem))
+end
+
 local function enableMenu(self, O)
   local G = {}
   resolveMenu(G)
@@ -65,13 +72,6 @@ local function enableMenu(self, O)
     local ok, problem = pcall(C.patchHeightFilters, self, G, data)
     if not ok then log(WARNING, tostring(problem) .. "; the height tools change every tile under the brush") end
   end
-  if data.heights ~= nil or data.treePreviewDraw ~= nil or data.groupWarning ~= nil then
-    local ok, problem = pcall(C.patchFrame, self, G, data)
-    if not ok then
-      if data.groupWarning ~= nil then log(ERROR, "The herd limit warning is off.") end
-      log(WARNING, tostring(problem))
-    end
-  end
   if data.pipette ~= nil then
     local ok, problem = pcall(C.patchPipettePreview, self, data.pipette, data.pipetteRead)
     if not ok then log(WARNING, tostring(problem) .. "; the pipette shows the whole brush while taking a tile") end
@@ -87,6 +87,11 @@ local function enableMenu(self, O)
   self.shownFlag = data.shown
   self.landscape = G
   data.installed = true          -- the menu is in: the module's actions may act on it
+  if data.heights ~= nil or data.treePreviewDraw ~= nil or data.groupWarning ~= nil then
+    local ok, problem = pcall(C.patchFrame, self, G, data)
+    if ok then return data end
+    reportFrameFailure(data, problem)
+  end
 end
 
 -- Skirmish maps get the Rocks tab with the signpost: the jl past `mov eax, 239` always jumps.
@@ -121,6 +126,7 @@ end
 
 return {
   enableMenu = enableMenu,
+  reportFrameFailure = reportFrameFailure,
   enableSignpost = enableSignpost,
   enableRandomPreview = enableRandomPreview,
 }

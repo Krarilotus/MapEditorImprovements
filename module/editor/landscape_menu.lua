@@ -132,6 +132,8 @@ local function buildTable(G, O)
     insert(G.firstBlock, "tooltip")
   end
   if G.blockEnd[K.HEIGHTS_TAB] == nil or G.buttons[K.MIN_HEIGHT_TOOL] == nil then
+    if O.maxHeight then log(ERROR, "Max Height is off. The Heights menu could not be found.") end
+    if O.heightTools then log(ERROR, "The height brush controls are off. The Heights menu could not be found.") end
     O.maxHeight, O.heightTools = false, false
   end
   for _, kind in ipairs(C.heightItems(O)) do insert(G.blockEnd[K.HEIGHTS_TAB], kind) end
@@ -872,10 +874,10 @@ local function buildTable(G, O)
     wr32(into + ITEM_TYPE, TYPE_CLICKABLE)    -- no size, so never under the mouse
     wr32(into + ITEM_RENDER_TYPE, RENDER_NONE)
     local ok, problem = pcall(function()
-      data.treePreviewDraw = C.makeTreePreview(G, O, data)
-      data.treePreviewItem = into
-      wr32(into + ITEM_RENDER, C.luaPad(data.treePreviewDraw, "the tree preview"))
+      local preview = C.makeTreePreview(G, O, data)
+      wr32(into + ITEM_RENDER, C.luaPad(preview, "the tree preview"))
       wr32(into + ITEM_RENDER_TYPE, RENDER_SIMPLE)
+      data.treePreviewDraw, data.treePreviewItem = preview, into
     end)
     if not ok then
       log(ERROR, "The vegetation preview is off.")
