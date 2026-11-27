@@ -126,15 +126,23 @@ function M.commit(self, handoff, onProblem)
         if not handedOff then onProblem(problem, true) end
         return
       end
+      local drawingSafe = true
+      local problems = { tostring(installed) }
       if self.saved ~= nil then
         for index = #self.saved, first, -1 do
           local saved = self.saved[index]
-          core.writeCode(saved.address, saved.bytes)
-          self.saved[index] = nil
+          local restored, problem = pcall(core.writeCode, saved.address, saved.bytes)
+          if restored then
+            table.remove(self.saved, index)
+          else
+            problems[#problems + 1] = string.format("could not restore 0x%X (%s)", saved.address, tostring(problem))
+            if saved.address == site.base + LOAD_EAX then drawingSafe = false end
+          end
         end
       end
       M.remove("grid")
-      log(ERROR, "The map editor resource grid is off: " .. tostring(installed))
+      log(ERROR, "The map editor resource grid is off: " .. table.concat(problems, ". "))
+      if not drawingSafe then return end
     end
     local installed = false
     local ok, problem = pcall(function()

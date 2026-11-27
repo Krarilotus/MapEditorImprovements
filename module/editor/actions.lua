@@ -33,7 +33,7 @@ M.SCAN_CODES = {
   numpad_decimal = { 0x53 }, numpad_divide = { 0x35, true },
   insert = { 0x52, true }, delete_key = { 0x53, true }, home = { 0x47, true },
   end_key = { 0x4F, true }, page_up = { 0x49, true }, page_down = { 0x51, true },
-  caps_lock = { 0x3A }, comma = { 0x33 },
+  caps_lock = { 0x3A },
 }
 
 ---The Custom Hotkeys proxy when it offers module actions, else nil.
@@ -63,11 +63,6 @@ local function register(hotkeys, id, label, context, default, callback, fallback
   if ok and result == true then return true end
   log(WARNING, string.format("Custom Hotkeys refused the action %s (%s); %s", spec.id, tostring(result), fallback))
   return false
-end
-
-function M.nativePress(hotkeys, id, key, callback)
-  return register(hotkeys, id, labels[id], { kind = "editor" }, M.suggest(key, ALT), callback,
-    "the original shortcut stays active")
 end
 
 -- An optional binding alongside the module's own key setting.

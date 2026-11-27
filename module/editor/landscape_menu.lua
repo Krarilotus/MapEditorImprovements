@@ -86,6 +86,7 @@ local makeLayout = ui.makeLayout
 -- whose index they are listed under) and fills them in.
 local function buildTable(G, O)
   local data = {}
+  local bins = C.resolveAnimalBins(G, O)
   C.guardRects(data)
   local pictures = {}
   if O.apple then pictures.apple = buttonPictures("apple") end
@@ -128,7 +129,7 @@ local function buildTable(G, O)
   end
   if O.textureMask then insert(G.firstBlock, "maskButton") end
   if O.counts or O.obstacles or O.rocksAndWater or O.invisibleRocks or O.apple or O.textures or O.waterDecorations
-      or O.maxHeight or O.lostRocks or O.textureMask or O.birdButtons or O.animalBin then
+      or O.maxHeight or O.lostRocks or O.textureMask or #bins > 0 then
     insert(G.firstBlock, "tooltip")
   end
   if G.blockEnd[K.HEIGHTS_TAB] == nil or G.buttons[K.MIN_HEIGHT_TOOL] == nil then
@@ -144,11 +145,11 @@ local function buildTable(G, O)
     insert(animalsEnd, "herdPanel")
   end
   if O.counts then insert(animalsEnd, "numbers" .. ANIMALS) end
-  if O.birdButtons then
-    insert(animalsEnd, "crowBin")
-    insert(animalsEnd, "gullBin")
+  local binKinds = {}
+  for _, bin in ipairs(bins) do
+    insert(animalsEnd, bin.kind)
+    binKinds[#binKinds + 1] = bin.kind
   end
-  if O.animalBin then insert(animalsEnd, "animalBin") end
   local vegetationEnd = G.blockEnd[VEGETATION]
   if O.apple then insert(vegetationEnd, "apple") end
   if O.shrubs then
@@ -665,8 +666,7 @@ local function buildTable(G, O)
       end
     end
   end
-  extra(O.birdButtons or O.animalBin, C.animalsMenu, { "crowBin", "gullBin", "animalBin" },
-    "The animal and bird removal buttons are off.")
+  extra(#bins > 0, function(M) C.animalsMenu(M, bins) end, binKinds, "The animal removal buttons are off.")
   local eraserKinds = { "eraserPanel" }
   for i = 1, #K.ERASER_MODES do eraserKinds[#eraserKinds + 1] = "eraserMode" .. i end
   data.eraserChoice = extra(O.eraserChoice, C.eraserMenu, eraserKinds, "The eraser mode panel is off.")

@@ -47,7 +47,6 @@ local wr16 = memory.wr16
 local buttonPictures = require("editor.images").buttonPictures
 local makePanel = require("editor.ui").makePanel
 local patchJump = require("editor.menu_install").patchJump
-local actions = require("editor.actions")
 
 ---------------------------------------------------------------------------------------
 -- Constants of 36-39
@@ -142,7 +141,7 @@ K.AOB_SETTINGS_SIZE = "B8 90 01 00 00 74 04 8B 44 24 08 50 B9 ? ? ? ? A3 ? ? ? ?
 K.SETTINGS_SIZE_VAR = 18
 K.AOB_SETTINGS_SIZE_ENTRY = "B9 ? ? ? ? E8 ? ? ? ? 83 FE 14 75 07 B8 A0 00 00 00"
 K.AOB_ALT_COMMA = "83 3D ? ? ? ? 11 0F 85 ? ? ? ? A1 ? ? ? ? 83 F8 1F 75 13 6A 00 6A FF B9 ? ? ? ? E8"
-K.ALT_COMMA = { skip = 7, modal = 14, manager = 28, open = 32 }
+K.ALT_COMMA = { modal = 14, manager = 28, open = 32 }
 K.OPENER_STATE = 0x18                    -- the modal opener's `mov ecx, list state`
 K.MAP_TYPE_PARAMS = { 3, 4, 5, 6 }       -- Siege, Invasion, Economic, Just Build
 K.MAP_SIZE_PARAMS = { 0x14, 0x15, 0x16, 0x17 }
@@ -223,7 +222,7 @@ function C.resolveBirds(G)
   return D
 end
 
-local eraseAnimals, eraseShortcutCall
+local eraseAnimals
 local function resolveAnimalErase()
   if eraseAnimals == nil then
     local alt = scan(K.AOB_DELETE_ANIMALS, "Alt + E")
@@ -234,18 +233,8 @@ local function resolveAnimalErase()
       deleteAnimals(units)
       return true
     end
-    eraseShortcutCall = alt + call.call
   end
-  return eraseAnimals, eraseShortcutCall
-end
-
-function C.enableEraseAnimalsHotkey(self, hotkeys)
-  local erase, call = resolveAnimalErase()
-  expectBytes(call, { 0xE8 }, "the Alt + E animal removal call")
-  -- Every editor screen that accepts Alt + E reaches this call.
-  if actions.nativePress(hotkeys, "erase-animals", "letter_e", erase) then
-    patchJump(self, call, 5, call + 5)
-  end
+  return eraseAnimals
 end
 
 function C.birdCounts(G, D)
@@ -260,24 +249,9 @@ function C.birdCounts(G, D)
   return crows, gulls
 end
 
--- The Animals menu's wastebins: erase all crows and all seagulls (right of their buttons), and
--- all animals (the menu's right side; the game's own Alt + E).
-function C.animalsMenu(M)
-  local G, O, data, added = M.G, M.O, M.data, M.added
+local function resolveBirdBins(G)
+  assert(G.buttons[K.CROW_TOOL] and G.buttons[K.GULL_TOOL], "the crow and seagull buttons are missing")
   local D = C.resolveBirds(G)
-  local pictures = buttonPictures("bin")
-  local never = core.allocate(4, true)
-  if G.blit == nil then
-    G.blit = core.allocateAssembly(templates.blit, {
-      PENCIL = G.pencil, SETUP_SURFACE = G.setupSurface, SETUP_PENCIL = G.setupPencil,
-      SCRATCH = core.allocate(32, true), PIXEL_FORMAT = G.pixelFormat,
-    })
-  end
-  local render = core.allocateAssembly(templates.flagPictureButton, {
-    NORMAL = pictures.normal, HOVERED = pictures.hover, CHOSEN = pictures.chosen, FLAG = never,
-    HOVER = G.hover, PENCIL = G.pencil, PENCIL_TARGET = PENCIL_TARGET, ITEM_X = G.itemX, ITEM_Y = G.itemY,
-    BLIT = G.blit,
-  })
   local deleteEntity = core.exposeCode(D.deleteEntity, 2, 1)
   local deleteAllGulls = core.exposeCode(D.deleteAllGulls, 0, 0)
   local function eraseCrows()
@@ -295,18 +269,52 @@ function C.animalsMenu(M)
       end
     end
   end
+  return {
+    { kind = "crowBin", beside = K.CROW_TOOL, fn = eraseCrows, text = "Erase all crows" },
+    { kind = "gullBin", beside = K.GULL_TOOL, fn = function() deleteAllGulls() end, text = "Erase all seagulls" },
+  }
+end
+
+function C.resolveAnimalBins(G, O)
   local bins = {}
   if O.birdButtons then
-    bins[#bins + 1] = { item = added.crowBin, beside = K.CROW_TOOL, fn = eraseCrows, text = "Erase all crows" }
-    bins[#bins + 1] = { item = added.gullBin, beside = K.GULL_TOOL, fn = function() deleteAllGulls() end,
-      text = "Erase all seagulls" }
+    local ok, result = pcall(resolveBirdBins, G)
+    if ok then
+      bins = result
+    else
+      log(ERROR, "The bird removal buttons are off: " .. tostring(result))
+    end
   end
   if O.animalBin then
-    bins[#bins + 1] = { item = added.animalBin, fn = resolveAnimalErase(),
-      text = "Erase all land animals" }
+    local ok, erase = pcall(resolveAnimalErase)
+    if ok and G.buttons[DEER] ~= nil then
+      bins[#bins + 1] = { kind = "animalBin", fn = erase, text = "Erase all land animals" }
+    else
+      log(ERROR, "The All Animals button is off: " .. (ok and "the deer button is missing" or tostring(erase)))
+    end
   end
+  return bins
+end
+
+-- The bird bins sit next to their tools, and All Animals sits to the right.
+function C.animalsMenu(M, bins)
+  local G = M.G
+  local pictures = buttonPictures("bin")
+  local never = core.allocate(4, true)
+  if G.blit == nil then
+    G.blit = core.allocateAssembly(templates.blit, {
+      PENCIL = G.pencil, SETUP_SURFACE = G.setupSurface, SETUP_PENCIL = G.setupPencil,
+      SCRATCH = core.allocate(32, true), PIXEL_FORMAT = G.pixelFormat,
+    })
+  end
+  local render = core.allocateAssembly(templates.flagPictureButton, {
+    NORMAL = pictures.normal, HOVERED = pictures.hover, CHOSEN = pictures.chosen, FLAG = never,
+    HOVER = G.hover, PENCIL = G.pencil, PENCIL_TARGET = PENCIL_TARGET, ITEM_X = G.itemX, ITEM_Y = G.itemY,
+    BLIT = G.blit,
+  })
   for _, bin in ipairs(bins) do
-    local into = bin.item
+    local into = M.added[bin.kind]
+    bin.item, bin.model = into, M.button(bin.beside or DEER)
     wr32(into + ITEM_TYPE, TYPE_CLICKABLE)
     wr32(into + ITEM_X, 0)
     wr32(into + ITEM_Y, 0)
@@ -327,11 +335,11 @@ function C.animalsMenu(M)
   -- bin at the menu's right, level with the deer.
   M.places[#M.places + 1] = function()
     local rightmost = 0
-    for _, param in ipairs({ DEER, K.CROW_TOOL, K.GULL_TOOL }) do
-      if (rd32(M.button(param) + ITEM_X) & 0xFFFFFFFF) == PLACED_BY_CONTROL then return false end
+    for _, bin in ipairs(bins) do
+      if (rd32(bin.model + ITEM_X) & 0xFFFFFFFF) == PLACED_BY_CONTROL then return false end
     end
     for _, bin in ipairs(bins) do
-      local model = M.button(bin.beside or DEER)
+      local model = bin.model
       local x = K.ANIMAL_BIN_X
       if bin.beside ~= nil then
         x = rd32(model + ITEM_X) + rd32(model + ITEM_WIDTH) + K.BIN_GAP

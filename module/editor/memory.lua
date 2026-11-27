@@ -102,6 +102,19 @@ local function setting(config, group, name)
   return DEFAULTS[group][name]
 end
 
+local function choice(value, valid, default, option)
+  if valid then return value end
+  if value ~= nil then
+    local name = MODULE_NAME .. "." .. option
+    if type(value) ~= "string" then
+      log(ERROR, string.format("%s: expected a string, using '%s'.", name, default))
+    else
+      log(WARNING, string.format("%s: unknown choice '%s', using '%s'.", name, value, default))
+    end
+  end
+  return default
+end
+
 local function bytesOf(value)
   local out = {}
   for index, byte in ipairs(core.itob(value)) do
@@ -141,6 +154,7 @@ return {
   readOperand = readOperand,
   readCallTarget = readCallTarget,
   setting = setting,
+  choice = choice,
   bytesOf = bytesOf,
   item = item,
   writeCString = writeCString,

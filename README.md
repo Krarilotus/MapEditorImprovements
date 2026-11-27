@@ -247,9 +247,10 @@ What the module does, in plain English, is in `module/locale/description-en.md`.
   and in games; the pipette key through its key poll. The API registers the grid's two actions
   one at a time; should it take the editor one and refuse the game one, the grid toggles in the
   editor only, and the log says so.
-  The pipette's "take a tile" and "any tile" keys and the height tools' invert key stay this
-  module's own: they are held keys, by default a bare Ctrl or Alt, and the action API takes no
-  bare modifiers. Leaving the map puts the grid away: `requestScreenChange` is redirected after
+  Custom Hotkeys also offers unassigned hold actions for sampling another tile, painting any
+  tile and reversing Equalize. The module's configured keys still work. The game handles Alt + E
+  for land animals and Alt + comma for opening and closing Map Settings.
+  Leaving the map puts the grid away: `requestScreenChange` is redirected after
   the pending screen is stored, past every byte Resolution Based Zoom's pattern on that function
   reads.
 * Every address is found by pattern scan or read out of the instruction that uses it, and

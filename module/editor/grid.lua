@@ -26,6 +26,7 @@
 --     Zoom's own pattern on the same function reads, so the two modules can be enabled in either
 --     order.
 
+local defaults = require("editor.layout").DEFAULTS.grid
 local memory = require("editor.memory")
 local actions = require("editor.actions")
 local frame = require("editor.frame")
@@ -135,14 +136,6 @@ local VIRTUAL_KEY_CODES = {
   insert = 0x2D, delete_key = 0x2E, home = 0x24, end_key = 0x23,
   page_up = 0x21, page_down = 0x22, caps_lock = 0x14,
 }
-local DEFAULT_KEY = "letter_g"
-
-local DEFAULT_GRID_COLOUR = "white"
--- The mine footprint takes red, so the keep rotation boundaries move to cyan; two reds on the
--- same picture would be unreadable. Both are still free to change.
-local DEFAULT_ROTATION_COLOUR = "cyan"
-local DEFAULT_MINE_COLOUR = "red"
-
 ---------------------------------------------------------------------------------------
 -- Helpers
 ---------------------------------------------------------------------------------------
@@ -180,17 +173,14 @@ local function isAutoRepeat(lParam)
   return floor(lParam / 0x40000000) % 2 == 1
 end
 
----Resolve a configured choice name against a table, falling back to a default.
-local function resolveChoice(name, table_, defaultName, what)
-  local value = table_[name]
-  if value == nil then
-    if name ~= nil then
-      log(WARNING, string.format("resource grid: unknown %s '%s', using '%s'.",
-        what, tostring(name), defaultName))
-    end
-    value = table_[defaultName]
+function M.validateChoices(config)
+  for field, choices in pairs({
+    key = VIRTUAL_KEY_CODES, grid_colour = V.COLOURS, rotation_colour = V.COLOURS, mine_colour = V.COLOURS,
+  }) do
+    local value = config[field]
+    config[field] = memory.choice(value, type(value) == "string" and choices[value] ~= nil,
+      defaults[field], "grid." .. field)
   end
-  return value
 end
 
 ---------------------------------------------------------------------------------------
@@ -217,11 +207,10 @@ function M.enable(self, config)
     return false
   end
 
-  local hotkey = resolveChoice(config.key, VIRTUAL_KEY_CODES, DEFAULT_KEY, "hotkey")
-  local gridChannels = resolveChoice(config.grid_colour, V.COLOURS, DEFAULT_GRID_COLOUR, "grid colour")
-  local rotationChannels = resolveChoice(config.rotation_colour, V.COLOURS, DEFAULT_ROTATION_COLOUR,
-    "rotation colour")
-  local mineChannels = resolveChoice(config.mine_colour, V.COLOURS, DEFAULT_MINE_COLOUR, "mine colour")
+  local hotkey = VIRTUAL_KEY_CODES[config.key]
+  local gridChannels = V.COLOURS[config.grid_colour]
+  local rotationChannels = V.COLOURS[config.rotation_colour]
+  local mineChannels = V.COLOURS[config.mine_colour]
   local withRotation = config.rotation_lines == true
   local editorOnly = config.outside_editor ~= true
   -- The lines lie on one height, so they only tell the whole truth in the flattened view.
@@ -410,8 +399,7 @@ function M.enable(self, config)
     end, transition, SIZE_SCREEN_STORED)
 
     if hotkeys ~= nil then
-      local key = config.key ~= nil and VIRTUAL_KEY_CODES[config.key] ~= nil and config.key or DEFAULT_KEY
-      if actions.grid(hotkeys, key, not editorOnly, toggle) then return end
+      if actions.grid(hotkeys, config.key, not editorOnly, toggle) then return end
     end
     if dispatchSite == nil then error("the grid toggle could not be installed", 0) end
     local address = dispatchSite + OFFSET_SYS_KEY_JUMP

@@ -20,15 +20,15 @@ local rd32 = memory.rd32
 -- The writes are the ones the game's own height and terrain tools make, followed by the
 -- same updates.
 
-local function keyCode(name)
-  if name == nil then return nil end
+local function keyCode(name, choice)
+  if type(name) ~= "string" then return nil end
   local special = { ctrl = 0x11, shift = 0x10, alt = 0x12, space = 0x20, tab = 0x09 }
-  if special[name] ~= nil then return special[name] end
-  local letter = name:match("^letter_(%a)$")
+  if special[name] ~= nil and choice ~= "select" then return special[name] end
+  local letter = name:match(choice ~= nil and "^letter_([a-z])$" or "^letter_(%a)$")
   if letter ~= nil then return string.byte(letter:upper()) end
   local digit = name:match("^digit_(%d)$")
-  if digit ~= nil then return 0x30 + tonumber(digit) end
-  local f = name:match("^f(%d+)$")
+  if digit ~= nil and choice ~= "hold" then return 0x30 + tonumber(digit) end
+  local f = name:match(choice ~= nil and "^f([1-9]%d?)$" or "^f(%d+)$")
   if f ~= nil and tonumber(f) >= 1 and tonumber(f) <= 12 then return 0x6F + tonumber(f) end
   return nil
 end

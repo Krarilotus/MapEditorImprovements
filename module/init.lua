@@ -127,7 +127,6 @@ require("editor.castle_menu")
 require("editor.castle")
 local frame = require("editor.frame")
 local grid = require("editor.grid")
-local actions = require("editor.actions")
 
 ---------------------------------------------------------------------------------------
 -- Always keep the menu up to date
@@ -151,34 +150,78 @@ end
 -- Enable
 ---------------------------------------------------------------------------------------
 
+local function checkedSettings(config)
+  local checked = {}
+  if config == nil then return checked end
+  if type(config) ~= "table" then
+    log(ERROR, MODULE_NAME .. ": expected a table of settings.")
+    return checked
+  end
+  for group, defaults in pairs(DEFAULTS) do
+    local section = config[group]
+    if type(section) == "table" then
+      local values = {}
+      for name, value in pairs(section) do
+        if type(defaults[name]) == "boolean" and type(value) ~= "boolean" then
+          log(ERROR, string.format("%s.%s.%s: expected a boolean, using %s.",
+            MODULE_NAME, group, name, tostring(defaults[name])))
+        else
+          values[name] = value
+        end
+      end
+      checked[group] = values
+    elseif section ~= nil then
+      log(ERROR, string.format("%s.%s: expected a table of settings.", MODULE_NAME, group))
+    end
+  end
+  return checked
+end
+
 local function pairedSettings(config, group, primary, companion)
   local enabled = setting(config, group, primary) == true
   local override = setting(config, group, companion)
-  return enabled, override == true or (override == nil and enabled)
+  if override == nil then return enabled, enabled end
+  if type(override) ~= "boolean" then
+    log(ERROR, string.format("%s.%s.%s: expected a boolean, using %s.",
+      MODULE_NAME, group, companion, tostring(enabled)))
+    return enabled, enabled
+  end
+  return enabled, override
 end
 
-local function shortcut(config, group, choice, enabled, key)
+local function configuredKey(config, group, enabled, key)
+  if not setting(config, group, enabled) then return nil end
+  local value = setting(config, group, key)
+  return memory.choice(value, C.keyCode(value) ~= nil, DEFAULTS[group][key], group .. "." .. key)
+end
+
+local function shortcut(config, group, choice, enabled, key, kind)
   local value = setting(config, group, choice)
+  local valid = value == "off" or value == "configured" or C.keyCode(value, kind) ~= nil
+  value = memory.choice(value, valid, "configured", group .. "." .. choice)
   if value == "off" then return nil end
-  if value ~= nil and value ~= "configured" then return value end
-  if setting(config, group, enabled) == true then return setting(config, group, key) end
+  if value ~= "configured" then return value end
+  return configuredKey(config, group, enabled, key)
 end
 
 local function enable(self, config)
-  config = config or {}
-  local hotkeys = actions.provider()
-  if hotkeys ~= nil then
-    for _, shortcut in ipairs({
-      { C.enableEraseAnimalsHotkey, "Erase all land animals" },
-      { C.enableMapSettingsHotkey, "Open Map Settings" },
-    }) do
-      local ok, problem = pcall(shortcut[1], self, hotkeys)
-      if not ok then
-        log(ERROR, shortcut[2] .. " is unavailable in Custom Hotkeys.")
-        log(WARNING, tostring(problem))
-      end
-    end
-  end
+  config = checkedSettings(config)
+  local spreadOrder, sortedRows = pairedSettings(config, "trees", "spread_order", "sorted_rows")
+  local variants, extraRock = pairedSettings(config, "rocks", "variants", "extra_rock")
+  local buildingCounts, hoverTextLeft =
+    pairedSettings(config, "castle", "building_counts", "hover_text_left")
+  local keepCrests, crestTooltip =
+    pairedSettings(config, "castle", "keep_crests", "keep_crest_tooltip")
+  local settingsMenu, settingsButton = pairedSettings(config, "map_settings", "menu", "button")
+  local invertKey = shortcut(config, "heights", "invert_shortcut", "invert_key_on", "invert_key", "hold")
+  local selectKey = shortcut(config, "pipette", "select_shortcut", "select_key_on", "select_key", "select")
+  local readKey = shortcut(config, "pipette", "read_shortcut", "read_key_on", "read_key", "hold")
+  local anyKey = configuredKey(config, "pipette", "any_tile_key_on", "any_tile_key")
+  local gridConfig = {}
+  for name, value in pairs(DEFAULTS.grid) do gridConfig[name] = value end
+  for name, value in pairs(config.grid or {}) do gridConfig[name] = value end
+  grid.validateChoices(gridConfig)
+
   -- Undo first: its buttons go into the menus below.
   if setting(config, "undo", "enabled") == true then
     local ok, problem = pcall(C.enableUndo, self)
@@ -197,8 +240,6 @@ local function enable(self, config)
       log(WARNING, tostring(result))
     end
   end
-  local spreadOrder, sortedRows = pairedSettings(config, "trees", "spread_order", "sorted_rows")
-  local variants, extraRock = pairedSettings(config, "rocks", "variants", "extra_rock")
   local O = {
     counts = setting(config, "counts", "enabled") == true,
     shown = setting(config, "counts", "shown") == true,
@@ -224,7 +265,7 @@ local function enable(self, config)
     maxHeight = setting(config, "heights", "max_height") == true,
     heightTools = setting(config, "heights", "tool_options") == true,
     lostRocks = setting(config, "rocks", "remove_lost") == true,
-    invertKey = shortcut(config, "heights", "invert_shortcut", "invert_key_on", "invert_key"),
+    invertKey = invertKey,
     textureMask = setting(config, "textures", "mask") == true,
     maskByType = setting(config, "textures", "mask_by_type") == true,
     birdButtons = setting(config, "herds", "bird_bins") == true,
@@ -238,18 +279,12 @@ local function enable(self, config)
     undo = self.undo,
   }
   if setting(config, "pipette", "enabled") == true then
-    local selectKey = shortcut(config, "pipette", "select_shortcut", "select_key_on", "select_key")
-    local readKey = shortcut(config, "pipette", "read_shortcut", "read_key_on", "read_key")
     O.pipette = {
       selectKeyOn = selectKey ~= nil, selectKey = selectKey,
       readKeyOn = readKey ~= nil, readKey = readKey,
-      anyKeyOn = setting(config, "pipette", "any_tile_key_on") == true, anyKey = setting(config, "pipette", "any_tile_key"),
+      anyKeyOn = anyKey ~= nil, anyKey = anyKey,
     }
   end
-  local buildingCounts, hoverTextLeft =
-    pairedSettings(config, "castle", "building_counts", "hover_text_left")
-  local keepCrests, crestTooltip =
-    pairedSettings(config, "castle", "keep_crests", "keep_crest_tooltip")
   local castle = {
     buildingCounts = buildingCounts,
     towerRuins = setting(config, "castle", "tower_ruins") == true,
@@ -294,7 +329,6 @@ local function enable(self, config)
       log(WARNING, tostring(result))
     end
   end
-  local settingsMenu, settingsButton = pairedSettings(config, "map_settings", "menu", "button")
   local settings = {
     lockedMaps = setting(config, "map_settings", "show_locked") == true,
     settingsButton = settingsButton,
@@ -394,9 +428,6 @@ local function enable(self, config)
       log(WARNING, tostring(problem))
     end
   end
-  local gridConfig = {}
-  for name, value in pairs(DEFAULTS.grid) do gridConfig[name] = value end
-  for name, value in pairs(type(config.grid) == "table" and config.grid or {}) do gridConfig[name] = value end
   local gridOn = false
   if gridConfig.enabled == true then
     local ok, problem = pcall(grid.enable, self, gridConfig)

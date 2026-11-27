@@ -32,7 +32,6 @@ local rd8 = memory.rd8
 local wr32 = memory.wr32
 local wr16 = memory.wr16
 local patchJump = require("editor.menu_install").patchJump
-local actions = require("editor.actions")
 
 ---------------------------------------------------------------------------------------
 -- Map settings (38): locked maps in the Load dialog, the map menu's Map Settings button and the
@@ -142,21 +141,11 @@ local function resolveSettingsControls()
     end
     settingsControls = {
       modal = modal, listState = rd32(entry + K.OPENER_STATE + 1),
-      openSettings = openSettings, branch = alt + K.ALT_COMMA.skip,
+      openSettings = openSettings,
       closeSettings = function() open(manager, -1, 0) end,
     }
   end
   return settingsControls
-end
-
-function C.enableMapSettingsHotkey(self, hotkeys)
-  local controls = resolveSettingsControls()
-  local branch = controls.branch
-  expectBytes(branch, { 0x0F, 0x85 }, "the Alt + comma screen check")
-  local exit = branch + 6 + rd32(branch + 2)
-  if actions.nativePress(hotkeys, "map-settings", "comma", controls.openSettings) then
-    patchJump(self, branch, 6, exit)
-  end
 end
 
 -- Draws a button the way the Map settings menu draws its own: background (highlighted while
