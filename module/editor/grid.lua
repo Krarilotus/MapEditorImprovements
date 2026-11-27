@@ -392,52 +392,37 @@ function M.enable(self, config)
     return true
   end
 
-  local input = nil
-  if hotkeys ~= nil then
-    local key = config.key ~= nil and VIRTUAL_KEY_CODES[config.key] ~= nil and config.key or DEFAULT_KEY
-    if actions.grid(hotkeys, key, not editorOnly, toggle) then input = "Custom Hotkeys actions" end
-  end
-  if input == nil and dispatchSite ~= nil then
-    -- Alt plus the hotkey. WM_SYSKEYDOWN is the only message Alt combinations arrive on, so no
-    -- separate modifier test is needed, and the key is on the do-nothing case of that table so
-    -- nothing has to be suppressed either.
-    core.detourCode(function(registers)
-      if registers.ESI == hotkey and not isAutoRepeat(registers.ECX) then
-        toggle()
-      end
-      return registers
-    end, dispatchSite + OFFSET_SYS_KEY_JUMP, SIZE_SYS_KEY_JUMP)
-    input = string.format("Alt + key 0x%02X", hotkey)
-  elseif input == nil then
-    log(ERROR, "The map editor resource grid is off. Its toggle could not be installed.")
-    input = "no toggle"
+  local mapScreens = { [MAP_EDITOR_PROPERTIES_SCREEN] = true }
+  local screenSite = memory.scanUnique(IN_GAME_SCREEN_AOB, "the on-the-map screen IDs")
+  local transition = memory.scanUnique(SCREEN_CHANGE_AOB, "the screen change function")
+    + OFFSET_SCREEN_STORED
+  for _, offset in ipairs(OFFSETS_IN_GAME_SCREEN_IDS) do
+    mapScreens[core.readByte(screenSite + offset)] = true
   end
 
-  -- Leaving the map puts the overlay away, so coming back into the editor always starts with it
-  -- off. Moving between the editor's own screens keeps it.
-  local mapScreens = { [MAP_EDITOR_PROPERTIES_SCREEN] = true }
-  local inGameScreenSite = scanOptional(IN_GAME_SCREEN_AOB, "the on-the-map screen ids")
-  local screenChangeSite = inGameScreenSite ~= nil
-    and scanOptional(SCREEN_CHANGE_AOB, "the screen change function") or nil
-  if screenChangeSite ~= nil then
-    for _, offset in ipairs(OFFSETS_IN_GAME_SCREEN_IDS) do
-      mapScreens[core.readByte(inGameScreenSite + offset)] = true
-    end
+  frame.add("grid", routine, function()
+    self.saved[#self.saved + 1] = { address = transition, bytes = core.readBytes(transition, SIZE_SCREEN_STORED) }
     core.detourCode(function(registers)
       if not mapScreens[registers.EBP] then
         writeInteger(control + B.SHOWN, 0)
       end
       return registers
-    end, screenChangeSite + OFFSET_SCREEN_STORED, SIZE_SCREEN_STORED)
-  else
-    log(WARNING, "resource grid: no screen change site, so it stays on when you leave the map")
-  end
+    end, transition, SIZE_SCREEN_STORED)
 
-  -- Last, once every other part is in: a failure above leaves no grid routine behind.
-  frame.add("grid", routine)
-  log(INFO, string.format("resource grid: %s, %d lines, rotation boundaries %s, %s.",
-    input, #state.lines[V.DEFAULT_ORIENTATION][1], withRotation and "on" or "off",
-    editorOnly and "map editor only" or "on every map"))
+    if hotkeys ~= nil then
+      local key = config.key ~= nil and VIRTUAL_KEY_CODES[config.key] ~= nil and config.key or DEFAULT_KEY
+      if actions.grid(hotkeys, key, not editorOnly, toggle) then return end
+    end
+    if dispatchSite == nil then error("the grid toggle could not be installed", 0) end
+    local address = dispatchSite + OFFSET_SYS_KEY_JUMP
+    self.saved[#self.saved + 1] = { address = address, bytes = core.readBytes(address, SIZE_SYS_KEY_JUMP) }
+    core.detourCode(function(registers)
+      if registers.ESI == hotkey and not isAutoRepeat(registers.ECX) then
+        toggle()
+      end
+      return registers
+    end, address, SIZE_SYS_KEY_JUMP)
+  end)
   return true
 end
 

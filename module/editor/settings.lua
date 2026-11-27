@@ -91,7 +91,7 @@ function C.resolveSettings(G)
   S.modalSite = modal
   S.menu = rd32(modal + K.SETTINGS_MODAL.menu)
   S.record = rd32(modal + K.SETTINGS_MODAL.record)
-  S.table = scan(K.AOB_SETTINGS_TABLE, "the Map settings menu's items") - MENU_ITEM_SIZE
+  S.table = memory.scanData(K.AOB_SETTINGS_TABLE, "the Map settings menu's items") - MENU_ITEM_SIZE
   if rd32(S.table + ITEM_TYPE) ~= TYPE_GROUP_START then
     error(MODULE_NAME .. ": the Map settings menu is not the one this module knows")
   end
@@ -252,7 +252,7 @@ function C.enableMapSettings(self, O, G)
   -- 38.2: the Map Settings button on the map's menu screen.
   if O.settingsButton then
     local ok, problem = pcall(function()
-      local props = scan(K.AOB_PROPERTIES_TABLE, "the map menu's items") - K.PROPERTIES_ITEM * MENU_ITEM_SIZE
+      local props = memory.scanData(K.AOB_PROPERTIES_TABLE, "the map menu's items") - K.PROPERTIES_ITEM * MENU_ITEM_SIZE
       local init = scan("68 " .. bytesOf(props) .. " B9 ? ? ? ? E8", "the map menu's constructor")
       local items, ensure = C.appendItems(self, init, 1, "the map menu")
       local b = K.SETTINGS_BUTTON

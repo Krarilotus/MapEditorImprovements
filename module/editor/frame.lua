@@ -32,6 +32,7 @@ local M = {}
 local site = nil
 local routines = {}
 local running = {}
+local gridActivate
 
 local function readAddress(address)
   return memory.rd32(address) & 0xFFFFFFFF
@@ -56,14 +57,16 @@ end
 ---A feature's routine, run every frame on the game screen once install() has put the site in.
 ---@param name string "grid" or "editor"
 ---@param routine number address of the routine
-function M.add(name, routine)
+function M.add(name, routine, activate)
   routines[name] = routine
+  if name == "grid" then gridActivate = activate end
 end
 
 ---Take a routine back before the site goes in (its feature did not finish enabling).
 ---@param name string
 function M.remove(name)
   routines[name] = nil
+  if name == "grid" then gridActivate = nil end
 end
 
 ---Whether the site is in and runs this feature's routine.
@@ -100,6 +103,7 @@ function M.install(self)
     BACK = S.base + AFTER_LOADS,
     GRID = routines.grid, EDITOR = routines.editor,
   }))
+  if grid then gridActivate() end
   for name in pairs(routines) do running[name] = true end
   routines = {}
   return true
@@ -114,6 +118,24 @@ end
 ---@return string when "now" or "afterInit"
 function M.commit(self, handoff, onProblem)
   local function run()
+    if routines.grid ~= nil then
+      local first = #(self.saved or {}) + 1
+      local ok, installed = pcall(M.install, self)
+      if ok and installed then
+        local handedOff, problem = pcall(handoff)
+        if not handedOff then onProblem(problem, true) end
+        return
+      end
+      if self.saved ~= nil then
+        for index = #self.saved, first, -1 do
+          local saved = self.saved[index]
+          core.writeCode(saved.address, saved.bytes)
+          self.saved[index] = nil
+        end
+      end
+      M.remove("grid")
+      log(ERROR, "The map editor resource grid is off: " .. tostring(installed))
+    end
     local installed = false
     local ok, problem = pcall(function()
       installed = M.install(self)

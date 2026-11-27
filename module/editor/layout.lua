@@ -463,7 +463,7 @@ K.ENGINE_BUSY = { site = 0x13, size = 13, field = 2, jump = 9 }
 -- The eraser's walk over a tile's units: `imul eax,eax,<unit size> / mov word [eax+state],3 /
 -- movsx eax,word [eax+next on tile] / test eax,eax / jne`; the next unit lies 0x216 after the
 -- state word (both exes).
-K.AOB_UNIT_WALK = "69 C0 ? ? ? ? ? ? ? ? ? ? ? ? ? 0F BF 80 ? ? ? ? 85 C0 75 E6"
+K.AOB_UNIT_WALK = "69 C0 ? ? ? ? ? ? ? ? ? ? ? ? ? 0F BF 80 ? ? ? ? 85 C0 75 E6 83 C7 01 3B 7C 24 28 7C B3 5F 5E 5D 5B"
 K.UNIT_WALK = { stride = 2, next = 18, nextAfterState = 0x216 }
 -- How many tower engines a building takes (its own big towers go by the game's own rule, one):
 -- the keeps 4 and the stronghold keeps 8, the large gatehouse 4, any other building one.
@@ -878,10 +878,11 @@ K.AOB_HEIGHT_TAIL = "55 53 B9 ? ? ? ? E8 ? ? ? ? 8B 5C 24 1C 8B 74 24 2C 83 C6 0
 K.HEIGHT_TAIL = { pathFinding = 3, links = 7, flag = 0x27 }
 K.AOB_HEIGHTS = "8A 84 2F ? ? ? ? 88 84 2F ? ? ? ? F7 84 AF ? ? ? ? 00 00 10 00"
 K.HEIGHTS = { height = 3, default = 10, logic = 17 }
--- The height and terrain commands' end: `push 9 / mov ecx, PathFindingState / call
+-- A height command ends with `push 9 / mov ecx, PathFindingState / call
 -- updateWalkAndPathLayer / push 2 / mov ecx, minimap / mov [macro layer flag],1 / call
--- triggerMinimapRedraw` (five commands share it).
-K.AOB_HEIGHT_TOOL = "6A 09 B9 ? ? ? ? E8 ? ? ? ? 6A 02 B9 ? ? ? ? C7 05 ? ? ? ? 01 00 00 00 E8"
+-- triggerMinimapRedraw`.
+K.AOB_HEIGHT_TOOL = "6A 09 B9 ? ? ? ? E8 ? ? ? ? 6A 02 B9 ? ? ? ? C7 05 ? ? ? ? 01 00 00 00 E8 ? ? ? ? "
+  .. "C3 CC CC 51 A1 ? ? ? ? 83 F8 01 C7 05 ? ? ? ? 06 00 00 00 75 55"
 K.HEIGHT_TOOL = { walk = 7, minimap = 0x0F, macro = 0x15, redraw = 0x1D }
 -- The tiles that are on the map, a byte per x, y (400 a row): the height commands' test `mov esi,
 -- eax / imul esi,esi,400 / cmp byte [esi+ecx+VALID],0 / pop esi / je`.
@@ -1015,7 +1016,7 @@ K.LOST_ROCKS_LABEL = "Remove lost rocks"
 K.LOST_ROCKS_BUTTON = { padding = 5, height = 22, below = 6 }
 -- The in-game key handlers' guard (five share it): `... cmp [menu guard],-1`, -1 while nothing
 -- takes the keyboard (no text box).
-K.AOB_KEY_GUARD = "F7 C1 00 00 00 40 0F 85 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 85 C0 0F 84 ? ? ? ? 83 3D ? ? ? ? FF"
+K.AOB_KEY_GUARD = "F7 C1 00 00 00 40 0F 85 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 85 C0 0F 84 ? ? ? ? 83 3D ? ? ? ? FF 75 77 A1 ? ? ? ? 8B 0C 85"
 K.KEY_GUARD = 32
 
 -- MenuItemRenderFunction_MapEditorLandscaping_GeneralButtons: the item position globals
@@ -1167,7 +1168,7 @@ local SCREEN_WIDTH_OPERAND, SCREEN_HEIGHT_OPERAND = 2, 8
 local MOST_LOGS = 9                      -- buttons in the felled tree panel
 
 -- The unit count, and the limit the editor tests it against before placing more.
-K.AOB_UNITS = "81 3D ? ? ? ? ? ? 00 00 7C 03 ? EB 01 ? 6A 1D E8"
+K.AOB_UNITS = "81 3D ? ? ? ? ? ? 00 00 7C 03 57 EB 01 55 6A 1D E8 ? ? ? ? 83 C4 08 A1"
 K.UNITS_OPERAND = 2
 K.UNITS_LIMIT = 6
 

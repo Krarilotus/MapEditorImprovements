@@ -62,11 +62,10 @@ end
 local function register(hotkeys, id, label, context, default, callback, fallback)
   local spec = { id = M.ID_PREFIX .. id, label = label, category = labels.category, context = context,
     default = default, callback = callback }
-  local ok, problem = pcall(function() hotkeys:registerAction(spec) end)
-  if not ok then
-    log(WARNING, string.format("Custom Hotkeys refused the action %s (%s); %s", spec.id, tostring(problem), fallback))
-  end
-  return ok
+  local ok, result = pcall(hotkeys.registerAction, hotkeys, spec)
+  if ok and result == true then return true end
+  log(WARNING, string.format("Custom Hotkeys refused the action %s (%s); %s", spec.id, tostring(result), fallback))
+  return false
 end
 
 ---The resource grid's toggle: in the map editor, and in games when the grid may show there. Both

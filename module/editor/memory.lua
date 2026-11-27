@@ -10,21 +10,7 @@ local MENU_ITEM_SIZE = layout.MENU_ITEM_SIZE
 local rd32, rd16, rd8 = core.readInteger, core.readSmallInteger, core.readByte
 local wr32, wr16 = core.writeInteger, core.writeSmallInteger
 
-local function scan(pattern, purpose)
-  local ok, address = pcall(core.AOBScan, pattern)
-  if not ok or address == nil or address == 0 then
-    error(MODULE_NAME .. ": could not find " .. purpose)
-  end
-  return address
-end
-
--- The end of the executable's section an address lies in (for the code patterns here, the code
--- section). The image starts on a 64 KiB boundary with its "MZ" header; its "PE" header and
--- section table, all in that first page, give the sections. Found from the address itself, so no
--- address of the game is assumed; nil if no header turns up within 64 MiB below it. Each boundary
--- is first tested with the framework's scanner, which steps over memory that is not there, and only
--- read once its first page holds the header. Without a usable section table the image's end is
--- used (it also spans the game's large data sections, so it is slower).
+-- End of the executable section containing an intentional multi-hit pattern.
 local found = {}             -- { first, stop } of each section found
 local missed = {}            -- 64 KiB boundaries below which no header turned up
 local function sectionEnd(inside)
@@ -40,32 +26,32 @@ local function sectionEnd(inside)
     local lfanew = mz == base and (rd32(base + 0x3C) & 0xFFFFFFFF) or 0
     local pe = base + lfanew
     if lfanew > 0 and lfanew < 0xF00 and (rd32(pe) & 0xFFFFFFFF) == 0x4550 and (rd16(pe + 4) & 0xFFFF) == 0x14C then
-      local imageStop = base + (rd32(pe + 0x50) & 0xFFFFFFFF)   -- OptionalHeader.SizeOfImage
-      if imageStop > inside then
-        local first, stop = base, imageStop
-        local count = rd16(pe + 6) & 0xFFFF                     -- FileHeader.NumberOfSections
-        local table_ = pe + 0x18 + (rd16(pe + 0x14) & 0xFFFF)   -- after the optional header
-        if table_ + count * 40 <= base + 0x1000 then
-          for index = 0, count - 1 do
-            local section = table_ + index * 40
-            local from = base + (rd32(section + 12) & 0xFFFFFFFF)                    -- VirtualAddress
-            local size = math.max(rd32(section + 8) & 0xFFFFFFFF, rd32(section + 16) & 0xFFFFFFFF)
-            if inside >= from and inside < from + size then
-              first, stop = from, from + size
-              break
-            end
-          end
+      local count = rd16(pe + 6) & 0xFFFF
+      local table_ = pe + 0x18 + (rd16(pe + 0x14) & 0xFFFF)
+      if table_ + count * 40 > base + 0x1000 then break end
+      for index = 0, count - 1 do
+        local section = table_ + index * 40
+        local first = base + (rd32(section + 12) & 0xFFFFFFFF)
+        local size = math.max(rd32(section + 8) & 0xFFFFFFFF, rd32(section + 16) & 0xFFFFFFFF)
+        if inside >= first and inside < first + size then
+          if (rd32(section + 36) & 0x20000000) == 0 then return nil end
+          local stop = first + size
+          found[#found + 1] = { first, stop }
+          return stop
         end
-        found[#found + 1] = { first, stop }
-        return stop
       end
     end
     base = base - 0x10000
   end
   missed[start] = true
-  log(WARNING, string.format("no executable header found below 0x%X; pattern checks scan to the "
-    .. "framework's default end", inside))
   return nil
+end
+
+-- Static game data lies outside the executable sections.
+local function scanData(pattern, purpose)
+  local address = core.AOBScan(pattern)
+  if address == nil then error(MODULE_NAME .. ": could not find " .. purpose, 0) end
+  return address
 end
 
 local function scanUnique(pattern, purpose)
@@ -81,13 +67,10 @@ local function scanAll(pattern, most)
   local sites = {}
   local ok, at = pcall(core.scanForAOB, pattern)
   local stop = ok and at ~= nil and at ~= 0 and sectionEnd(at) or nil
-  while ok and at ~= nil and at ~= 0 and (stop == nil or at < stop) and #sites < most do
+  if stop == nil then return sites end
+  while ok and at ~= nil and at ~= 0 and at < stop and #sites < most do
     sites[#sites + 1] = at
-    if stop ~= nil then
-      ok, at = pcall(core.scanForAOB, pattern, at + 1, stop - 1)
-    else
-      ok, at = pcall(core.scanForAOB, pattern, at + 1)
-    end
+    ok, at = pcall(core.scanForAOB, pattern, at + 1, stop - 1)
   end
   return sites
 end
@@ -150,10 +133,10 @@ local function jumpTo(site, target, size)
 end
 
 return {
-  scan = scan,
+  scan = scanUnique,
+  scanData = scanData,
   scanUnique = scanUnique,
   scanAll = scanAll,
-  sectionEnd = sectionEnd,
   expectBytes = expectBytes,
   readOperand = readOperand,
   readCallTarget = readCallTarget,

@@ -404,7 +404,6 @@ local function enable(self, config)
       log(WARNING, tostring(problem))
       return
     end
-    if gridOn then log(ERROR, "The map editor resource grid is off. Map drawing could not be installed.") end
     if frameData ~= nil then
       landscape.reportFrameFailure(frameData, problem)
     else

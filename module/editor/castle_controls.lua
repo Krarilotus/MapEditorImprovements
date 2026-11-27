@@ -73,7 +73,7 @@ local makeRockPictures = sprites.makeRockPictures
 -- buttons, and what the building counts need.
 function C.resolve(G)
   local B = {}
-  B.table = scan(K.AOB_BUILD_MINIMAP, "the build menu") - K.BUILD_MINIMAP_ITEM * MENU_ITEM_SIZE
+  B.table = memory.scanData(K.AOB_BUILD_MINIMAP, "the build menu") - K.BUILD_MINIMAP_ITEM * MENU_ITEM_SIZE
   local count = 0
   while rd32(item(B.table, count, ITEM_TYPE)) ~= TYPE_END do
     count = count + 1
@@ -208,7 +208,7 @@ function C.makeBarrier(G)
   local buffer = core.allocate(32, true)
   local gm = nil
   local ok, names = pcall(function()
-    return { scan(K.AOB_GM_NO_WORKERS, "the gm list"), scan(K.AOB_GM_CHECK_BOXES, "the gm list") }
+    return { memory.scanData(K.AOB_GM_NO_WORKERS, "the gm list"), memory.scanData(K.AOB_GM_CHECK_BOXES, "the gm list") }
   end)
   local boxes = rd32(G.buttonImages + K.CHECKED_IMAGE * IMAGE_SIZE)
   if ok and (names[1] - names[2]) == (K.NO_WORKERS_GM - boxes) * K.GM_RECORD_SIZE then gm = K.NO_WORKERS_GM end

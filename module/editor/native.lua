@@ -98,7 +98,7 @@ local rd8 = memory.rd8
 ---------------------------------------------------------------------------------------
 
 local function resolveMenu(G)
-  G.table = scan(AOB_ITEM_TABLE, "the landscape editor's menu") - KEY_BUTTON_ITEM * MENU_ITEM_SIZE
+  G.table = memory.scanData(AOB_ITEM_TABLE, "the landscape editor's menu") - KEY_BUTTON_ITEM * MENU_ITEM_SIZE
   local index = 0
   while rd32(item(G.table, index, ITEM_TYPE)) ~= TYPE_END do
     index = index + 1

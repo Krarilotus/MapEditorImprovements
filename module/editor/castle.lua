@@ -133,19 +133,28 @@ function C.patchSeveralBuildings(self, G, O)
   end
 end
 
+local function towerEngineClicks(G)
+  if G.towerEngineClicks == nil then
+    local sites = memory.scanAll(K.AOB_TOWER_ENGINE_CLICK, 3)
+    if #sites ~= 2 then error("the tower engine click sites could not be verified", 0) end
+    G.towerEngineClicks = sites
+  end
+  return G.towerEngineClicks
+end
+
 -- In the map editor the tower mangonel and ballista can also be put on any tile without a unit
 -- (ground, walls, gates, other towers, the keep): the click sends the game's own spawn command
 -- for the clicked tile instead of refusing. The player's own big towers work as before.
 -- Where a tower engine may go in the map editor, for the tile in rule.tile: 0 nowhere, 1 on
 -- this very tile, 2 by the game's own tower rule (the current player's big towers).
-function C.towerEngineRule(G, site)
+local function towerEngineRule(G, site, preview)
   local T = K.TOWER_ENGINE
   local R = C.resolvePipette(G)
   local function operand(field) return readOperand(site, T[field], "the tower engine placement") end
   local types, owners, size = operand("types"), operand("owners"), operand("buildingSize")
   local base = types - K.BUILDING.type
   local player, units = operand("player"), operand("units")
-  local onTile = readOperand(scan(K.AOB_TOWER_ENGINE_PREVIEW, "the tower engine preview"), { -0x0B, { 0x45 } },
+  local onTile = readOperand(preview, { -0x0B, { 0x45 } },
     "the tower engine preview")
   expectBytes(site + K.TOWER_PREVIEW.flags[1], K.TOWER_PREVIEW.flags[2], "the tower engine placement")
   local flags = rd32(site + K.TOWER_PREVIEW.flags[1] + #K.TOWER_PREVIEW.flags[2])
@@ -193,22 +202,23 @@ end
 -- solid wherever a click would place one.
 function C.patchTowerEngines(self, G)
   local T = K.TOWER_ENGINE
-  local sites, previews = memory.scanAll(K.AOB_TOWER_ENGINE_CLICK, 3), memory.scanAll(K.AOB_TOWER_ENGINE_PREVIEW, 3)
-  if #sites ~= 2 or #previews ~= 2 then
+  local sites, previews = towerEngineClicks(G), memory.scanAll(K.AOB_TOWER_ENGINE_PREVIEW, 3)
+  if #previews ~= 2 then
     error(MODULE_NAME .. ": the tower engine placement is not the one this module knows")
   end
-  local rule = C.towerEngineRule(G, sites[1])
+  local rule = towerEngineRule(G, sites[1], previews[1])
   local busy = scan(K.AOB_ENGINE_BUSY, "the tower engine spawn command") + K.ENGINE_BUSY.site
   local EB = K.ENGINE_BUSY
-  patchJump(self, busy, EB.size, core.allocateAssembly(templates.towerEngineBusy, {
+  local busyStub = core.allocateAssembly(templates.towerEngineBusy, {
     GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, HAS_ENGINE = rd32(busy + EB.field),
     BUSY = busy + EB.size + rd32(busy + EB.jump), BACK = busy + EB.size,
-  }))
+  })
+  local clickStubs, previewStubs = {}, {}
   for i, site in ipairs(sites) do
     local function operand(field) return readOperand(site, T[field], "the tower engine placement") end
     expectBytes(site + T.refuse[1] - 2, T.refuse[2], "the tower engine placement")
     expectBytes(site + T.command[1], T.command[2], "the tower engine placement")
-    local stub = core.allocateAssembly(templates.towerEngineGround, {
+    clickStubs[i] = core.allocateAssembly(templates.towerEngineGround, {
       GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, TILE = rule.tile, ANSWER = rule.answer, RULE = rule.pad,
       HEIGHTS = operand("heights"),
       PARAM0 = operand("param0"), PARAM1 = operand("param1"), PARAM2 = operand("param2"),
@@ -217,15 +227,19 @@ function C.patchTowerEngines(self, G)
       QUEUE = readCallTarget(site, T.queue, "the command queue"), EPILOGUE = site + T.epilogue,
       TOWER_PATH = site + T.size, REFUSE = site + T.size + rd32(site + 4),
     })
-    patchJump(self, site, T.size, stub)
     local preview, P = previews[i], K.TOWER_PREVIEW
     expectBytes(preview + P.solid[1], P.solid[2], "the tower engine preview")
     expectBytes(preview + P.clear[1], P.clear[2], "the tower engine preview")
-    patchJump(self, preview, P.size, core.allocateAssembly(templates.towerEnginePreview, {
+    previewStubs[i] = core.allocateAssembly(templates.towerEnginePreview, {
       GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, TILE = rule.tile, ANSWER = rule.answer, RULE = rule.pad,
       BUILDING_SIZE = operand("buildingSize"), OPAQUE = preview + P.solid[1], TRANSPARENT = preview + P.clear[1],
       BACK = preview + P.size,
-    }))
+    })
+  end
+  patchJump(self, busy, EB.size, busyStub)
+  for i, site in ipairs(sites) do
+    patchJump(self, site, T.size, clickStubs[i])
+    patchJump(self, previews[i], K.TOWER_PREVIEW.size, previewStubs[i])
   end
 end
 
@@ -485,32 +499,40 @@ end
 function C.unitColours(self, G, B, data, panel, crests)
   local R = C.resolvePipette(G)
   local site = scan(K.AOB_UNIT_COLOUR, "the unit placement") + K.UNIT_COLOUR.site
-  local click = scan(K.AOB_TOWER_ENGINE_CLICK, "the current player")
-  local player = readOperand(click, K.TOWER_ENGINE.player, "the current player")
+  local clicks = towerEngineClicks(G)
+  local player = readOperand(clicks[1], K.TOWER_ENGINE.player, "the current player")
+  if player ~= readOperand(clicks[2], K.TOWER_ENGINE.player, "the current player") then
+    error("the tower engine commands disagree on the current player", 0)
+  end
+  local walk = scan(K.AOB_UNIT_WALK, "the units")
+  local SEL = K.SELECTION
+  local stride = rd32(walk + K.UNIT_WALK.stride)
+  local first = rd32(walk + K.UNIT_WALK.next) - K.UNIT_WALK.nextAfterState - SEL.state   -- unit 0
   local colour = core.allocate(4, true)
   wr32(colour, rd32(player))
   -- read before the patch below overwrites these bytes
   local units = rd32(site + K.UNIT_COLOUR.units)
-  patchJump(self, site, K.UNIT_COLOUR.size, core.allocateAssembly(templates.unitColour, {
+  local stub = core.allocateAssembly(templates.unitColour, {
     GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, COLOUR = colour,
     UNITS = units, BACK = site + K.UNIT_COLOUR.size,
-  }))
-  data.unitColour = colour
-  -- the castle's unit tools place their units as a group
-  local groups = 0
-  local ok, found = pcall(core.AOBScan, K.AOB_GROUP_COLOUR)
-  local stop = ok and found and found ~= 0 and memory.sectionEnd(found)
-  while stop and found and found ~= 0 and found < stop and groups < K.GROUP_COLOUR.sites do
-    local at = found + K.GROUP_COLOUR.site
-    patchJump(self, at, K.GROUP_COLOUR.size, core.allocateAssembly(templates.unitColourEdi, {
-      GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, COLOUR = colour,
-      UNITS = rd32(at + K.GROUP_COLOUR.units), BACK = at + K.GROUP_COLOUR.size,
-    }))
-    groups = groups + 1
-    ok, found = pcall(core.scanForAOB, K.AOB_GROUP_COLOUR, found + 1, stop)
-    if not ok then break end
+  })
+  local group = K.GROUP_COLOUR
+  local sites = memory.scanAll(K.AOB_GROUP_COLOUR, group.sites + 1)
+  local groupStubs = {}
+  if #sites == group.sites then
+    for _, address in ipairs(sites) do
+      local at = address + group.site
+      groupStubs[#groupStubs + 1] = { at, core.allocateAssembly(templates.unitColourEdi, {
+        GAME_MODE = G.gameMode, MAP_EDITOR = K.MAP_EDITOR, COLOUR = colour,
+        UNITS = rd32(at + group.units), BACK = at + group.size,
+      }) }
+    end
+  else
+    log(ERROR, "Choosing group unit colors separately is off.")
   end
-  if groups ~= K.GROUP_COLOUR.sites then log(WARNING, MODULE_NAME .. ": groups of units keep the player's colours") end
+  patchJump(self, site, K.UNIT_COLOUR.size, stub)
+  for _, patch in ipairs(groupStubs) do patchJump(self, patch[1], group.size, patch[2]) end
+  data.unitColour = colour
   -- The crest pictures, as the keep crests take them from the player shields.
   local crest = {}
   for i = 0, B.count - 1 do
@@ -548,10 +570,6 @@ function C.unitColours(self, G, B, data, panel, crests)
   end
   -- Selected units: the current player's (1-8) selection takes the panel over; a crest then
   -- recolours them.
-  local walk = scan(K.AOB_UNIT_WALK, "the units")
-  local SEL = K.SELECTION
-  local stride = rd32(walk + K.UNIT_WALK.stride)
-  local first = rd32(walk + K.UNIT_WALK.next) - K.UNIT_WALK.nextAfterState - SEL.state   -- unit 0
   local selectedColour = nil
   -- In the unit tabs the crests always choose the colour of new units; elsewhere a selection of
   -- the current player's units (1-8) takes them over.
