@@ -5,7 +5,7 @@ counts_enabled_tooltip: Haz clic en la i roja sobre el botón de llave y pasa el
 trees_group: Árboles y arbustos
 trees_group_descr: Coloca y organiza vegetación en el modo Paisaje.
 trees_growth: El tamaño del pincel define el crecimiento del árbol
-trees_growth_tooltip: Elige un árbol y un tamaño en Vegetación. El tamaño 4 está crecido y los tamaños 6 y 7 colocan árboles muertos.
+trees_growth_tooltip: Elige un árbol y un tamaño de pincel en Vegetación. El tamaño 4 coloca árboles adultos y los tamaños 6 y 7 colocan árboles muertos.
 trees_apple: Manzano en Vegetación
 trees_apple_tooltip: Elige el manzano en Vegetación antes de plantarlo.
 trees_shrubs: Colores de arbustos
@@ -49,15 +49,15 @@ rocks_invisible_tooltip: Marca la casilla a la derecha de Rocas antes de colocar
 rocks_erase_invisible: Borrar rocas invisibles
 rocks_erase_invisible_tooltip: Usa el borrador de paisaje para despejar casillas bloqueadas por rocas invisibles.
 rocks_remove_lost: Limpiar registros de rocas perdidas
-rocks_remove_lost_tooltip: Haz clic en Quitar rocas perdidas abajo a la derecha de Rocas para liberar huecos sin alterar casillas.
+rocks_remove_lost_tooltip: Haz clic en «Remove lost rocks» abajo a la derecha de Rocas para liberar huecos sin alterar casillas.
 heights_group: Alturas
 heights_group_descr: Modela el terreno en el modo Paisaje.
 heights_max_height: Altura máxima en Alturas
-heights_max_height_tooltip: Elige Altura máxima junto a Altura mínima para elevar el terreno bajo el pincel al máximo.
+heights_max_height_tooltip: Elige «Max Height» junto a Altura mínima para elevar el terreno bajo el pincel al máximo.
 heights_tool_options: Controles del pincel de altura
 heights_tool_options_tooltip: Elige una herramienta de Alturas para ajustar rango, fuerza, protección del terreno y rocas sobre el menú.
 heights_invert_key: Mantener para invertir Igualar
-heights_invert_key_tooltip: Con Igualar elegido, mantén esta tecla para volver rugoso el terreno y suéltala para suavizar.
+heights_invert_key_tooltip: Con Igualar seleccionado, mantén pulsada esta tecla para volver rugoso el terreno y suéltala para volver a alisarlo.
 castle_group: Modo castillo
 castle_group_descr: Coloca edificios y unidades en el modo Castillo.
 castle_building_counts: Contadores de edificios sobre el minimapa
@@ -75,17 +75,17 @@ castle_several_keeps_tooltip: Coloca fortalezas adicionales normalmente. Con bla
 castle_several_storage: Varios edificios de almacén y reclutamiento
 castle_several_storage_tooltip: Coloca edificios adicionales normalmente. Almacenes separados pueden cambiar qué recursos hay disponibles cerca.
 castle_tower_engines: Colocar máquinas de torre en casillas transitables
-castle_tower_engines_tooltip: Elige una máquina de torre en Edificios militares y colócala en cualquier casilla transitable.
+castle_tower_engines_tooltip: Elige una máquina de asedio montada en torre en Edificios militares y colócala en una casilla transitable.
 castle_keep_parts: Colocar partes de una fortaleza
-castle_keep_parts_tooltip: Selecciona una fortaleza y elige Solo fortaleza o Sin almacén en la fila sobre Fortalezas.
+castle_keep_parts_tooltip: Selecciona una fortaleza y elige «Keep only» o «No stockpile» en la fila sobre Fortalezas.
 castle_damaged_walls: Colocar murallas o escaleras dañadas
-castle_damaged_walls_tooltip: Selecciona una muralla o escalera y pulsa Dañado sobre el menú de edificios antes de colocarla.
+castle_damaged_walls_tooltip: Selecciona una muralla o escalera y pulsa «Damaged» sobre el menú de edificios antes de colocarla.
 castle_variant_panels: Elegir variante de edificio
 castle_variant_panels_tooltip: Selecciona un edificio compatible y haz clic en una variante en la fila sobre el menú.
 castle_ruined_cathedral: Colocar catedral de aspecto derruido
 castle_ruined_cathedral_tooltip: Elige la variante en ruinas sobre el menú de edificios. Funciona como una catedral normal.
 castle_moat_kinds: Elegir tipo de foso
-castle_moat_kinds_tooltip: Selecciona Foso en Puertas y elige Excavado, Planificado o Permanente sobre el menú.
+castle_moat_kinds_tooltip: Selecciona Foso en Puertas y elige «Dug», «Planned» o «Permanent» sobre el menú.
 castle_moat_on_marsh: Permitir fosos sobre pantano
 castle_moat_on_marsh_tooltip: Coloca fosos sobre pantano. Rellenar el foso restaura el pantano debajo.
 castle_moat_removal_keeps_ground: Conservar el terreno al quitar fosos
@@ -101,7 +101,7 @@ brushes_full_shape_tooltip: Rellena toda la vista previa del pincel sin aplicar 
 undo_group: Deshacer y rehacer
 undo_group_descr: Retrocede y avanza entre ediciones recientes.
 undo_enabled: Deshacer y rehacer
-undo_enabled_tooltip: Usa las flechas arriba a la izquierda para hasta 20 cambios, o asigna Deshacer y Rehacer en Opciones > Teclas personalizadas.
+undo_enabled_tooltip: Usa las flechas de arriba a la izquierda para deshacer o rehacer hasta 20 cambios, o asigna Deshacer y Rehacer en Opciones > Teclas personalizadas.
 pipette_group: Cuentagotas
 pipette_group_descr: Toma muestra de una casilla y reutiliza su contenido en el mapa.
 pipette_enabled: Copiar terreno u objetos con el cuentagotas
@@ -182,13 +182,13 @@ castle_player_zero_tooltip: Haz clic en el noveno escudo blanco junto al minimap
 castle_keep_ground: Conservar el terreno al colocar fortalezas
 castle_keep_ground_tooltip: Coloca fortalezas sin aplanar el terreno debajo de ellas.
 castle_rotation: Lista de rotación de edificios
-castle_rotation_tooltip: En modo Castillo, haz clic en Rotación justo sobre el menú inferior izquierdo y elige un ángulo antes de colocar un edificio compatible.
+castle_rotation_tooltip: En modo Castillo, haz clic en «Rotation» justo sobre el menú inferior izquierdo y elige un ángulo antes de colocar un edificio compatible.
 castle_unit_colour: Elegir color de unidad separado del dueño
 castle_unit_colour_tooltip: Elige un blasón sobre el menú de unidades europeas o árabes para cambiar el color visible de la unidad.
 castle_keep_crests: Elegir la fortaleza activa por su blasón
 castle_keep_crests_tooltip: Con varias fortalezas activas, haz clic en un blasón para seleccionar o quitar la activa. La ayuda al pasar el cursor está activa por defecto.
 castle_wall_tools: Alturas de muralla y almenas independientes
-castle_wall_tools_tooltip: Selecciona murallas o escaleras y usa los controles sobre el menú. Haz clic en Restablecer al lado para restaurar.
+castle_wall_tools_tooltip: Selecciona murallas o escaleras y usa los controles sobre el menú. Haz clic en «Reset» al lado para restaurar.
 trees_spread_order: Agrupar árboles por terreno de expansión
 trees_spread_order_tooltip: Agrupa los árboles en Vegetación según el terreno donde se expanden. Los arbustos tienen fila propia por defecto.
 trees_spread_outlines: Marcar dónde se expanden los árboles
@@ -202,9 +202,9 @@ eraser_choice_tooltip: Selecciona Borrador y elige Todo, Animales, Unidades, Edi
 eraser_seagulls: Borrar gaviotas en vuelo
 eraser_seagulls_tooltip: Usa el Borrador para quitar gaviotas en vuelo. Con los modos del borrador activos, elige Animales o Todo.
 map_settings_show_locked: Mostrar mapas bloqueados en Cargar
-map_settings_show_locked_tooltip: Marca Mostrar mapas bloqueados debajo de la lista en el diálogo Cargar del editor.
+map_settings_show_locked_tooltip: Marca «Show locked maps» debajo de la lista en el diálogo Cargar del editor.
 map_settings_menu: Ajustes del mapa ampliados
-map_settings_menu_tooltip: Pulsa Alt+, en el editor, arrastra Tamaño personalizado y suelta para redimensionar. El botón Ajustes del mapa sobre Ir al mapa está activo por defecto.
+map_settings_menu_tooltip: Pulsa Alt+, en el editor. Arrastra el control Map size y suéltalo para aplicar el tamaño. El botón Map Settings, sobre Ir al mapa, está activo por defecto.
 map_settings_size_refresh: Aplicar mapas más pequeños al instante
 map_settings_size_refresh_tooltip: Aplica un tamaño menor mientras editas y muestra los nuevos bordes al instante.
 map_settings_camera_edge: Mostrar el borde completo del mapa
@@ -272,6 +272,6 @@ map_editor: Editor de mapas
 grid_enabled: Mostrar cuadrícula de recursos
 grid_enabled_tooltip: Pulsa Alt+G en el editor o reasigna la cuadrícula en Opciones > Teclas personalizadas.
 grid_group_descr: Superpone la cuadrícula de recursos, límites de rotación de fortalezas o áreas de minas de hierro.
-herds_animal_bin: Añadir un botón para borrar todos los animales (igual que Alt+E)
+herds_animal_bin: Añadir un botón para borrar todos los animales terrestres (Alt+E)
 key_configured: Usar tecla configurada
 key_off: Desactivado

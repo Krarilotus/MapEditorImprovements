@@ -5,7 +5,7 @@ counts_enabled_tooltip: Anahtar düğmesinin üzerindeki kırmızı i’ye tıkl
 trees_group: Ağaçlar ve çalılar
 trees_group_descr: Arazi modunda bitki örtüsü yerleştirip düzenleyin.
 trees_growth: Fırça boyutu ağaç büyümesini belirler
-trees_growth_tooltip: Bitki Örtüsü’nde bir ağaç ve fırça boyutu seçin. Boyut 4 tam büyümüştür; 6 ve 7 kuru ağaç koyar.
+trees_growth_tooltip: Bitki Örtüsü’nde bir ağaç ve fırça boyutu seçin. Boyut 4 yetişkin ağaç, 6 ve 7 ise kuru ağaç yerleştirir.
 trees_apple: Bitki Örtüsü’nde elma ağacı
 trees_apple_tooltip: Dikmeden önce Bitki Örtüsü’nden elma ağacını seçin.
 trees_shrubs: Çalı renkleri
@@ -49,11 +49,11 @@ rocks_invisible_tooltip: Yerleştirmeden önce Kayalar’ın sağındaki kutuyu 
 rocks_erase_invisible: Görünmez kayaları sil
 rocks_erase_invisible_tooltip: Görünmez kayalarla tıkalı kareleri temizlemek için arazi silgisini kullanın.
 rocks_remove_lost: Kayıp kaya kayıtlarını temizle
-rocks_remove_lost_tooltip: Kareleri değiştirmeden kaya yuvalarını boşaltmak için Kayalar’ın sağ altındaki Kayıp kayaları kaldır’a tıklayın.
+rocks_remove_lost_tooltip: Kareleri değiştirmeden kaya yuvalarını boşaltmak için Kayalar’ın sağ altındaki “Remove lost rocks” düğmesine tıklayın.
 heights_group: Yükseklikler
 heights_group_descr: Arazi modunda araziyi şekillendirin.
 heights_max_height: Yükseklikler’de Azami Yükseklik
-heights_max_height_tooltip: Fırça altındaki zemini en yüksek seviyeye çıkarmak için Asgari Yükseklik yanındaki Azami Yükseklik’i seçin.
+heights_max_height_tooltip: Fırça altındaki zemini en yüksek seviyeye çıkarmak için Asgari Yükseklik yanındaki “Max Height” düğmesini seçin.
 heights_tool_options: Yükseklik fırçası kontrolleri
 heights_tool_options_tooltip: Menü üstünde fırça aralığı, gücü, arazi koruması ve kaya işlemesini ayarlamak için bir Yükseklikler aracı seçin.
 heights_invert_key: Düzleştirmeyi ters çevirmek için basılı tut
@@ -77,15 +77,15 @@ castle_several_storage_tooltip: Ek depolama ve asker toplama binalarını normal
 castle_tower_engines: Kule araçlarını yürünebilir karelere yerleştir
 castle_tower_engines_tooltip: Ordu Binaları’ndan bir kule aracı seçip yürünebilir bir kareye yerleştirin.
 castle_keep_parts: İç kalenin parçalarını yerleştir
-castle_keep_parts_tooltip: Bir iç kale seçin ve İç Kaleler üstündeki satırdan Yalnızca iç kale veya Deposuz seçeneğini seçin.
+castle_keep_parts_tooltip: Bir iç kale seçin ve İç Kaleler üstündeki satırdan “Keep only” veya “No stockpile” seçeneğini seçin.
 castle_damaged_walls: Hasarlı sur veya merdiven yerleştir
-castle_damaged_walls_tooltip: Bir sur veya merdiven seçip yerleştirmeden önce bina menüsünün üstündeki Hasarlı’ya tıklayın.
+castle_damaged_walls_tooltip: Bir sur veya merdiven seçip yerleştirmeden önce bina menüsünün üstündeki “Damaged” düğmesine tıklayın.
 castle_variant_panels: Bina çeşidi seç
 castle_variant_panels_tooltip: Desteklenen bir bina seçip bina menüsünün üstündeki satırdan bir çeşide tıklayın.
 castle_ruined_cathedral: Yıkık görünümlü katedral yerleştir
 castle_ruined_cathedral_tooltip: Bina menüsünün üstünden yıkık çeşidi seçin. Normal bir katedral gibi işlev görür.
 castle_moat_kinds: Hendek türünü seç
-castle_moat_kinds_tooltip: Kapı Binaları’nda Hendek’i seçin ve menünün üstünden Kazılı, Planlı veya Kalıcı’yı seçin.
+castle_moat_kinds_tooltip: Kapı Binaları’nda Hendek’i seçin ve menünün üstünden “Dug”, “Planned” veya “Permanent” seçeneğini seçin.
 castle_moat_on_marsh: Bataklıkta hendeğe izin ver
 castle_moat_on_marsh_tooltip: Bataklığa hendek yerleştirin. Hendeği doldurmak altındaki bataklığı geri getirir.
 castle_moat_removal_keeps_ground: Hendeği kaldırırken zemini koru
@@ -93,7 +93,7 @@ castle_moat_removal_keeps_ground_tooltip: Bir hendeği kaldırmak altındaki esk
 herds_group: Sürüler
 herds_group_descr: Arazi modunda sürüleri ve kuşları yönetin.
 herds_panel: Sürü boyutu ve davranışı
-herds_panel_tooltip: Bir sürü hayvanı seçin ve Hayvanlar’ın üstündeki panelden boyutunu ve davranışını ayarlayın.
+herds_panel_tooltip: Sürü hâlinde yaşayan bir hayvan türünü seçin. Sürünün büyüklüğünü ve davranışını Hayvanlar menüsünün üzerindeki panelden ayarlayın.
 brushes_group: Fırçalar
 brushes_group_descr: Düzenleyici fırçasının kareleri nasıl kapladığını değiştirir.
 brushes_full_shape: Fırça şeklini düzelt
@@ -182,13 +182,13 @@ castle_player_zero_tooltip: Oyuncu 0 için nesne yerleştirmek üzere mini harit
 castle_keep_ground: İç kale yerleştirirken zemini koru
 castle_keep_ground_tooltip: İç kaleleri altındaki zemini düzleştirmeden yerleştirir.
 castle_rotation: Bina döndürme listesi
-castle_rotation_tooltip: Kale modunda sol alt menünün hemen üstündeki Döndürme’ye tıklayın ve desteklenen bir binayı yerleştirmeden önce bir açı seçin.
+castle_rotation_tooltip: Kale modunda sol alt menünün hemen üstündeki “Rotation” düğmesine tıklayın ve desteklenen bir binayı yerleştirmeden önce bir açı seçin.
 castle_unit_colour: Birim renklerini sahiplikten ayrı seç
 castle_unit_colour_tooltip: Birimin görünümünü değiştirmek için Avrupa veya Arap birim menüsünün üstünden bir arma seçin.
 castle_keep_crests: Etkin iç kaleyi armasından seç
-castle_keep_crests_tooltip: Çoklu iç kale açıkken etkin iç kaleyi seçmek veya kaldırmak için bir armaya tıklayın. Üzerine gelme yardımı varsayılan olarak açıktır.
+castle_keep_crests_tooltip: Birden fazla iç kale etkinken bir armaya tıklayarak iç kaleyi seçin veya seçimi kaldırın. İmleçle üzerine gelince gösterilen yardım varsayılan olarak açıktır.
 castle_wall_tools: Sur yükseklikleri ve bağımsız mazgallar
-castle_wall_tools_tooltip: Sur veya merdiven seçip menü üstündeki kontrolleri kullanın. Ayarlarını geri yüklemek için yanındaki Sıfırla’ya tıklayın.
+castle_wall_tools_tooltip: Sur veya merdiven seçip menü üstündeki kontrolleri kullanın. Ayarlarını geri yüklemek için yanındaki “Reset” düğmesine tıklayın.
 trees_spread_order: Ağaçları yayıldıkları zemine göre grupla
 trees_spread_order_tooltip: Bitki Örtüsü’nde ağaçları yayıldıkları zemine göre gruplar. Çalılar varsayılan olarak ayrı satır alır.
 trees_spread_outlines: Ağaçların yayıldığı zemini işaretle
@@ -202,9 +202,9 @@ eraser_choice_tooltip: Silgi’yi seçin, ardından menünün üstünden Tümü,
 eraser_seagulls: Uçan martıları sil
 eraser_seagulls_tooltip: Uçan martıları kaldırmak için Silgi’yi kullanın. Silgi modları açıkken Hayvanlar veya Tümü’nü seçin.
 map_settings_show_locked: Yükle penceresinde kilitli haritaları göster
-map_settings_show_locked_tooltip: Düzenleyicinin Yükle penceresinde dosya listesinin altındaki Kilitli haritaları göster kutusunu işaretleyin.
+map_settings_show_locked_tooltip: Düzenleyicinin Yükle penceresinde dosya listesinin altındaki “Show locked maps” kutusunu işaretleyin.
 map_settings_menu: Genişletilmiş Harita Ayarları
-map_settings_menu_tooltip: Düzenleyicide Alt+, tuşlarına basın, Özel boyut’u sürükleyip bırakarak yeniden boyutlandırın. Haritaya Git üstündeki Harita Ayarları düğmesi varsayılan olarak açıktır.
+map_settings_menu_tooltip: Düzenleyicide Alt+, tuşlarına basın. Boyutu uygulamak için “Map size” kaydırıcısını sürükleyip bırakın. “Haritaya Git” üzerindeki “Map Settings” düğmesi varsayılan olarak açıktır.
 map_settings_size_refresh: Daha küçük haritaları hemen uygula
 map_settings_size_refresh_tooltip: Düzenlerken daha küçük harita boyutunu hemen uygular ve yeni kenarları anında gösterir.
 map_settings_camera_edge: Harita kenarının tamamını göster
@@ -272,6 +272,6 @@ map_editor: Harita düzenleyici
 grid_enabled: Kaynak ızgarasını göster
 grid_enabled_tooltip: Düzenleyicide Alt+G’ye basın veya Seçenekler > Özel Kısayollar altından ızgara kısayolunu değiştirin.
 grid_group_descr: Kaynak ızgarasını, iç kale dönüş sınırlarını veya demir madeni alanlarını gösterir.
-herds_animal_bin: Tüm hayvanları silmek için düğme ekle (Alt+E ile aynı)
+herds_animal_bin: Tüm kara hayvanlarını silme düğmesi ekle (Alt+E)
 key_configured: Yapılandırılmış tuşu kullan
 key_off: Kapalı

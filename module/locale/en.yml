@@ -199,7 +199,7 @@ trees_spread_outlines: Mark where trees spread
 trees_spread_outlines_tooltip: In Vegetation, green marks trees that spread on fertile ground and beige marks those that spread on infertile ground.
 herds_bird_bins: Remove all crows or seagulls
 herds_bird_bins_tooltip: In Animals, click the bin beside the crow or seagull icon to remove that bird type.
-herds_animal_bin: Add a button to erase all animals (same as Alt+E)
+herds_animal_bin: Add a button to erase all land animals (Alt+E)
 herds_group_warning: Warn near the herd limit
 herds_group_warning_tooltip: See the remaining slots when herds and troop groups approach the map limit.
 eraser_choice: Choose what the eraser removes
@@ -209,7 +209,7 @@ eraser_seagulls_tooltip: Use Eraser to remove flying gulls. With eraser modes en
 map_settings_show_locked: Show locked maps in Load
 map_settings_show_locked_tooltip: Tick Show locked maps below the file list in the editor’s Load dialog.
 map_settings_menu: Expanded Map Settings
-map_settings_menu_tooltip: Press Alt+, in the editor, then drag Custom size and release to resize. The Map Settings button above To Map is on by default.
+map_settings_menu_tooltip: Press Alt+, in the editor. Drag the Map size slider and release to apply the size. The Map Settings button above To Map is on by default.
 eraser_group: Eraser
 eraser_group_descr: Choose what the landscape eraser clears.
 map_settings_group: Map settings

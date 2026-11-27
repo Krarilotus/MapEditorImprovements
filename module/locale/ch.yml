@@ -49,11 +49,11 @@ rocks_invisible_tooltip: 放置前勾选“岩石”右侧的复选框。隐形�
 rocks_erase_invisible: 擦除隐形岩石
 rocks_erase_invisible_tooltip: 使用地形橡皮擦清除被隐形岩石阻挡的地块。
 rocks_remove_lost: 清理丢失的岩石记录
-rocks_remove_lost_tooltip: 点击“岩石”右下角的“移除丢失岩石”，在不改动地块的情况下释放岩石槽位。
+rocks_remove_lost_tooltip: 点击“岩石”右下角的“Remove lost rocks”，在不改动地块的情况下释放岩石槽位。
 heights_group: 高度
 heights_group_descr: 在地形模式中塑造高低起伏。
 heights_max_height: 在“高度”中加入最大高度
-heights_max_height_tooltip: 在“最小高度”旁选择“最大高度”，将画笔下的地面升至最高。
+heights_max_height_tooltip: 在“最小高度”旁选择“Max Height”，将画笔下的地面升至最高。
 heights_tool_options: 高度画笔控件
 heights_tool_options_tooltip: 选择任一“高度”工具，在菜单上方调节画笔范围、强度、地形保护与岩石处理。
 heights_invert_key: 按住以反转“平滑”工具
@@ -75,17 +75,17 @@ castle_several_keeps_tooltip: 照常放置额外主堡。启用主堡徽章后�
 castle_several_storage: 可建多座仓储与招募建筑
 castle_several_storage_tooltip: 照常放置额外的仓储和招募建筑。分开的储藏区可能影响附近可用资源。
 castle_tower_engines: 在可通行地块放置塔楼器械
-castle_tower_engines_tooltip: 在“军事建筑”中选择塔楼器械并放置到任意可通行地块。
+castle_tower_engines_tooltip: 在“军事建筑”中选择塔楼上的攻城器械，然后将它放到可通行的地块上。
 castle_keep_parts: 放置主堡局部结构
-castle_keep_parts_tooltip: 选中主堡并在“主堡”上方一栏选择“仅主堡”或“无储藏区”。
+castle_keep_parts_tooltip: 选中主堡并在“主堡”上方一栏选择“Keep only”或“No stockpile”。
 castle_damaged_walls: 放置受损城墙或阶梯
-castle_damaged_walls_tooltip: 选中城墙或阶梯，放置前点击建筑菜单上方的“受损”。
+castle_damaged_walls_tooltip: 选中城墙或阶梯，放置前点击建筑菜单上方的“Damaged”。
 castle_variant_panels: 选择建筑变体
 castle_variant_panels_tooltip: 选中支持的建筑，再在建筑菜单上方一栏点击变体。
 castle_ruined_cathedral: 放置废墟外观的大教堂
 castle_ruined_cathedral_tooltip: 在建筑菜单上方选择废墟变体，其功能与正常大教堂相同。
 castle_moat_kinds: 选择护城河类型
-castle_moat_kinds_tooltip: 在“城门”中选中护城河，在菜单上方选择已挖、规划或永久。
+castle_moat_kinds_tooltip: 在“城门”中选中护城河，在菜单上方选择“Dug”“Planned”或“Permanent”。
 castle_moat_on_marsh: 允许在沼泽上挖护城河
 castle_moat_on_marsh_tooltip: 可在沼泽上放置护城河，填平后恢复下方沼泽。
 castle_moat_removal_keeps_ground: 移除护城河时保留原地形
@@ -93,7 +93,7 @@ castle_moat_removal_keeps_ground_tooltip: 移除护城河后会还原其下方�
 herds_group: 兽群
 herds_group_descr: 在地形模式中管理兽群与鸟类。
 herds_panel: 兽群规模与行为
-herds_panel_tooltip: 选中群居动物后，用“动物”上方的面板设置其规模和行为。
+herds_panel_tooltip: 选择一种群居动物，然后在“动物”菜单上方的面板设置兽群数量和行为。
 brushes_group: 笔刷
 brushes_group_descr: 改变编辑器画笔覆盖地块的方式。
 brushes_full_shape: 修复画笔形状
@@ -182,13 +182,13 @@ castle_player_zero_tooltip: 点击小地图旁的第九枚白色盾徽，为玩�
 castle_keep_ground: 放置主堡时保留地形
 castle_keep_ground_tooltip: 放置主堡时不再铲平其下方地面。
 castle_rotation: 建筑旋转列表
-castle_rotation_tooltip: 在城堡模式中，点击左下角菜单正上方的“旋转”，选择角度后再放置支持的建筑。
+castle_rotation_tooltip: 在城堡模式中，点击左下角菜单正上方的“Rotation”，选择角度后再放置支持的建筑。
 castle_unit_colour: 将单位颜色与归属分开选择
 castle_unit_colour_tooltip: 在欧洲或阿拉伯兵种菜单上方选择徽章，以更改单位外观颜色。
 castle_keep_crests: 通过徽章选择当前主堡
 castle_keep_crests_tooltip: 启用多主堡时，点击徽章可选中或取消当前主堡；悬停提示默认开启。
 castle_wall_tools: 城墙高度与独立垛口
-castle_wall_tools_tooltip: 选中城墙或阶梯并使用菜单上方控件，点击旁边的“重置”恢复默认设置。
+castle_wall_tools_tooltip: 选中城墙或阶梯并使用菜单上方控件，点击旁边的“Reset”恢复默认设置。
 trees_spread_order: 按蔓延地形分组排列树木
 trees_spread_order_tooltip: 在“植被”中按蔓延地形对树木分组；灌木默认独立成行。
 trees_spread_outlines: 标出树木的蔓延地形
@@ -202,9 +202,9 @@ eraser_choice_tooltip: 选中橡皮擦后，在菜单上方选择全部、动物
 eraser_seagulls: 擦除飞行中的海鸥
 eraser_seagulls_tooltip: 使用橡皮擦即可清除飞行中的海鸥；启用橡皮擦模式后，请选择“动物”或“全部”。
 map_settings_show_locked: 在“加载”中显示锁定地图
-map_settings_show_locked_tooltip: 在编辑器“加载”窗口的文件列表下方勾选“显示锁定地图”。
+map_settings_show_locked_tooltip: 在编辑器“加载”窗口的文件列表下方勾选“Show locked maps”。
 map_settings_menu: 扩展地图设置
-map_settings_menu_tooltip: 在编辑器中按 Alt+,，拖动“自定义尺寸”并松开即可调整大小。“转到地图”上方的地图设置按钮默认开启。
+map_settings_menu_tooltip: 在编辑器中按 Alt+,。拖动“Map size”滑块并松开，即可应用新尺寸。“转到地图”上方的“Map Settings”按钮默认开启。
 map_settings_size_refresh: 缩小地图时立即生效
 map_settings_size_refresh_tooltip: 编辑时应用更小的地图尺寸并立即看到新边界。
 map_settings_camera_edge: 显示完整地图边缘
@@ -272,6 +272,6 @@ map_editor: 地图编辑器
 grid_enabled: 显示资源网格
 grid_enabled_tooltip: 在编辑器中按 Alt+G 显示，或在“选项 > 自定义快捷键”中重新绑定网格快捷键。
 grid_group_descr: 叠加显示资源网格、主堡朝向分界线或铁矿占地范围。
-herds_animal_bin: 添加清除全部动物的按钮（等同于 Alt+E）
+herds_animal_bin: 添加清除所有陆地动物的按钮（Alt+E）
 key_configured: 使用已配置的按键
 key_off: 关闭

@@ -5,7 +5,7 @@ counts_enabled_tooltip: Cliquez sur le i rouge au-dessus du bouton clé, puis su
 trees_group: Arbres et buissons
 trees_group_descr: Placer et organiser la végétation en mode Paysage.
 trees_growth: La taille du pinceau définit la croissance des arbres
-trees_growth_tooltip: Choisissez un arbre et une taille dans Végétation. La taille 4 est adulte ; les tailles 6 et 7 placent des arbres morts.
+trees_growth_tooltip: Choisissez un arbre et une taille de pinceau dans Végétation. La taille 4 place un arbre adulte, les tailles 6 et 7 un arbre mort.
 trees_apple: Pommier dans Végétation
 trees_apple_tooltip: Choisissez le pommier dans Végétation avant de planter.
 trees_shrubs: Couleurs des buissons
@@ -49,11 +49,11 @@ rocks_invisible_tooltip: Cochez la case à droite de Rochers avant de placer. Le
 rocks_erase_invisible: Effacer les rochers invisibles
 rocks_erase_invisible_tooltip: Utilisez la gomme de paysage pour libérer les cases bloquées par des rochers invisibles.
 rocks_remove_lost: Nettoyer les entrées de rochers perdus
-rocks_remove_lost_tooltip: Cliquez sur Supprimer les rochers perdus en bas à droite de Rochers pour libérer des emplacements sans toucher aux cases.
+rocks_remove_lost_tooltip: Cliquez sur « Remove lost rocks » en bas à droite de Rochers pour libérer des emplacements sans toucher aux cases.
 heights_group: Reliefs
 heights_group_descr: Façonner le relief en mode Paysage.
 heights_max_height: Hauteur max dans Reliefs
-heights_max_height_tooltip: Choisissez Hauteur max à côté de Hauteur min pour élever le sol sous le pinceau au maximum.
+heights_max_height_tooltip: Choisissez « Max Height » à côté de Hauteur min pour élever le sol sous le pinceau au maximum.
 heights_tool_options: Réglages du pinceau de relief
 heights_tool_options_tooltip: Choisissez un outil de Reliefs pour régler portée, force, protection du terrain et gestion des rochers au-dessus du menu.
 heights_invert_key: Maintenir pour inverser Égaliser
@@ -77,15 +77,15 @@ castle_several_storage_tooltip: Placez normalement des bâtiments supplémentair
 castle_tower_engines: Placer les engins de tour sur cases praticables
 castle_tower_engines_tooltip: Choisissez un engin de tour dans Bâtiments militaires et placez-le sur une case praticable.
 castle_keep_parts: Placer des parties de donjon
-castle_keep_parts_tooltip: Sélectionnez un donjon et choisissez Donjon seul ou Sans réserve sur la ligne au-dessus de Donjons.
+castle_keep_parts_tooltip: Sélectionnez un donjon et choisissez « Keep only » ou « No stockpile » sur la ligne au-dessus de Donjons.
 castle_damaged_walls: Placer des murs ou escaliers endommagés
-castle_damaged_walls_tooltip: Sélectionnez un mur ou escalier et cliquez sur Endommagé au-dessus du menu de construction avant de placer.
+castle_damaged_walls_tooltip: Sélectionnez un mur ou escalier et cliquez sur « Damaged » au-dessus du menu de construction avant de placer.
 castle_variant_panels: Choisir une variante de bâtiment
 castle_variant_panels_tooltip: Sélectionnez un bâtiment compatible et cliquez sur une variante dans la ligne au-dessus du menu.
 castle_ruined_cathedral: Placer une cathédrale d’aspect ruiné
 castle_ruined_cathedral_tooltip: Choisissez la variante en ruine au-dessus du menu de construction. Elle fonctionne comme une cathédrale.
 castle_moat_kinds: Choisir le type de douves
-castle_moat_kinds_tooltip: Sélectionnez Douves dans Portes et choisissez Creusées, Planifiées ou Permanentes au-dessus du menu.
+castle_moat_kinds_tooltip: Sélectionnez Douves dans Portes et choisissez « Dug », « Planned » ou « Permanent » au-dessus du menu.
 castle_moat_on_marsh: Autoriser les douves sur marais
 castle_moat_on_marsh_tooltip: Placez des douves sur un marais. Combler les douves restaure le marais dessous.
 castle_moat_removal_keeps_ground: Conserver le sol en retirant les douves
@@ -93,7 +93,7 @@ castle_moat_removal_keeps_ground_tooltip: Retirer des douves rétablit le terrai
 herds_group: Troupeaux
 herds_group_descr: Gérer les troupeaux et les oiseaux en mode Paysage.
 herds_panel: Taille et comportement des troupeaux
-herds_panel_tooltip: Sélectionnez un animal grégaire et utilisez le panneau au-dessus d’Animaux pour régler taille et comportement.
+herds_panel_tooltip: Sélectionnez une espèce vivant en troupeau, puis réglez la taille et le comportement du troupeau dans le panneau au-dessus d’Animaux.
 brushes_group: Pinceaux
 brushes_group_descr: Modifie la façon dont le pinceau de l’éditeur couvre les cases.
 brushes_full_shape: Corriger la forme du pinceau
@@ -101,11 +101,11 @@ brushes_full_shape_tooltip: Remplit tout l’aperçu du pinceau sans appliquer l
 undo_group: Annuler et rétablir
 undo_group_descr: Revenir en arrière ou rétablir les modifications récentes.
 undo_enabled: Annuler et rétablir
-undo_enabled_tooltip: Cliquez sur les flèches en haut à gauche pour jusqu’à 20 actions, ou associez Annuler et Rétablir dans Options > Raccourcis personnalisés.
+undo_enabled_tooltip: Utilisez les flèches en haut à gauche pour annuler ou rétablir jusqu’à 20 actions. Vous pouvez aussi associer Annuler et Rétablir dans Options > Raccourcis personnalisés.
 pipette_group: Pipette
 pipette_group_descr: Prélever une case et réutiliser son contenu sur la carte.
 pipette_enabled: Copier terrain ou objets avec la pipette
-pipette_enabled_tooltip: Cliquez sur la pipette au-dessus de la taille du pinceau, choisissez Reliefs, Textures, Objets ou Tout, puis cliquez une case source et peignez.
+pipette_enabled_tooltip: Cliquez sur la pipette au-dessus du sélecteur de taille du pinceau. Choisissez Reliefs, Textures, Objets ou Tout, cliquez sur une case source, puis peignez.
 pipette_select_key: Raccourci de la pipette
 pipette_select_key_tooltip: Appuyez encore sur cette touche pour changer de mode, ou attribuez Pipette dans Options > Raccourcis personnalisés.
 pipette_read_key: Maintenir pour prélever une autre case
@@ -182,13 +182,13 @@ castle_player_zero_tooltip: Cliquez sur le neuvième écusson blanc à côté de
 castle_keep_ground: Préserver le sol en plaçant un donjon
 castle_keep_ground_tooltip: Place les donjons sans aplanir le terrain en dessous.
 castle_rotation: Liste de rotation des bâtiments
-castle_rotation_tooltip: En mode Château, cliquez sur Rotation juste au-dessus du menu en bas à gauche et choisissez un angle avant de placer un bâtiment compatible.
+castle_rotation_tooltip: En mode Château, cliquez sur « Rotation » juste au-dessus du menu en bas à gauche et choisissez un angle avant de placer un bâtiment compatible.
 castle_unit_colour: Choisir la couleur des unités séparément du propriétaire
 castle_unit_colour_tooltip: Choisissez un blason au-dessus du menu des unités européennes ou arabes pour changer l’apparence de l’unité.
 castle_keep_crests: Choisir le donjon actif par son blason
 castle_keep_crests_tooltip: Avec plusieurs donjons activés, cliquez sur un blason pour choisir ou désélectionner le donjon actif. L’aide au survol est active par défaut.
 castle_wall_tools: Hauteurs de murs et créneaux isolés
-castle_wall_tools_tooltip: Sélectionnez des murs ou escaliers et utilisez les réglages au-dessus du menu. Cliquez sur Réinitialiser à côté pour tout rétablir.
+castle_wall_tools_tooltip: Sélectionnez des murs ou escaliers et utilisez les réglages au-dessus du menu. Cliquez sur « Reset » à côté pour tout rétablir.
 trees_spread_order: Regrouper les arbres par sol de propagation
 trees_spread_order_tooltip: Regroupe les arbres par sol de propagation dans Végétation. Les buissons ont leur propre ligne par défaut.
 trees_spread_outlines: Indiquer où les arbres se propagent
@@ -202,9 +202,9 @@ eraser_choice_tooltip: Sélectionnez la Gomme, puis choisissez Tout, Animaux, Un
 eraser_seagulls: Effacer les mouettes en vol
 eraser_seagulls_tooltip: Utilisez la Gomme pour retirer les mouettes en vol. Avec les modes de gomme activés, choisissez Animaux ou Tout.
 map_settings_show_locked: Afficher les cartes verrouillées dans Charger
-map_settings_show_locked_tooltip: Cochez Afficher les cartes verrouillées sous la liste des fichiers dans la fenêtre Charger de l’éditeur.
+map_settings_show_locked_tooltip: Cochez « Show locked maps » sous la liste des fichiers dans la fenêtre Charger de l’éditeur.
 map_settings_menu: Paramètres de carte étendus
-map_settings_menu_tooltip: Appuyez sur Alt+, dans l’éditeur, faites glisser Taille personnalisée puis relâchez pour redimensionner. Le bouton Paramètres de la carte au-dessus de Vers la carte est actif par défaut.
+map_settings_menu_tooltip: Appuyez sur Alt+, dans l’éditeur. Faites glisser le curseur « Map size », puis relâchez pour appliquer la taille. Le bouton « Map Settings » au-dessus de « Vers la carte » est actif par défaut.
 map_settings_size_refresh: Appliquer immédiatement les cartes réduites
 map_settings_size_refresh_tooltip: Applique une taille réduite en cours d’édition et affiche aussitôt les nouveaux bords.
 map_settings_camera_edge: Afficher tout le bord de la carte
@@ -272,6 +272,6 @@ map_editor: Éditeur de cartes
 grid_enabled: Afficher la grille des ressources
 grid_enabled_tooltip: Appuyez sur Alt+G dans l’éditeur ou réattribuez la grille dans Options > Raccourcis personnalisés.
 grid_group_descr: Superpose la grille des ressources, les limites d’orientation du donjon ou l’emprise des mines de fer.
-herds_animal_bin: Ajouter un bouton pour effacer tous les animaux (comme Alt+E)
+herds_animal_bin: Ajouter un bouton pour effacer tous les animaux terrestres (Alt+E)
 key_configured: Utiliser la touche configurée
 key_off: Désactivé

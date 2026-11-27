@@ -49,15 +49,15 @@ rocks_invisible_tooltip: Elhelyezés előtt pipáld be a Sziklák jobb oldalán 
 rocks_erase_invisible: Láthatatlan sziklák törlése
 rocks_erase_invisible_tooltip: A tájradírral megtisztíthatod a láthatatlan sziklák által blokkolt mezőket.
 rocks_remove_lost: Elveszett sziklabejegyzések törlése
-rocks_remove_lost_tooltip: Kattints a Sziklák jobb alsó részén az Elveszett sziklák eltávolítása gombra, hogy mezők módosítása nélkül szabadíts fel helyet.
+rocks_remove_lost_tooltip: Kattints a Sziklák jobb alsó részén a „Remove lost rocks” gombra, hogy mezők módosítása nélkül szabadíts fel helyet.
 heights_group: Magasságok
 heights_group_descr: Terep formálása Táj módban.
 heights_max_height: Max. magasság a Magasságoknál
-heights_max_height_tooltip: Válaszd a Max. magasságot a Min. magasság mellett, hogy az ecset alatt maximálisra emeld a talajt.
+heights_max_height_tooltip: Válaszd a „Max Height” gombot a Min. magasság mellett, hogy az ecset alatt maximálisra emeld a talajt.
 heights_tool_options: Magasságecset vezérlői
 heights_tool_options_tooltip: Válassz egy Magasságok eszközt a tartomány, erősség, terepvédelem és sziklakezelés beállításához a menü felett.
 heights_invert_key: Lenyomva tartva megfordítja a Kiegyenlítést
-heights_invert_key_tooltip: Kiegyenlítés közben tartsd lenyomva a talaj érdesítéséhez, elengedve újra simít.
+heights_invert_key_tooltip: A Kiegyenlítés eszköznél tartsd lenyomva ezt a billentyűt a terep érdesítéséhez, majd engedd fel, ha ismét simítani szeretnél.
 castle_group: Vármód
 castle_group_descr: Épületek és egységek elhelyezése Vár módban.
 castle_building_counts: Épületszámlálók a minitérkép felett
@@ -77,15 +77,15 @@ castle_several_storage_tooltip: Helyezz le extra raktár- és toborzóépületek
 castle_tower_engines: Toronygépek elhelyezése járható mezőkön
 castle_tower_engines_tooltip: Válassz toronygépet a Katonai épületeknél, és helyezd bármely járható mezőre.
 castle_keep_parts: Vártorony részeinek elhelyezése
-castle_keep_parts_tooltip: Válassz vártornyot, majd a Vártornyok feletti sorban válaszd a Csak vártorony vagy Raktár nélkül opciót.
+castle_keep_parts_tooltip: Válassz vártornyot, majd a Vártornyok feletti sorban válaszd a „Keep only” vagy „No stockpile” opciót.
 castle_damaged_walls: Sérült falak vagy lépcsők elhelyezése
-castle_damaged_walls_tooltip: Válassz falat vagy lépcsőt, és elhelyezés előtt kattints a Sérült gombra az épületmenü felett.
+castle_damaged_walls_tooltip: Válassz falat vagy lépcsőt, és elhelyezés előtt kattints a „Damaged” gombra az épületmenü felett.
 castle_variant_panels: Épületváltozat választása
 castle_variant_panels_tooltip: Válassz egy támogatott épületet, majd kattints egy változatra az épületmenü feletti sorban.
 castle_ruined_cathedral: Romos kinézetű katedrális elhelyezése
 castle_ruined_cathedral_tooltip: Válaszd a romos változatot az épületmenü felett. Normál katedrálisként működik.
 castle_moat_kinds: Várárok típusának választása
-castle_moat_kinds_tooltip: Válaszd a Várárkot a Kapuházaknál, majd felette a Kiásott, Tervezett vagy Állandó típust.
+castle_moat_kinds_tooltip: Válaszd a Várárkot a Kapuházaknál, majd felette a „Dug”, „Planned” vagy „Permanent” típust.
 castle_moat_on_marsh: Várárok engedélyezése mocsáron
 castle_moat_on_marsh_tooltip: Helyezz várárkot mocsárra. A feltöltése visszaállítja alatta a mocsarat.
 castle_moat_removal_keeps_ground: Talaj megőrzése várárok törlésekor
@@ -93,7 +93,7 @@ castle_moat_removal_keeps_ground_tooltip: A várárok eltávolítása visszaadja
 herds_group: Csordák
 herds_group_descr: Csordák és madarak kezelése Táj módban.
 herds_panel: Csordaméret és viselkedés
-herds_panel_tooltip: Válassz egy csordaállatot, és állítsd be a méretét és viselkedését az Állatok feletti panelen.
+herds_panel_tooltip: Válassz ki egy csordában élő állatfajt, majd az Állatok feletti panelen állítsd be a csorda létszámát és viselkedését.
 brushes_group: Ecsetek
 brushes_group_descr: Módosítja, hogyan fedi le a mezőket a szerkesztő ecsete.
 brushes_full_shape: Ecset alakjának javítása
@@ -174,7 +174,7 @@ menu_dust_clouds_tooltip: Megakadályozza a porfelhők okozta összeomlásokat t
 menu_always_update: Szerkesztőpanel frissítése munka közben
 menu_always_update_tooltip: Naprakészen tartja a szerkesztő vezérlőit, amíg az egér a térkép felett van.
 castle_all_players: Mind a nyolc játékospajzs megjelenítése
-castle_all_players_tooltip: Vár módban bármelyik nyolc pajzsot kiválaszthatod a minitérkép mellett.
+castle_all_players_tooltip: Vár módban a minitérkép melletti nyolc pajzs bármelyikét kiválaszthatod.
 castle_all_keeps: Udvarház és erőd minden térképen
 castle_all_keeps_tooltip: Válaszd az Udvarházat vagy az Erődöt a Vártornyoknál bármilyen térképtípuson.
 castle_player_zero: Semleges játékospajzs megjelenítése
@@ -182,13 +182,13 @@ castle_player_zero_tooltip: Kattints a minitérkép melletti kilencedik fehér p
 castle_keep_ground: Talaj megőrzése vártorony lerakásakor
 castle_keep_ground_tooltip: Vártornyok elhelyezése az alattuk lévő talaj elegyengetése nélkül.
 castle_rotation: Épületforgatási lista
-castle_rotation_tooltip: Vár módban kattints a Forgatás gombra közvetlenül a bal alsó menü felett, és válassz szöget a támogatott épület lerakása előtt.
+castle_rotation_tooltip: Vár módban kattints a „Rotation” gombra közvetlenül a bal alsó menü felett, és válassz szöget a támogatott épület lerakása előtt.
 castle_unit_colour: Egységszín választása a tulajdonostól függetlenül
 castle_unit_colour_tooltip: Válassz címert az európai vagy arab egységmenü felett az egység színének módosításához.
 castle_keep_crests: Aktív vártorony választása a címerével
-castle_keep_crests_tooltip: Több vártorony mellett címerre kattintva választhatod ki vagy törölheted az aktív vártornyot. A lebegő súgó alapértelmezésben be van kapcsolva.
+castle_keep_crests_tooltip: Több vártorony esetén a címerre kattintva kijelölheted a vártornyot, vagy megszüntetheted a kijelölését. Az egérmutatónál megjelenő súgó alapértelmezésben be van kapcsolva.
 castle_wall_tools: Falmagasságok és szabadon álló pártázatok
-castle_wall_tools_tooltip: Válassz falat vagy lépcsőt, és használd a menü feletti vezérlőket. A melletti Visszaállítás gombbal alaphelyzetbe állíthatod.
+castle_wall_tools_tooltip: Válassz falat vagy lépcsőt, és használd a menü feletti vezérlőket. A melletti „Reset” gombbal alaphelyzetbe állíthatod.
 trees_spread_order: Fák csoportosítása terjedési talaj szerint
 trees_spread_order_tooltip: A Növényzetben a terjedési talajuk szerint csoportosítja a fákat. A bokrok alapértelmezésben külön sort kapnak.
 trees_spread_outlines: Fák terjedési talajának jelölése
@@ -202,9 +202,9 @@ eraser_choice_tooltip: Válaszd a Radírt, majd a menü felett a Mind, Állatok,
 eraser_seagulls: Repülő sirályok törlése
 eraser_seagulls_tooltip: Használd a Radírt a repülő sirályok eltávolításához. Bekapcsolt radírmódoknál válaszd az Állatok vagy Mind opciót.
 map_settings_show_locked: Zárolt térképek megjelenítése a Betöltésnél
-map_settings_show_locked_tooltip: Pipáld be a Zárolt térképek megjelenítése négyzetet a fájllista alatt a szerkesztő Betöltés ablakában.
+map_settings_show_locked_tooltip: Pipáld be a „Show locked maps” négyzetet a fájllista alatt a szerkesztő Betöltés ablakában.
 map_settings_menu: Bővített térképbeállítások
-map_settings_menu_tooltip: Nyomj Alt+,-t a szerkesztőben, húzd az Egyéni méretet és engedd el az átméretezéshez. A Térképbeállítások gomb a Térképre felett alapértelmezésben be van kapcsolva.
+map_settings_menu_tooltip: Nyomd meg az „Alt+,” billentyűkombinációt. Húzd a „Map size” csúszkát, majd engedd el a méret alkalmazásához. A „Map Settings” gomb a „Térképre” fölött alapértelmezés szerint látható.
 map_settings_size_refresh: Kisebb térképek azonnali alkalmazása
 map_settings_size_refresh_tooltip: Szerkesztés közben azonnal alkalmazza a kisebb térképméretet, és rögtön látszanak az új szélek.
 map_settings_camera_edge: Teljes térképszél megjelenítése
@@ -272,6 +272,6 @@ map_editor: Térképszerkesztő
 grid_enabled: Nyersanyagrács megjelenítése
 grid_enabled_tooltip: Nyomj Alt+G-t a szerkesztőben, vagy módosítsd a kiosztást a Beállítások > Egyéni gyorsbillentyűk alatt.
 grid_group_descr: Nyersanyagrács, vártorony-forgatási határok vagy vasbánya-alapterületek megjelenítése.
-herds_animal_bin: Gomb hozzáadása az összes állat törléséhez (mint az Alt+E)
+herds_animal_bin: Gomb az összes szárazföldi állat törléséhez (Alt+E)
 key_configured: Beállított billentyű használata
 key_off: Ki
