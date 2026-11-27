@@ -157,6 +157,7 @@ local function enable(self, config)
     local ok, problem = pcall(C.enableUndo, self)
     if not ok then
       self.undo = nil
+      log(ERROR, "Map editor undo is off.")
       log(WARNING, tostring(problem) .. "; the editor has no undo")
     end
   end
@@ -164,7 +165,10 @@ local function enable(self, config)
   if setting(config, "rocks", "random_preview") == true then
     local ok, result = pcall(enableRandomPreview, self)
     if ok then rockPlaced = result
-    else log(WARNING, tostring(result) .. "; the random rotation is left as it is") end
+    else
+      log(ERROR, "Random rock rotation previews are off.")
+      log(WARNING, tostring(result))
+    end
   end
   local O = {
     counts = setting(config, "counts", "enabled") == true,
@@ -247,7 +251,10 @@ local function enable(self, config)
       or O.textureMask or O.birdButtons or O.animalBin or O.groupWarning or O.eraserChoice or O.eraseGulls
       or O.spreadOrder or O.spreadOutlines or O.compass or O.rockPlaced then
     local ok, problem = pcall(enableMenu, self, O)
-    if not ok then log(WARNING, tostring(problem) .. "; the editor menu is left as it is") end
+    if not ok then
+      log(ERROR, "Landscape menu changes are off.")
+      log(WARNING, tostring(problem))
+    end
   end
   local settings = {
     lockedMaps = setting(config, "map_settings", "show_locked") == true,
@@ -264,7 +271,10 @@ local function enable(self, config)
       end
       C.enableMapSettings(self, settings, G)
     end)
-    if not ok then log(WARNING, tostring(problem) .. "; the map settings are left as they are") end
+    if not ok then
+      log(ERROR, "Map settings changes are off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if castle.buildingCounts or castle.towerRuins or castle.armyExtras or castle.statues or castle.barrier
       or castle.severalKeeps or castle.looseBuildings or castle.towerEngines or castle.keepParts
@@ -272,19 +282,31 @@ local function enable(self, config)
       or castle.moatRemoval or castle.ruinedCathedral or castle.allPlayers or castle.allKeeps or castle.playerZero or castle.keepCrests or castle.wallTools
       or castle.keepGround or castle.rotation or castle.compass or castle.unitColour then
     local ok, problem = pcall(C.enable, self, castle)
-    if not ok then log(WARNING, tostring(problem) .. "; the build menu is left as it is") end
+    if not ok then
+      log(ERROR, "Castle editor menu changes are off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if setting(config, "rocks", "signpost") == true then
     local ok, problem = pcall(enableSignpost, self)
-    if not ok then log(WARNING, tostring(problem) .. "; skirmish maps keep their own Rocks menu") end
+    if not ok then
+      log(ERROR, "The skirmish map signpost menu is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if setting(config, "brushes", "full_shape") == true then
     local ok, problem = pcall(C.patchBrushShape, self)
-    if not ok then log(WARNING, tostring(problem) .. "; the brushes keep their missing corner") end
+    if not ok then
+      log(ERROR, "Full brush shapes are off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if setting(config, "rocks", "erase_invisible") == true then
     local ok, problem = pcall(C.patchEraser, self)
-    if not ok then log(WARNING, tostring(problem) .. "; the eraser leaves invisible rocks") end
+    if not ok then
+      log(ERROR, "Erasing invisible rocks is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   for _, entry in ipairs({ { "size_refresh", C.patchSizeRefresh, "smaller map sizes need a reload" },
       { "camera_edge", C.patchCameraEdge, "the camera stops short of the map edge" } }) do
@@ -311,15 +333,24 @@ local function enable(self, config)
       end
       C.patchCompassTurn(self, G)
     end)
-    if not ok then log(WARNING, tostring(problem) .. "; the compass turns the map one way only") end
+    if not ok then
+      log(ERROR, "Turning the map both ways with the compass is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if setting(config, "menu", "dust_clouds") == true then
     local ok, problem = pcall(C.patchDustClouds, self)
-    if not ok then log(WARNING, tostring(problem) .. "; dust clouds are left as they are") end
+    if not ok then
+      log(ERROR, "Dust cloud changes are off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if setting(config, "menu", "always_update") == true then
     local ok, problem = pcall(enableRedraw, self)
-    if not ok then log(WARNING, tostring(problem) .. "; the menu is redrawn as usual") end
+    if not ok then
+      log(ERROR, "Always updating the map editor menu is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   local gridConfig = {}
   for name, value in pairs(DEFAULTS.grid) do gridConfig[name] = value end
@@ -328,7 +359,10 @@ local function enable(self, config)
   if gridConfig.enabled == true then
     local ok, problem = pcall(grid.enable, self, gridConfig)
     gridOn = ok and problem == true
-    if not ok then log(WARNING, tostring(problem) .. "; no resource grid") end
+    if not ok then
+      log(ERROR, "The map editor resource grid is off.")
+      log(WARNING, tostring(problem))
+    end
   end
   if not gridOn then frame.remove("grid") end
   -- Last: the map drawing's patch site with every routine the features above added.

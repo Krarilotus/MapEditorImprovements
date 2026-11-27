@@ -262,7 +262,7 @@ function M.enable(self, config)
 
   if surfaceSite == nil or gameModeSite == nil or orientationSite == nil
       or (hotkeys == nil and dispatchSite == nil) then
-    log(WARNING, "resource grid: disabled, the game code it needs was not found.")
+    log(ERROR, "The map editor resource grid is off. The map drawing code could not be bound.")
     return false
   end
 
@@ -410,7 +410,7 @@ function M.enable(self, config)
     end, dispatchSite + OFFSET_SYS_KEY_JUMP, SIZE_SYS_KEY_JUMP)
     input = string.format("Alt + key 0x%02X", hotkey)
   elseif input == nil then
-    log(WARNING, "resource grid: no way to toggle it; it stays hidden")
+    log(ERROR, "The map editor resource grid is off. Its toggle could not be installed.")
     input = "no toggle"
   end
 
