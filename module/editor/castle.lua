@@ -621,23 +621,16 @@ function C.patchSizeRefresh(self, G)
     PAD = C.luaPad(function()
       -- every tile the resize marked as border (0x10 / 0x20) is off, whatever the tweak did
       local R = C.resolvePipette(G)
-      local T, on, flagged = R.tileMap, 0, 0
+      local T = R.tileMap
       for y = 0, K.MAP_SIZE - 1 do
         local row = rd32(R.rows + y * 12)
         for x = 0, K.MAP_SIZE - 1 do
           local at = R.validTiles + y * K.MAP_SIZE + x
-          if rd8(at) ~= 0 then
-            if (rd32(T + R.logic + (row + x) * 4) & K.MAP_BORDER) ~= 0 then
-              core.writeByte(at, 0)
-              flagged = flagged + 1
-            else
-              on = on + 1
-            end
+          if rd8(at) ~= 0 and (rd32(T + R.logic + (row + x) * 4) & K.MAP_BORDER) ~= 0 then
+            core.writeByte(at, 0)
           end
         end
       end
-      log(INFO, string.format("%s: map size %d: %d tiles on, %d border tiles turned off", MODULE_NAME,
-        rd32(sizeWord), on, flagged))
     end, "the map size change"),
     AFTER_THIS = rd32(site + 1), BACK = site + K.SIZE_TAIL.size,
   }))
