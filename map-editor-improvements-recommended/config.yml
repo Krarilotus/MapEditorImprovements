@@ -171,6 +171,9 @@ config-sparse:
           bird_bins:
             contents:
               suggested-value: true
+          animal_bin:
+            contents:
+              suggested-value: true
           group_warning:
             contents:
               suggested-value: true

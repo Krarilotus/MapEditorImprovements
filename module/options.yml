@@ -569,6 +569,13 @@ options:
       type: boolean
       value: false
     header: '{{herds_bird_bins}}'
+  - url: map-editor-improvements.herds.animal_bin
+    name: map-editor-improvements-herds-animal-bin
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{herds_animal_bin}}'
   - url: map-editor-improvements.herds.group_warning
     name: map-editor-improvements-herds-group-warning
     text: '{{herds_group_warning_tooltip}}'

@@ -357,7 +357,6 @@ Set these URLs under `map-editor-improvements` in a preset or profile.
 | `textures.no_heights_iron` | Hide Iron in Heights when Gravel and Iron are available in Textures. |
 | `pipette.any_tile_key_on`, `pipette.any_tile_key` | Enable and assign the held modifier for pasting heights and textures on protected tiles. The modifier defaults to Alt and starts disabled. |
 | `grid.rotation_colour`, `grid.mine_colour`, `grid.mine_size` | Set the keep rotation line color, the iron mine outline color, and the mine footprint width in tiles. |
-| `herds.animal_bin` | Retain the All Animals button for a profile that supplies it. Alt+E clears all land animals in the editor. |
 
 The author setting follows its launcher switch when it is unset. An explicit
 author setting controls that part independently.

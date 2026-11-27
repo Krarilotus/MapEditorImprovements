@@ -12,10 +12,6 @@ config-sparse:
           no_heights_iron:
             contents:
               suggested-value: false
-        herds:
-          animal_bin:
-            contents:
-              suggested-value: false
         heights:
           invert_key_on:
             contents:
