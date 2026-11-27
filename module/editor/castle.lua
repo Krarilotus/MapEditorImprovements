@@ -303,10 +303,16 @@ function C.buildingRotation(self, G, B, data, head, options)
     writeCString(text, str)
     shadowedText(G.textManager, text, x, y, ALIGN_LEFT, TOOLTIP_COLOUR, 0, TOOLTIP_FONT, 0, 0)
   end
+  local function clearRotation()
+    wr32(wanted, -1)
+    if editorRotation then
+      wr32(placeRotation, 0)
+      editorRotation = false
+    end
+  end
   local function draw()
     if rd32(gameMode) ~= K.MAP_EDITOR then
-      wr32(wanted, -1)
-      editorRotation = false
+      clearRotation()
       wr32(head + ITEM_WIDTH, 0)             -- stays drawn (and so able to come back), never clicked
       for _, o in ipairs(options) do wr16(o + ITEM_HIDDEN, 1) end
       open = false
@@ -326,11 +332,7 @@ function C.buildingRotation(self, G, B, data, head, options)
       wr32(placeRotation, (o == 0xF) and 0 or (o // 2))
       editorRotation = true
     else
-      wr32(wanted, -1)
-      if editorRotation then
-        wr32(placeRotation, 0)
-        editorRotation = false
-      end
+      clearRotation()
     end
     local ox = rd32(B.menu + MENU_X) + rd32(G.cameraX)
     local oy = rd32(B.menu + MENU_Y) + rd32(G.cameraY)
