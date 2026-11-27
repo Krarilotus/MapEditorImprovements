@@ -1,186 +1,115 @@
 counts_group: Térképszámlálók
-counts_group_descr: |-
-  Megmutatja a tájszerkesztőben, hány állat, fa és szikla található a térképen, és mennyire közel vannak a játék korlátaihoz.
-counts_enabled: Térképszámlálók megjelenítése
-counts_enabled_tooltip: |-
-  Vidd az egeret az Állatok, Növényzet vagy Sziklák gombra, hogy tipp mutassa a darabszámot és a játék korlátját, például „Fák és bokrok: 812/1999”. Az Állatok tippje a csordákat és csoportokat is mutatja, amelyeknek saját korlátjuk van.
-  Az Állatok menüben a szarvas, teve, nyúl és oroszlán gombokon látható a darabszámuk; a Növényzet menüben minden fa- és bokorgombon szerepel az adott növény száma.
-  A kulcs gomb feletti piros „i” gomb munka közben is ki- és bekapcsolja ezt.
+counts_group_descr: Megmutatja, milyen közel van a térkép az objektumkorlátaihoz.
+counts_enabled: Térképobjektum-számlálók
+counts_enabled_tooltip: Kattints a kulcs gomb feletti piros i-re, majd vidd a kurzort az Állatok, Növényzet, Sziklák vagy azok elemei fölé.
 trees_group: Fák és bokrok
-trees_group_descr: |-
-  Több választási lehetőség növényzet elhelyezésekor a tájszerkesztőben.
-trees_growth: Az ecsetméret állítja a fa növekedési fokozatát
-trees_growth_tooltip: |-
-  A fák az ecsetméretnek megfelelő növekedési fokozatban kerülnek le: az 1-es ecset a legkisebb fákat helyezi le, a 4-es a kifejletteket (amit a szerkesztő egyébként mindig lerak), az 5-ös olyan kifejlett fákat, amelyeket a favágók egy ideig békén hagynak, a 6-os és 7-es pedig elszáradt fákat (a 7-es hamarabb elkorhad). A bokrokra nincs hatással.
-trees_apple: Almafa gomb
-trees_apple_tooltip: |-
-  Almafát ad a Növényzet menühöz. A képe az images/apple.png (valamint apple_hover.png és apple_selected.png) a modul mappájában; cseréld le őket, ha módosítani szeretnéd.
-trees_shrubs: Több bokor
-trees_shrubs_tooltip: |-
-  Amikor a négy további színnel rendelkező bokor van kiválasztva, a Növényzet menü feletti sor mind az öt színt felkínálja.
-trees_felled: Kidöntött fák
-trees_felled_tooltip: |-
-  Fa kiválasztásakor a Növényzet menü feletti sor felkínálja a fát állva (elsőként) és kidöntve, minden lehetséges rönkszámmal (kifejlett fánál 9-től 1-ig; a legkisebb fák 1 rönkkel dőlnek ki). Kattints egyre kidöntött fák lerakásához; kattints az álló fára, újra a kidöntöttre vagy a menübeli fára az álló fákhoz való visszatéréshez.
-trees_random_mix: Véletlen keverékek a fasorokban
-trees_random_mix_tooltip: |-
-  „?” jelű gombokat ad a Növényzet menü feletti sorokhoz:
-  - Véletlen fa (első a kidöntött fák sorában): a legkisebbtől az ecset méretéig minden növekedési fokozat véletlenszerűen keverve. A legkisebb és az elszáradt fáknál nem elérhető.
-  - Véletlen kidöntött fa (utolsó a kidöntött fák sorában): kidöntött fák véletlen rönkszámmal.
-  - Véletlen bokor (utolsó a bokrok sorában): az öt bokorszín véletlenszerű keveréke.
-  Kattints újra, vagy válassz másik gombot a keverés leállításához.
-trees_obstacles: Jelölőnégyzet akadályok melletti fákhoz
-trees_obstacles_tooltip: |-
-  Jelölőnégyzetet ad a Növényzet menü felső sorához. Bepipálva a fák közvetlenül épületek, sziklák, falak és más fák mellé is helyezhetők, amitől a játék egyébként távol tartja őket (bokrok eleve állhatnak ott). Mutass rá az állapot megtekintéséhez.
-trees_rocks_and_water: Jelölőnégyzet sziklákra és vízre kerülő növényzethez
-trees_rocks_and_water_tooltip: |-
-  Jelölőnégyzet a Növényzet menü jobb oldalán, az akadályok melletti fáké alatt (kezdetben kikapcsolva). Bepipálva fák és bokrok mocsárra, folyóra, gázlóra, sziklás talajra, sziklatömbökre és kavicsra is helyezhetők.
-trees_preview: Fa-előnézet
-trees_preview_tooltip: |-
-  Fa vagy bokor kiválasztásakor az egér alatti mezőn megjelenik a lehelyezendő fa az ecset szerinti fokozatban (vagy kidöntve a megfelelő rönkszámmal), pontosan úgy, ahogy a játék kirajzolja. Kicsinyített nézetben nem látszik.
-trees_no_stacking: Ne halmozódjanak a bokrok
-trees_no_stacking_tooltip: |-
-  Többé nem helyezhető fa vagy bokor olyan mezőre, amelyen már van egy. Egyes bokrok (a felső sor bokra és a mellé rendezett négy másik) korábban láthatatlanul egymásra halmozódtak, végleg elfoglalva a fakapacitást. A radír mostantól egy mező összes egymásra halmozott bokrát törli, így a régi halmok is megtisztíthatók.
+trees_group_descr: Növényzet elhelyezése és rendezése Táj módban.
+trees_growth: Az ecsetméret állítja a fák növekedését
+trees_growth_tooltip: Válassz fát és ecsetméretet a Növényzetnél. A 4-es kifejlett fa, a 6-os és 7-es száraz fát rak le.
+trees_apple: Almafa a Növényzetnél
+trees_apple_tooltip: Ültetés előtt válaszd ki az almafát a Növényzet menüben.
+trees_shrubs: Bokorszínek
+trees_shrubs_tooltip: Válassz egy bokrot a Növényzetben, majd válassz színt a menü feletti sorban.
+trees_felled: Kivágott fa változatok
+trees_felled_tooltip: Válassz fát a Növényzetben, és válaszd ki a kivágott változatot rönkszám szerint a menü felett.
+trees_random_mix: Véletlenszerű növényzetkeverés
+trees_random_mix_tooltip: Kattints a ? gombra a bokor- vagy faváltozatok sorában a keveréshez. Újabb kattintás vagy másik változat leállítja.
+trees_obstacles: Fák akadályok mellé
+trees_obstacles_tooltip: Pipáld be a felső négyzetet a Növényzet jobb oldalán, hogy akadályok mellé is ültethess fákat.
+trees_rocks_and_water: Növényzet sziklákra és vízre
+trees_rocks_and_water_tooltip: Pipáld be az alsó négyzetet a Növényzet jobb oldalán sziklákra és vízre ültetéshez.
+trees_preview: Növényzet előnézete a kurzor alatt
+trees_preview_tooltip: Normál nagyításnál mutass a térképre a választott fa vagy bokor előnézetéhez.
+trees_no_stacking: Egymásra rakott növényzet megakadályozása
+trees_no_stacking_tooltip: Megakadályozza a növényzet halmozását egy mezőn, a régi halmokat pedig a radírral törölheted.
 textures_group: Talajtextúrák
-textures_group_descr: |-
-  A tájszerkesztő Textúrák menüje.
-textures_gravel_and_iron: Kavics és vas a Textúrák menüben
-textures_gravel_and_iron_tooltip: |-
-  Kaviccsal bővíti a felső sort és vassal az alsót, egyenletesen elosztva mindkét sort. A kavics képe az images/gravel.png (valamint gravel_hover.png és gravel_selected.png).
-textures_mask: Maszk gomb
-textures_mask_tooltip: |-
-  Maszk gombot (félig kitöltött négyzet) ad a tájszerkesztő menüjének bal felső sarkába. Bekapcsolva a természeti eszközök (magasságok, textúrák, víz, fák és bokrok, sziklák és pipetta) csak azokat a mezőket módosítják, amelyek textúrája megegyezik az először kattintott mezőével; az egérgomb elengedése után a következő kattintás új céltextúrát választ.
-textures_mask_by_type: A maszk egynek tekinti a vízvariánsokat
-textures_mask_by_type_tooltip: |-
-  A maszk csak az azonos textúrájú mezőket engedi át (fű, bozót, sűrű bozót, kövek, part… mind különálló). Bekapcsolva egy víztípus variánsai egynek számítanak: a teljes tenger szélekkel és mély részekkel együtt, a teljes folyó habbal, hullámokkal és vízesésszélekkel, illetve az összes gázló. A tenger, a folyó és a gázló külön marad.
+textures_group_descr: Beállítja, hogyan fest talajtextúrákat a Táj ecset.
+textures_gravel_and_iron: Kavics és vas a Textúráknál
+textures_gravel_and_iron_tooltip: Válaszd a Kavicsot vagy Vasat a Textúráknál, és fesd a térképre.
+textures_mask: Csak a kezdőtextúra átfestése
+textures_mask_tooltip: Kattints a bal felső félig kitöltött négyzetre, majd minden húzást a lecserélendő textúrán kezdj.
+textures_mask_by_type: Vízváltozatok kezelése egy textúraként
+textures_mask_by_type_tooltip: Bekapcsolt maszknál átfest a kezdő tenger-, folyó- vagy gázlótextúra változatai között.
 water_group: Víz
-water_group_descr: |-
-  A tájszerkesztő Víz menüje.
-water_decorations: Hab és kis hullámok
-water_decorations_tooltip: |-
-  Visszahoz két folyódíszt az első Stronghold szerkesztőjéből, amelyet a Crusader még támogat, de gombjai nincsenek hozzá: Hab (fehér tajték és permet, mint vízesés alatt, az ecset alatti minden folyómezőre) és Kis hullámok (az egér alatti egyetlen folyómezőre). Mindkettő csak folyóra tehető és a térképpel mentődik.
-water_foam_on_sea: Hab a tengerre is
-water_foam_on_sea_tooltip: |-
-  A hab tengermezőkre is helyezhető, amelyek ekkor habos folyóvá alakulnak (ha a hab opció be van kapcsolva).
+water_group_descr: Folyórészletek festése Táj módban.
+water_decorations: Hab és kis hullámok a Víznél
+water_decorations_tooltip: Válassz Habot vagy Kis hullámokat a Víznél, és fesd őket folyómezőkre.
+water_foam_on_sea: Tengermezők átalakítása habzó folyóvá
+water_foam_on_sea_tooltip: Fess Habot a Víz menüből tengermezőkre, hogy folyóvá váljanak.
 rocks_group: Sziklák
-rocks_group_descr: |-
-  A tájszerkesztő Sziklák menüje.
-rocks_signpost: Útjelző tábla a csetepaté térképek Sziklák menüjében
-rocks_signpost_tooltip: |-
-  A csetepaté térképek ugyanazt a Sziklák menüt kapják, mint a küldetéstérképek, az útjelző tábla gombbal együtt.
-rocks_random_preview: Véletlen forgatás az előnézetben
-rocks_random_preview_tooltip: |-
-  Az előnézet a következő szikla szögét mutatja. A véletlen forgatás minden elhelyezési kísérlet után másik szöget választ.
-rocks_variants: Sziklavariánsok sora
-rocks_variants_tooltip: |-
-  A Sziklák menü feletti sor a választott sziklaméret négy variánsát mutatja a lehelyezési tájolásban. Kattints egyre, hogy csak azt rakja le; újabb kattintás rá vagy bármely Sziklák menügombra visszaállítja a váltakozást.
-rocks_invisible: Láthatatlan sziklák jelölőnégyzet
-rocks_invisible_tooltip: |-
-  Jelölőnégyzetet ad a Sziklák menü gombjaitól jobbra. Bepipálva minden lerakott szikla rögtön „láthatatlan szikla” lesz, anélkül hogy előbb 4000 sziklát kellene lerakni: a mezők foglaltak (nem építhető és nem járható), de nem rajzolódik ki szikla, így a korábbi felszín marad látható (a „2k kő trükk”). Vedd ki a pipát a rendes sziklákhoz.
-rocks_erase_invisible: A radír törli a láthatatlan sziklákat
-rocks_erase_invisible_tooltip: |-
-  A tájradír (és a vele sziklát törlő eszközök) a láthatatlan sziklák mezőit is felszabadítja, akárcsak a rendes sziklákét. Enélkül minden mezőnél az akadályt figyelmen kívül hagyó bokor lerakása és törlése kellene.
-rocks_remove_lost: Elveszett sziklák eltávolítása gomb
-rocks_remove_lost_tooltip: |-
-  „Elveszett sziklák eltávolítása” gombot ad a Sziklák menü jobb alsó sarkába. Az emelés/süllyesztés által megtört szikla, amelynek minden mezőjét később bokrok fedték el, mező nélkül marad a térkép sziklalistájában: nem látható és nem törölhető, de foglal egyet a 4000 helyből. A gomb minden ilyen bejegyzést eltávolít a listából a mezők megváltoztatása nélkül.
+rocks_group_descr: Sziklák elhelyezése, forgatása és törlése Táj módban.
+rocks_signpost: Útjelző tábla csetepaté-térképeken
+rocks_signpost_tooltip: Nyisd meg a Sziklákat csetepaté-térképen, és válaszd az Útjelző táblát.
+rocks_random_preview: Véletlen sziklaszög minden elhelyezésnél
+rocks_random_preview_tooltip: A Táj → Sziklák alatt válassz méretet, majd kattints a Véletlen forgatásra. Minden kísérlet után új szöget kap az előnézet.
+rocks_variants: Sziklaváltozat választása
+rocks_variants_tooltip: Válassz sziklaméretet, majd kattints egy változatra a Sziklák felett. A legkisebb méret alapértelmezésben ötödik sziklát is kínál.
+rocks_invisible: Láthatatlan sziklák elhelyezése
+rocks_invisible_tooltip: Elhelyezés előtt pipáld be a Sziklák jobb oldalán lévő négyzetet. A láthatatlan sziklák blokkolják a mozgást és az építést.
+rocks_erase_invisible: Láthatatlan sziklák törlése
+rocks_erase_invisible_tooltip: A tájradírral megtisztíthatod a láthatatlan sziklák által blokkolt mezőket.
+rocks_remove_lost: Elveszett sziklabejegyzések törlése
+rocks_remove_lost_tooltip: Kattints a Sziklák jobb alsó részén az Elveszett sziklák eltávolítása gombra, hogy mezők módosítása nélkül szabadíts fel helyet.
 heights_group: Magasságok
-heights_group_descr: |-
-  A tájszerkesztő magasságeszközei.
-heights_max_height: Maximális magasság gomb
-heights_max_height_tooltip: |-
-  Visszahozza az első Stronghold Maximális magasság eszközét a Minimális magasságtól jobbra: az ecset alatti talajt 156-os magasságra emeli. A Crusaderben az eszköz és a gombképek megmaradtak, csak a gomb hiányzott.
-heights_tool_options: Magasságeszköz-beállítások
-heights_tool_options_tooltip: |-
-  Magasságeszköz kiválasztásakor a Magasságok menü feletti panel (alulról felfelé) felkínálja:
-  - Talajtextúrák visszaállítása (kezdetben ki): visszaállítsák-e az eszközök a talajt alapszínére (a fennsíkokat földre), mint a játékban. Kikapcsolva csak a magasságot módosítják.
-  - Sziklamezők törése (kezdetben ki): megtörjék-e az emelés, süllyesztés, kiegyenlítés, domb és hegy eszközök az érintett sziklákat, mint a játékban (az érintett mezők láthatatlanná és járhatóvá válnak, miközben a szikla megmarad). Kikapcsolva a sziklák épek maradnak.
-  - Víz mellőzése és Termőföld mellőzése (kezdetben ki): érintetlenül hagyja a tenger, folyó, gázló, mocsár és várárok, illetve a bozót, sűrű bozót és oázisfű mezőket.
-  - Emeléshez, süllyesztéshez és kiegyenlítéshez: Tartományhoz igazítás (kezdetben be), Megfordítás (csak kiegyenlítés), magasságtartomány (kezdetben 8–156; mindkét vége húzható) és erősség. Tartományhoz igazítással a tartományon kívüli mezők behúzódnak bele; kikapcsolva érintetlenek maradnak. A Megfordítás simítás helyett érdesíti a talajt.
-  - Sziklamagasság változása (kezdetben Egész szikla): mit tegyenek az eszközök egy érintett sziklával. Csak mező csak az ecset alatti mezőket mozgatja; Egész szikla a szikla minden mezőjét együtt; Szikla törlése eltávolítja a sziklát, mint a minimális magasság.
-  A tartomány, az igazítás, a megfordítás és a mellőzés dobozok a szerkesztőből kilépve visszaállnak alapértelmezettre.
-heights_invert_key: Billentyű a kiegyenlítés megfordításához
-heights_invert_key_tooltip: |-
-  A kiegyenlítés eszköz megfordításához lenyomva tartandó billentyű.
+heights_group_descr: Terep formálása Táj módban.
+heights_max_height: Max. magasság a Magasságoknál
+heights_max_height_tooltip: Válaszd a Max. magasságot a Min. magasság mellett, hogy az ecset alatt maximálisra emeld a talajt.
+heights_tool_options: Magasságecset vezérlői
+heights_tool_options_tooltip: Válassz egy Magasságok eszközt a tartomány, erősség, terepvédelem és sziklakezelés beállításához a menü felett.
+heights_invert_key: Lenyomva tartva megfordítja a Kiegyenlítést
+heights_invert_key_tooltip: Kiegyenlítés közben tartsd lenyomva a talaj érdesítéséhez, elengedve újra simít.
 castle_group: Vármód
-castle_group_descr: |-
-  A térképszerkesztő vármódjának építési menüje.
+castle_group_descr: Épületek és egységek elhelyezése Vár módban.
 castle_building_counts: Épületszámlálók a minitérkép felett
-castle_building_counts_tooltip: |-
-  Megmutatja a minitérkép felett a térkép összes épületét a játék korlátjához képest (minden beleszámít, beleértve a vártornyokat, tájépületeket és épületrészeket), az összes játékos épületeinek számát és az aktuális játékosét. Játékosépület minden olyan épület, amelyet ellenség lerombolhat.
+castle_building_counts_tooltip: Vár módban mutatja az épületszámlálókat a minitérkép felett. A lebegő szöveg alapértelmezésben félreáll.
 castle_tower_ruins: Toronyromok
-castle_tower_ruins_tooltip: |-
-  A Tornyok menü megnyitásakor a felette lévő sor felkínálja az öt torony romjait.
+castle_tower_ruins_tooltip: Válassz romot a Tornyok feletti változatsorban.
 castle_tunnel_and_tents: Alagútbejárat és ostromsátrak
-castle_tunnel_and_tents_tooltip: |-
-  A katonai épületek menüjében: az alagútásók céhének kiválasztásakor egy alagútbejárat, a mérnökök céhénél pedig a hat ostromsátor jelenik meg a menü feletti sorban.
-castle_statues: Szobor és szentélyek
-castle_statues_tooltip: |-
-  Hozzáadja a fel nem használt 2×2-es szobrot, 2×2-es szentélyt és 1×1-es szentélyt: a szobor és szentély variánsainak végére (lásd „Épületvariánsok”), vagy ha azok ki vannak kapcsolva, a jó dolgok menüje feletti sorba.
-castle_barrier: Korlát a Romok menüben
-castle_barrier_tooltip: |-
-  Korlát gombot ad a Romok menü jobb alsó szabad helyére: egy később törölhető 1×1-es akadályt.
+castle_tunnel_and_tents_tooltip: Válaszd az alagútásók vagy mérnökök céhét, és válassz bejáratot vagy sátrat a menü felett.
+castle_statues: Extra szobor és szentélyek
+castle_statues_tooltip: Válassz szobrot vagy szentélyt és változatát a menü felett, vagy keresd az extrákat a Jó dolgok között.
+castle_barrier: Akadály a Romoknál
+castle_barrier_tooltip: Az Akadályt a Romok jobb alsó részén találod.
 castle_several_keeps: Több vártorony játékosonként
-castle_several_keeps_tooltip: |-
-  Új vártorony lerakása többé nem törli a játékos korábbi vártornyát (és tábortüzét). A legújabb lesz a játékos aktív vártornya, a többi épületként megmarad.
+castle_several_keeps_tooltip: Helyezz le extra vártornyokat a szokásos módon. Bekapcsolt címereknél címerre kattintva válthatsz aktív vártornyot.
 castle_several_storage: Több raktár- és toborzóépület
-castle_several_storage_tooltip: |-
-  A kaszárnyák, zsoldostáborok, céhek és egyéb, rendesen egyedüli épületek nem törlődnek újabb lerakásakor, a további raktáraknak, magtáraknak és fegyvertáraknak pedig nem kell érintkezniük az elsővel. Bármennyi maradhat üresen is (a játék amúgy csak 8 üres magtárat/fegyvertárat és 32 üres raktárat enged).
-castle_tower_engines: Torony-kővetőgépek és balliszták bárhová
-castle_tower_engines_tooltip: |-
-  A katonai menü torony-kővetőgépe és toronyballisztája bárhová lerakható, ahol egység állhat (talaj, falak, kapuk, tornyok, vártorony), nem csak a játékos saját szögletes és kerek tornyaira: a kattintott mezőre, mezőnként egy, legfeljebb 4 vártoronyra vagy nagy kapuházra és 8 a nagy erőd-vártornyokra. Az előnézet minden érvényes helyen tömör.
-castle_keep_parts: Vártorony tábortűz vagy raktár nélkül
-castle_keep_parts_tooltip: |-
-  Vártorony kiválasztásakor a felette lévő sor két további módot kínál: „Csak vártorony” (vártorony és bejárat, tábortűz és raktár nélkül) és „Raktár nélkül” (vártorony, bejárat és tábortűzhely). A menüből választva ismét a teljes vártorony kerül le.
-  Az előnézet és a helyellenőrzés csak ezeket a részeket vizsgálja.
-castle_damaged_walls: Sérült falak és lépcsők
-castle_damaged_walls_tooltip: |-
-  Lépcső, alacsony fal, magas fal vagy pártázat kiválasztásakor a várépületek menüje feletti sor felkínálja a „Sérült” változatot: a lerakott falak sérült fal tetejét kapják megőrzött magassággal. A menüből választva ismét ép falak kerülnek le.
-castle_variant_panels: Épületvariánsok
-castle_variant_panels_tooltip: |-
-  Kert, szobor, szentély vagy pöcegödör kiválasztásakor a menü feletti sor megjeleníti minden variánsát; az ott választott változat rögzítve marad a másodpercenkénti váltás helyett. Ugyanez működik a kunyhónál a városmenü felett. A menüből választva visszatér az eredeti működés. A pipetta is a pontos variánst veszi fel.
-castle_ruined_cathedral: Romos katedrális
-castle_ruined_cathedral_tooltip: |-
-  Katedrális kiválasztásakor a városmenü feletti sor felkínálja „Romos” változatban: a lerakott katedrális azt a romos képet kapja, amelyet a játék amúgy csak egy történelmi küldetésben mutat. A játékban teljesen működő katedrális marad, csak romosnak látszik. A menüből választva ismét ép katedrális kerül le. A pipetta romosként veszi fel. Az eredeti tile_churches.gm1 szükséges hozzá (régebbi verziókban nincs rom, így a katedrális ép marad).
-castle_moat_kinds: Kiásott, tervezett és állandó várárok
-castle_moat_kinds_tooltip: |-
-  Várárok kiválasztásakor a kapuházak menüje feletti sor három típust kínál: Kiásott (a szerkesztő szokásos árka), Tervezett (kiásásra kijelölt árok, mint játék közben) és Állandó (kiásott árok, amelyet játékban senki nem temethet be és nem törölhet). A menüből választva visszaáll a kiásott árok.
-castle_moat_on_marsh: Várárok mocsárra
-castle_moat_on_marsh_tooltip: |-
-  A térképszerkesztőben ismét helyezhető várárok mocsárra. A mocsár alatta marad, így az árok betemetésekor visszatér.
-castle_moat_removal_keeps_ground: Az árok eltávolítása megőrzi a talajt
-castle_moat_removal_keeps_ground_tooltip: |-
-  A szerkesztő „várárok eltávolítása” eszköze csak a kiásott vagy tervezett várárkos mezőket módosítja: eltávolítja az árkot (visszaadva a rendes talajmagasságot) és békén hagyja a talajtextúrát. Enélkül az ecset alatti minden mező sima földdé válik.
+castle_several_storage_tooltip: Helyezz le extra raktár- és toborzóépületeket a szokásos módon. A külön raktárak megváltoztathatják a közelben elérhető nyersanyagokat.
+castle_tower_engines: Toronygépek elhelyezése járható mezőkön
+castle_tower_engines_tooltip: Válassz toronygépet a Katonai épületeknél, és helyezd bármely járható mezőre.
+castle_keep_parts: Vártorony részeinek elhelyezése
+castle_keep_parts_tooltip: Válassz vártornyot, majd a Vártornyok feletti sorban válaszd a Csak vártorony vagy Raktár nélkül opciót.
+castle_damaged_walls: Sérült falak vagy lépcsők elhelyezése
+castle_damaged_walls_tooltip: Válassz falat vagy lépcsőt, és elhelyezés előtt kattints a Sérült gombra az épületmenü felett.
+castle_variant_panels: Épületváltozat választása
+castle_variant_panels_tooltip: Válassz egy támogatott épületet, majd kattints egy változatra az épületmenü feletti sorban.
+castle_ruined_cathedral: Romos kinézetű katedrális elhelyezése
+castle_ruined_cathedral_tooltip: Válaszd a romos változatot az épületmenü felett. Normál katedrálisként működik.
+castle_moat_kinds: Várárok típusának választása
+castle_moat_kinds_tooltip: Válaszd a Várárkot a Kapuházaknál, majd felette a Kiásott, Tervezett vagy Állandó típust.
+castle_moat_on_marsh: Várárok engedélyezése mocsáron
+castle_moat_on_marsh_tooltip: Helyezz várárkot mocsárra. A feltöltése visszaállítja alatta a mocsarat.
+castle_moat_removal_keeps_ground: Talaj megőrzése várárok törlésekor
+castle_moat_removal_keeps_ground_tooltip: A várárok eltávolítása visszaadja az alatta lévő eredeti talajt.
 herds_group: Csordák
-herds_group_descr: |-
-  A tájszerkesztő állatai.
-herds_panel: Csordapanel
-herds_panel_tooltip: |-
-  Szarvas, oroszlán, nyúl vagy teve kiválasztásakor az Állatok menü feletti panel mutatja, hány állatból áll egy csorda (fix + véletlen rész) és milyen csoportos viselkedést használ. A jelölőnégyzettel a csordaméret az ecsethez igazodik: 2 × ecsetméret − 1 állat (1-től 13-ig), véletlen rész nélkül.
+herds_group_descr: Csordák és madarak kezelése Táj módban.
+herds_panel: Csordaméret és viselkedés
+herds_panel_tooltip: Válassz egy csordaállatot, és állítsd be a méretét és viselkedését az Állatok feletti panelen.
 brushes_group: Ecsetek
-brushes_group_descr: |-
-  A tájszerkesztő ecsetei.
-brushes_full_shape: Teljes alakú ecsetek
-brushes_full_shape_tooltip: |-
-  A játék ecsetei kétszer számolják az egér alatti mezőt, és kihagyják a bal felső sarokmezőt az előnézetben és a lerakáskor is. Bekapcsolva teljes alakjuk lesz (csak a térképszerkesztőben; a játék belső használata változatlan).
+brushes_group_descr: Módosítja, hogyan fedi le a mezőket a szerkesztő ecsete.
+brushes_full_shape: Ecset alakjának javítása
+brushes_full_shape_tooltip: Kitölti a teljes ecsetelőnézetet anélkül, hogy középen kétszer alkalmazná az eszközt.
 undo_group: Visszavonás és újra
-undo_group_descr: |-
-  Visszavonás és újra gombok a térképszerkesztő bal felső sarkában.
+undo_group_descr: Lépés vissza és előre a legutóbbi szerkesztések között.
 undo_enabled: Visszavonás és újra
-undo_enabled_tooltip: |-
-  Két nyílgomb a térképszerkesztő bal felső sarkában: a bal visszavonja a térkép utolsó módosítását (elhelyezés, törlés, festés, magasságok), a jobb visszaállítja, legfeljebb 20 lépésig. A gomb elszürkül, ha nincs mit visszavonni vagy újra végrehajtani. Minden kattintás egy lépés, akárcsak egy lenyomva tartott ecsetvonás. A térképet nem módosító kattintások nem hoznak létre lépést. Másik térkép betöltése újraindítja az előzményeket.
+undo_enabled_tooltip: Kattints a bal felső nyilakra akár 20 lépéshez, vagy rendeld hozzá a Visszavonást és Újrát a Beállítások > Egyéni gyorsbillentyűk alatt.
 pipette_group: Pipetta
-pipette_group_descr: |-
-  Pipetta a tájszerkesztő bal oszlopában, az ecsetméret felett: felveszi egy mező magasságát és/vagy textúráját, és átadja az ecset alatti mezőknek.
-pipette_enabled: Pipetta
-pipette_enabled_tooltip: |-
-  Pipetta gombot ad az ecsetméret fölé (az ecsetméret, a vonalzó és a radír kissé lejjebb kerül).
-  Kiválasztásakor egy sor jelenik meg a menü felett — Magasságok, Textúrák, Objektumok, Mind — és felette a pipetta tartalma. Kattints egy mezőre a felvételhez (a pipetta egyetlen mezőt mutat), majd kattints vagy húzd az ecsetet az átadáshoz. A Magasságok békén hagyja a textúrát, a Textúrák a magasságot. Az Objektumok felveszi a mező épületét, falát, fáját vagy szikláját: az épületek és falak ugyanúgy rakhatók le az eredeti játékosnak (annak címere kiválasztódik), a fák (azonos fajta és fokozat vagy kidöntött rönkszám) és sziklák (azonos fajta és forgatás) pedig saját eszközeik módján, húzással is. A Mind egy fát vagy 1×1-es sziklát is felvesz és minden ecset alatti mezőre letesz belőle. A pipetta vagy valamelyik módjának újbóli kiválasztása kiüríti azt.
-  Magasság nem adható tengerre, partra, mocsárra, várárokra, sziklákra, falakra és épületekre; textúra nem adható sziklákra, falakra és épületekre. A meredek peremeken lévő szirtkövek törlődnek és visszajönnek, ahol a perem meredek marad. A visszavonás a pipettára is működik.
-pipette_select_key: Billentyű a pipettához
-pipette_select_key_tooltip: |-
-  A pipettát kiválasztó billentyű a térképszerkesztőben. Szokásos funkcióját is megtartja.
-pipette_read_key: Billentyű mező felvételéhez
-pipette_read_key_tooltip: |-
-  Mező felvételéhez lenyomva tartandó billentyű, amikor a pipettában már van tartalom.
+pipette_group_descr: Mintavétel egy mezőről és tartalmának újrahasználata a térképen.
+pipette_enabled: Terep vagy objektumok másolása pipettával
+pipette_enabled_tooltip: Kattints az ecsetméret feletti pipettára, válassz Magasságok, Textúrák, Objektumok vagy Mind közül, majd kattints egy forrásmezőre és fess.
+pipette_select_key: Pipetta gyorsbillentyűje
+pipette_select_key_tooltip: Újra megnyomva módot vált, vagy rendeld hozzá a Pipettát a Beállítások > Egyéni gyorsbillentyűk alatt.
+pipette_read_key: Lenyomva tartva másik mezőről vesz mintát
+pipette_read_key_tooltip: Tartsd lenyomva ezt a billentyűt, amikor a pipettával új forrásmezőre kattintasz.
 key_letter_a: A
 key_letter_b: B
 key_letter_c: C
@@ -207,16 +136,16 @@ key_letter_w: W
 key_letter_x: X
 key_letter_y: Y
 key_letter_z: Z
-key_digit_0: '0'
-key_digit_1: '1'
-key_digit_2: '2'
-key_digit_3: '3'
-key_digit_4: '4'
-key_digit_5: '5'
-key_digit_6: '6'
-key_digit_7: '7'
-key_digit_8: '8'
-key_digit_9: '9'
+key_digit_0: "0"
+key_digit_1: "1"
+key_digit_2: "2"
+key_digit_3: "3"
+key_digit_4: "4"
+key_digit_5: "5"
+key_digit_6: "6"
+key_digit_7: "7"
+key_digit_8: "8"
+key_digit_9: "9"
 key_f1: F1
 key_f2: F2
 key_f3: F3
@@ -234,90 +163,65 @@ key_shift: Shift
 key_alt: Alt
 key_space: Szóköz
 key_tab: Tab
-menu_group: Szerkesztőmenü
-menu_group_descr: |-
-  Hogyan rajzolódik ki a képernyő alján lévő szerkesztőmenü.
-menu_compass: Iránytű a bal felső sarokban
-menu_compass_tooltip: |-
-  A jobbklikk-gyűrű iránytűje a térképszerkesztőben mindig látható a visszavonás gombjai alatt, és a térkép forgatásakor északra mutat.
-menu_compass_turn: A Ctrl a másik irányba forgat
-menu_compass_turn_tooltip: |-
-  Ha a jobbklikk-gyűrű iránytűjére lépve nyomva tartod a Ctrl-t, a térkép 90 fokkal az óramutatóval ellentétesen fordul, nem azzal megegyezően.
-menu_dust_clouds: A porfelhők nem omlaszthatják össze a játékot
-menu_dust_clouds_tooltip: |-
-  Az elveszett mozgásadatú porfelhők nullával való osztást és összeomlást okoztak. Bekapcsolva az ilyen porfelhő egyszerűen egy helyben marad.
-menu_always_update: A menü mindig maradjon friss
-menu_always_update_tooltip: |-
-  A játék csak akkor rajzolja újra a menüt, ha az egér felette van. A máshol történt változások — például gyorsbillentyűvel váltott eszköz vagy állatok lerakásakor változó számlálók — csak akkor frissülnek, ha visszaviszed rá az egeret. Bekapcsolva a menü folyamatosan újrarajzolódik a térképszerkesztőben.
-castle_all_players: Mind a nyolc játékoscímer minden térképen
-castle_all_players_tooltip: |-
-  A minitérkép melletti címerek minden térképtípuson mind a nyolc játékost mutatják, nem csak többjátékos térképeken.
-castle_all_keeps: Udvarház és erődítmény minden térképen
-castle_all_keeps_tooltip: |-
-  A vártornyok menüje többjátékos térképeken is felkínálja az udvarházat és az erődítményt.
-castle_player_zero: 0. játékos címere
-castle_player_zero_tooltip: |-
-  Egy fehér kilencedik címer a játékoscímerek közepén a 0. játékost választja ki, aki szintén birtokolhat épületeket és egységeket a térképen.
-castle_keep_ground: A vártornyok nem változtatják a talajt
-castle_keep_ground_tooltip: |-
-  A térképszerkesztőben lerakott vártorony már nem fest földet és köveket (vagy sűrű bozótot) maga és a tábortüze köré.
+menu_group: Szerkesztő viselkedése
+menu_group_descr: A szerkesztő megjelenítési és újrarajzolási viselkedését szabályozza.
+menu_compass: Észak megjelenítése a szerkesztőben
+menu_compass_tooltip: Olvasd le északot a bal felső rögzített iránytűről (bekapcsolt Visszavonás/Újra alatt).
+menu_compass_turn: Ctrl megfordítja a térkép forgatását
+menu_compass_turn_tooltip: Nyisd meg a jobb kattintásos gyűrűt, és tartsd lenyomva a Ctrl-t az iránytűre húzva az óramutatóval ellentétes forgatáshoz.
+menu_dust_clouds: Porfelhő-összeomlások megelőzése
+menu_dust_clouds_tooltip: Megakadályozza a porfelhők okozta összeomlásokat térképszerkesztés közben.
+menu_always_update: Szerkesztőpanel frissítése munka közben
+menu_always_update_tooltip: Naprakészen tartja a szerkesztő vezérlőit, amíg az egér a térkép felett van.
+castle_all_players: Mind a nyolc játékospajzs megjelenítése
+castle_all_players_tooltip: Vár módban bármelyik nyolc pajzsot kiválaszthatod a minitérkép mellett.
+castle_all_keeps: Udvarház és erőd minden térképen
+castle_all_keeps_tooltip: Válaszd az Udvarházat vagy az Erődöt a Vártornyoknál bármilyen térképtípuson.
+castle_player_zero: Semleges játékospajzs megjelenítése
+castle_player_zero_tooltip: Kattints a minitérkép melletti kilencedik fehér pajzsra, hogy a 0. játékosnak helyezz le objektumokat.
+castle_keep_ground: Talaj megőrzése vártorony lerakásakor
+castle_keep_ground_tooltip: Vártornyok elhelyezése az alattuk lévő talaj elegyengetése nélkül.
 castle_rotation: Épületforgatási lista
-castle_rotation_tooltip: |-
-  Válassz szöget a vártornyokhoz, kaszárnyákhoz, zsoldostáborokhoz, a mérnökök és az alagútásók céhéhez, valamint az olajolvasztókhoz. A „Hely szerinti” ugyanazt az irányt használja, amerre egy MI-vártorony azon a mezőn nézne.
-castle_unit_colour: Egységek megjelenítési játékosa
-castle_unit_colour_tooltip: |-
-  Az európai és arab egységmenük fölött: játékosonként egy címer (0–8). A térképszerkesztőben lerakott egységek a jelenlegi játékoséi maradnak, de a választott játékos színeiben jelennek meg. Másik jelenlegi játékos választása újra annak címerét jelöli ki.
-castle_keep_crests: Aktív vártorony-címerek
-castle_keep_crests_tooltip: |-
-  Minden vártorony felett látható a tulajdonosa címere; a játékos aktív vártornyán (ahol a lord, a kezdőegységek és az új parasztok megjelennek) kerettel. Kattints egy címerre a vártorony aktiválásához, vagy az aktívra, hogy ne legyen aktív vártornya a játékosnak. Az új vártorony nem veszi át automatikusan az aktív szerepet, és ha az aktívat törlik, a játékos egy másik vártornya veszi át. A fő raktár mindig követi az aktív vártornyot (különben a játék az elsőként lerakott raktárat őrizte meg, így több vártoronynál az MI blokkolva találta a várhelyét és nem épített terv szerint). A „Több vártorony játékosonként” opciót igényli.
-castle_wall_tools: Falmagasságok és szabad pártázatok
-castle_wall_tools_tooltip: |-
-  A pártázatok önállóan is megállnak. Paneljük alacsony, magas, sérült alacsony és sérült magas változatot kínál. A falpanel feletti csúszka külön állítja a magas falak, alacsony falak és pártázatok magasságát (0–255) és a lépcsők meredekségét (0–16); a melletti Visszaállítás visszaadja a kiválasztott alapértékét, a szerkesztőből kilépve pedig mind visszaáll.
-trees_spread_order: Fák terjedési sorrendben
-trees_spread_order_tooltip: |-
-  A Növényzet menüben előbb a termékeny talajon terjedő fák (oázisfű, sűrű és ritka bozót), majd a terméketlen talajon terjedő fa (föld, köves föld, dűnék) következik: a harmadik és negyedik fa helyet cserél.
-trees_spread_outlines: Keretek a terjedési talajhoz
-trees_spread_outlines_tooltip: |-
-  Vékony zöld keret a termékeny talajon terjedő fák körül, és vékony bézs keret a terméketlen talajon terjedő fa körül. Az almafa nem terjed, ezért nincs kerete.
-herds_bird_bins: Összes varjú / sirály törlése gombok
-herds_bird_bins_tooltip: |-
-  Piros kuka gombok a varjú és a sirály gombjától jobbra az Állatok menüben: egy kattintással eltávolítanak minden varjút (a fák maradnak) vagy minden sirályt a térképről.
-herds_group_warning: Csordák és csoportok figyelmeztetés
-herds_group_warning_tooltip: |-
-  Ha 200-nál kevesebb csorda és csoport hozható még létre, a képernyő tetején egy sor jelzi a maradék számot, akárcsak a játék egységsora.
-eraser_choice: Radír választópanel
-eraser_choice_tooltip: |-
-  A radír kiválasztásakor a menü feletti panel meghatározza, mit töröljön: Mind (mint eddig), Állatok (varjak és sirályok is), Egységek, Épületek (vártornyokkal, romokkal és falakkal), Növényzet vagy Sziklák (láthatatlan sziklák is).
-eraser_seagulls: A radír törli a sirályokat
-eraser_seagulls_tooltip: |-
-  A radír a radírozott mezők felett repülő sirályokat is eltávolítja (Mind vagy Állatok módban).
-map_settings_show_locked: „Zárolt térképek mutatása” négyzet
-map_settings_show_locked_tooltip: |-
-  „Zárolt térképek mutatása” jelölőnégyzet a szerkesztő Betöltés ablakában. Bepipálva a zárolt térképek is megjelennek; a lista azonnal frissül.
-map_settings_menu: Nagyobb Térképbeállítások menü
-map_settings_menu_tooltip: |-
-  Az Alt + , menü címet, Egyjátékos és Többjátékos választást, a négy egyjátékos térképtípust (Ostrom, Invázió, Gazdasági, Szabad építés), a négy térképméretet plusz Egyénit és egy Térképméret csúszkát (10-től 400-ig; elengedéskor alkalmazódik), Kiegyensúlyozott, Domb királya, Térkép zárolása és Vissza gombot kap.
-map_settings_size_refresh: A kisebb térképméret azonnal érvényes
-map_settings_size_refresh_tooltip: |-
-  Ha a térképszerkesztőben kisebbre veszed a térképet, a levágott mezők azonnal feketék és zároltak lesznek, a kamera pedig az új mérethez igazodik, mentés és újratöltés nélkül.
-map_settings_camera_edge: A kamera eléri a térkép szélét
-map_settings_camera_edge_tooltip: |-
-  A térképszerkesztőben a kamera minden oldalon egy mezővel tovább mehet, így a térkép legszélső mezői is teljesen látszanak.
+castle_rotation_tooltip: Vár módban kattints a Forgatás gombra közvetlenül a bal alsó menü felett, és válassz szöget a támogatott épület lerakása előtt.
+castle_unit_colour: Egységszín választása a tulajdonostól függetlenül
+castle_unit_colour_tooltip: Válassz címert az európai vagy arab egységmenü felett az egység színének módosításához.
+castle_keep_crests: Aktív vártorony választása a címerével
+castle_keep_crests_tooltip: Több vártorony mellett címerre kattintva választhatod ki vagy törölheted az aktív vártornyot. A lebegő súgó alapértelmezésben be van kapcsolva.
+castle_wall_tools: Falmagasságok és szabadon álló pártázatok
+castle_wall_tools_tooltip: Válassz falat vagy lépcsőt, és használd a menü feletti vezérlőket. A melletti Visszaállítás gombbal alaphelyzetbe állíthatod.
+trees_spread_order: Fák csoportosítása terjedési talaj szerint
+trees_spread_order_tooltip: A Növényzetben a terjedési talajuk szerint csoportosítja a fákat. A bokrok alapértelmezésben külön sort kapnak.
+trees_spread_outlines: Fák terjedési talajának jelölése
+trees_spread_outlines_tooltip: A Növényzetben a zöld a termékeny, a bézs a terméketlen talajon terjedő fákat jelöli.
+herds_bird_bins: Összes varjú vagy sirály törlése
+herds_bird_bins_tooltip: Az Állatoknál kattints a varjú vagy sirály ikon melletti kukára az adott madárfaj eltávolításához.
+herds_group_warning: Figyelmeztetés a csordakorlát közelében
+herds_group_warning_tooltip: Megmutatja a maradék helyeket, ha a csordák és csapatcsoportok közelítenek a térképkorláthoz.
+eraser_choice: Radír által törölt elemek kiválasztása
+eraser_choice_tooltip: Válaszd a Radírt, majd a menü felett a Mind, Állatok, Egységek, Épületek, Növényzet vagy Sziklák lehetőséget.
+eraser_seagulls: Repülő sirályok törlése
+eraser_seagulls_tooltip: Használd a Radírt a repülő sirályok eltávolításához. Bekapcsolt radírmódoknál válaszd az Állatok vagy Mind opciót.
+map_settings_show_locked: Zárolt térképek megjelenítése a Betöltésnél
+map_settings_show_locked_tooltip: Pipáld be a Zárolt térképek megjelenítése négyzetet a fájllista alatt a szerkesztő Betöltés ablakában.
+map_settings_menu: Bővített térképbeállítások
+map_settings_menu_tooltip: Nyomj Alt+,-t a szerkesztőben, húzd az Egyéni méretet és engedd el az átméretezéshez. A Térképbeállítások gomb a Térképre felett alapértelmezésben be van kapcsolva.
+map_settings_size_refresh: Kisebb térképek azonnali alkalmazása
+map_settings_size_refresh_tooltip: Szerkesztés közben azonnal alkalmazza a kisebb térképméretet, és rögtön látszanak az új szélek.
+map_settings_camera_edge: Teljes térképszél megjelenítése
+map_settings_camera_edge_tooltip: Mozgasd a kamerát a szélre a legkülső térképmezők megtekintéséhez.
 eraser_group: Radír
-eraser_group_descr: |-
-  Mit töröljön a tájszerkesztő radírja.
+eraser_group_descr: Kiválasztja, mit töröljön a tájradír.
 map_settings_group: Térképbeállítások
-map_settings_group_descr: |-
-  A térkép beállításai: térképtípus, méret, zárolás és az ezeket mutató menük.
+map_settings_group_descr: Térképtípus, méretek és jelölők módosítása vagy zárolt térképek böngészése.
 qol: Kényelmi funkciók
 grid_group: Nyersanyagrács
-grid_key: Rács gyorsbillentyűje (Alt+billentyű)
+grid_key: Javasolt Alt gyorsbillentyű a rácshoz
 grid_outside_editor: Rács engedélyezése játék közben
-grid_flattened_only: Csak sík nézetben
-grid_hide_in_v_view: Elrejtés a V nézetben
+grid_flattened_only: Rács csak lapított nézetben
+grid_hide_in_v_view: Rács elrejtése V nézetben
 grid_colour: Rács színe
 grid_rotation_group: Vár tájolása
-grid_rotation_lines: Várforgatási határok mutatása
+grid_rotation_lines: Vártorony-forgatási határok megjelenítése
 grid_mine_group: Vasbánya helyigénye
 grid_mine_boxes: Vasbánya helyének mutatása
 grid_key_letter_g: Alt + G
@@ -365,8 +269,9 @@ grid_colour_orange: Narancs
 grid_colour_red: Piros
 grid_colour_black: Fekete
 map_editor: Térképszerkesztő
-grid_enabled: Nyersanyagrács-átfedés
-grid_enabled_tooltip: 'Lehetővé teszi a nyersanyagrács megjelenítését a térkép felett. Ki: a rács és a
-  gyorsbillentyűje nem érhető el.'
-grid_group_descr: Az MI 5×5-ös nyersanyagrácsa, a várforgatási határok és a vasbánya helyigénye a térképre
-  rajzolva. Az Alt és a választott billentyű együttesen megjeleníti vagy elrejti a térképszerkesztőben.
+grid_enabled: Nyersanyagrács megjelenítése
+grid_enabled_tooltip: Nyomj Alt+G-t a szerkesztőben, vagy módosítsd a kiosztást a Beállítások > Egyéni gyorsbillentyűk alatt.
+grid_group_descr: Nyersanyagrács, vártorony-forgatási határok vagy vasbánya-alapterületek megjelenítése.
+herds_animal_bin: Gomb hozzáadása az összes állat törléséhez (mint az Alt+E)
+key_configured: Beállított billentyű használata
+key_off: Ki
