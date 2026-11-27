@@ -496,7 +496,7 @@ K.MAP_CENTRE = 200
 -- mov ecx,TileMapState / call setConstructionGFXLayerBasedOnPlacementChecks`.
 K.AOB_KEEP_TABLE_A = "0F BF D0 83 C2 C4 8D 0C 52 C1 E1 05 81 C1 ? ? ? ?"
 K.AOB_KEEP_PREVIEW_CALL = "8B 0D ? ? ? ? 8B 15 ? ? ? ? 51 56 50 52 B9 ? ? ? ? E8"
-K.KEEP_TABLES = { a = 14, b = 18, c = 7, call = 21, rows = 3, margin = 18 } -- 12-tile offset plus a 7-tile part
+K.KEEP_TABLES = { a = 14, b = 18, c = 7, call = 21, rows = 3, campfireSize = 7, stockpileSize = 5 }
 -- Only buildings placed as several parts turn (placeBuilding's own placers, by building type):
 -- barracks 8/9, engineers' guild 24, tunnellers' guild 25, oil smelter 28, keeps 40-44. The chosen
 -- tool: TriggerPlaceBuilding `mov ecx,[tool] / cmp ecx,0x65 / mov edx,..`.

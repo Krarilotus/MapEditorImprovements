@@ -272,9 +272,27 @@ function C.buildingRotation(self, G, B, data, head, options)
     TABLE_A = rd32(scanUnique(K.AOB_KEEP_TABLE_A, "the keep layout") + KT.a),
     TABLE_B = rd32(scanUnique(K.AOB_KEEP_CAMPFIRE, "the keep's campfire area") + KT.b),
     TABLE_C = rd32(scanUnique(K.AOB_KEEP_STOCKPILE, "the keep's stockpile") + KT.c),
-    KEEP_ROWS = KT.rows, MAP_SIZE = K.MAP_SIZE, KEEP_MARGIN = KT.margin,
+    KEEP_ROWS = KT.rows,
     PREVIEW = readCallTarget(previewSite, 0, "the building preview"), ARG_BYTES = 16,
   }
+  -- Allowed origins for the rejected renderer's three doors, campfire and stockpile.
+  keepLayout.KEEP_BOUNDS = core.allocate(KT.rows * 4 * 16, true)
+  for row = 0, KT.rows * 4 - 1 do
+    local minX, minY, maxX, maxY = 0, 0, K.MAP_SIZE - 1, K.MAP_SIZE - 1
+    local function include(part, side)
+      local x, y = rd32(part), rd32(part + 4)
+      minX, minY = math.max(minX, -x), math.max(minY, -y)
+      maxX, maxY = math.min(maxX, K.MAP_SIZE - x - side), math.min(maxY, K.MAP_SIZE - y - side)
+    end
+    for door = 0, 2 do include(keepLayout.TABLE_A + row * 24 + door * 8, 1) end
+    include(keepLayout.TABLE_B + row * 8, KT.campfireSize)
+    include(keepLayout.TABLE_C + row * 8, KT.stockpileSize)
+    local bounds = keepLayout.KEEP_BOUNDS + row * 16
+    wr32(bounds, minX)
+    wr32(bounds + 4, maxX)
+    wr32(bounds + 8, minY)
+    wr32(bounds + 12, maxY)
+  end
   local previewStub = core.allocateAssembly(templates.keepPreviewTurn, keepLayout)
   keepLayout.PREVIEW = core.allocateAssembly("sub esp,0x2C\npush ebx\npush ebp\njmp BACK", { BACK = validator + 5 })
   keepLayout.ARG_BYTES = 20

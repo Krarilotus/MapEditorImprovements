@@ -1121,14 +1121,26 @@ ja preview_plain
 if ARG_BYTES = 16
   cmp dword [ecx+0x554934],0
   je preview_turn
-  cmp dword [esp+4],KEEP_MARGIN
-  jb preview_plain
-  cmp dword [esp+4],MAP_SIZE-KEEP_MARGIN
-  jae preview_plain
-  cmp dword [esp+8],KEEP_MARGIN
-  jb preview_plain
-  cmp dword [esp+8],MAP_SIZE-KEEP_MARGIN
-  jae preview_plain
+  push eax
+  push edx
+  movzx eax,word [esp+20]
+  sub eax,0x3C
+  shl eax,2
+  add eax,[ROTATION]
+  shl eax,4
+  add eax,KEEP_BOUNDS
+  mov edx,[esp+12]
+  cmp edx,[eax]
+  jl preview_outside
+  cmp edx,[eax+4]
+  jg preview_outside
+  mov edx,[esp+16]
+  cmp edx,[eax+8]
+  jl preview_outside
+  cmp edx,[eax+12]
+  jg preview_outside
+  pop edx
+  pop eax
 end if
 preview_turn:
 call preview_swap
@@ -1138,6 +1150,11 @@ end repeat
 call PREVIEW
 call preview_swap
 ret ARG_BYTES
+if ARG_BYTES = 16
+preview_outside:
+  pop edx
+  pop eax
+end if
 preview_plain:
 jmp PREVIEW
 preview_swap:
