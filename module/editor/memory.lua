@@ -48,9 +48,9 @@ local function sectionEnd(inside)
 end
 
 local function scanUnique(pattern, purpose)
-  local address, problem = core.AOBScanUnique(pattern)
-  if address == nil then
-    error(string.format("%s: %s %s", MODULE_NAME, purpose, problem))
+  local found, address = pcall(core.AOBScan, pattern)
+  if not found then
+    error(string.format("%s: %s not found", MODULE_NAME, purpose))
   end
   return address
 end
@@ -91,8 +91,9 @@ end
 local menuInitializers, menuInitializersProblem
 local function menuInitializer(offset)
   if menuInitializers == nil and menuInitializersProblem == nil then
-    menuInitializers, menuInitializersProblem = core.AOBScanUnique(
+    local found, address = pcall(core.AOBScan,
       "68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 6A 3E B9 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 59 C3 CC CC CC CC CC CC CC CC CC")
+    if found then menuInitializers = address else menuInitializersProblem = "not found" end
   end
   if not menuInitializers then error("the menu initializer sequence " .. menuInitializersProblem) end
   return menuInitializers + offset
