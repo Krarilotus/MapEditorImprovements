@@ -58,8 +58,6 @@ heights_tool_options: Controles del pincel de altura
 heights_tool_options_tooltip: Elige una herramienta de Alturas para ajustar rango, fuerza, protección del terreno y rocas sobre el menú.
 heights_invert_key: Mantener para invertir Igualar
 heights_invert_key_tooltip: Con Igualar seleccionado, mantén pulsada esta tecla para volver rugoso el terreno y suéltala para volver a alisarlo.
-castle_group: Modo castillo
-castle_group_descr: Coloca edificios y unidades en el modo Castillo.
 castle_building_counts: Contadores de edificios sobre el minimapa
 castle_building_counts_tooltip: Lee los contadores de edificios sobre el minimapa en modo Castillo. El texto flotante se aparta por defecto.
 castle_tower_ruins: Ruinas de torres
@@ -275,3 +273,21 @@ grid_group_descr: Superpone la cuadrícula de recursos, límites de rotación de
 herds_animal_bin: Añadir un botón para borrar todos los animales terrestres (Alt+E)
 key_configured: Usar tecla configurada
 key_off: Desactivado
+castle_buildings_group: Edificios del castillo
+castle_buildings_group_descr: Coloca edificios en el modo Castillo.
+keeps_group: Torres del homenaje y almacenes
+keeps_group_descr: Configura torres del homenaje, almacenes y edificios de reclutamiento en el modo Castillo.
+players_group: Jugadores
+players_group_descr: Elige jugadores, colores y tipos de torre del homenaje en el modo Castillo.
+fortifications_group: Muros y fosos
+fortifications_group_descr: Coloca muros, escaleras y fosos en el modo Castillo.
+tree_brush_group: Plantación y pinceles
+tree_brush_group_descr: Ajusta cómo planta el pincel de vegetación en el modo Paisaje.
+tree_spread_group: Propagación de árboles
+tree_spread_group_descr: Muestra en el menú Vegetación sobre qué suelo se propaga cada árbol.
+cat_terrain_water: Terreno y agua
+cat_vegetation_animals: Vegetación y animales
+cat_castle_placement: Colocación del castillo
+cat_players_walls_moats: Jugadores, muros y fosos
+cat_painting_corrections: Pintura y correcciones
+cat_map_layout: Diseño y ajustes del mapa

@@ -58,8 +58,6 @@ heights_tool_options: Настройки кисти высот
 heights_tool_options_tooltip: Выберите инструмент в разделе «Рельеф», чтобы настроить охват, силу, защиту рельефа и обработку камней над меню.
 heights_invert_key: Удерживать для обратного сглаживания
 heights_invert_key_tooltip: Выберите «Сглаживание» и удерживайте клавишу, чтобы сделать землю неровной. Отпустите клавишу, чтобы снова сглаживать рельеф.
-castle_group: Режим замка
-castle_group_descr: Размещение зданий и юнитов в режиме замка.
 castle_building_counts: Счётчики зданий над мини-картой
 castle_building_counts_tooltip: Показывает счётчики зданий над мини-картой в режиме замка. Всплывающий текст по умолчанию сдвигается в сторону.
 castle_tower_ruins: Руины башен
@@ -275,3 +273,21 @@ grid_group_descr: Накладывает сетку ресурсов, грани
 herds_animal_bin: Кнопка удаления всех наземных животных (Alt+E)
 key_configured: Использовать настроенную клавишу
 key_off: Выкл.
+castle_buildings_group: Здания замка
+castle_buildings_group_descr: Размещение зданий в режиме замка.
+keeps_group: Донжоны и склады
+keeps_group_descr: Настройка донжонов, складов и зданий найма в режиме замка.
+players_group: Игроки
+players_group_descr: Выбор игроков, цветов и типов донжона в режиме замка.
+fortifications_group: Стены и рвы
+fortifications_group_descr: Размещение стен, лестниц и рвов в режиме замка.
+tree_brush_group: Посадка и кисти
+tree_brush_group_descr: Как кисть растительности сажает растения в режиме «Ландшафт».
+tree_spread_group: Распространение деревьев
+tree_spread_group_descr: Меню растительности показывает, на какой почве распространяется каждое дерево.
+cat_terrain_water: Ландшафт и вода
+cat_vegetation_animals: Растительность и животные
+cat_castle_placement: Размещение замка
+cat_players_walls_moats: Игроки, стены и рвы
+cat_painting_corrections: Рисование и исправления
+cat_map_layout: Макет и настройки карты

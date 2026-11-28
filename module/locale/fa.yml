@@ -58,8 +58,6 @@ heights_tool_options: کنترل‌های قلم‌موی ارتفاع
 heights_tool_options_tooltip: یک ابزار ارتفاعات برگزینید تا بازه، قدرت، محافظت زمین و برخورد با صخره‌ها را بالای منو تنظیم کنید.
 heights_invert_key: نگه‌داشتن برای وارونه کردن هموارسازی
 heights_invert_key_tooltip: با انتخاب هموارسازی، این کلید را نگه دارید تا زمین ناهموار شود و برای هموارسازی دوباره رهایش کنید.
-castle_group: حالت قلعه
-castle_group_descr: قرار دادن ساختمان‌ها و واحدها در حالت قلعه.
 castle_building_counts: شمارش ساختمان‌ها بالای نقشهٔ کوچک
 castle_building_counts_tooltip: شمار ساختمان‌ها را بالای نقشهٔ کوچک در حالت قلعه ببینید. متن شناور به‌طور پیش‌فرض کنار می‌رود.
 castle_tower_ruins: ویرانه‌های برج‌ها
@@ -275,3 +273,21 @@ grid_group_descr: نمایش شبکهٔ منابع، مرزهای چرخش دژ 
 herds_animal_bin: افزودن دکمهٔ پاک کردن همهٔ حیوانات خشکی (Alt+E)
 key_configured: استفاده از کلید پیکربندی‌شده
 key_off: خاموش
+castle_buildings_group: ساختمان‌های قلعه
+castle_buildings_group_descr: قرار دادن ساختمان‌ها در حالت قلعه.
+keeps_group: دژها و انبارها
+keeps_group_descr: تنظیم دژها، انبارها و ساختمان‌های سربازگیری در حالت قلعه.
+players_group: بازیکنان
+players_group_descr: انتخاب بازیکنان، رنگ‌ها و نوع دژ در حالت قلعه.
+fortifications_group: دیوارها و خندق‌ها
+fortifications_group_descr: قرار دادن دیوارها، پله‌ها و خندق‌ها در حالت قلعه.
+tree_brush_group: کاشت و قلم‌مو
+tree_brush_group_descr: تنظیم شیوهٔ کاشت قلم‌موی پوشش گیاهی در حالت چشم‌انداز.
+tree_spread_group: گسترش درختان
+tree_spread_group_descr: منوی پوشش گیاهی نشان می‌دهد هر درخت روی چه زمینی گسترش می‌یابد.
+cat_terrain_water: زمین و آب
+cat_vegetation_animals: گیاهان و جانوران
+cat_castle_placement: جای‌گذاری قلعه
+cat_players_walls_moats: بازیکنان، دیوارها و خندق‌ها
+cat_painting_corrections: نقاشی و اصلاحات
+cat_map_layout: چیدمان و تنظیمات نقشه

@@ -58,8 +58,6 @@ heights_tool_options: Réglages du pinceau de relief
 heights_tool_options_tooltip: Choisissez un outil de Reliefs pour régler portée, force, protection du terrain et gestion des rochers au-dessus du menu.
 heights_invert_key: Maintenir pour inverser Égaliser
 heights_invert_key_tooltip: Avec Égaliser actif, maintenez cette touche pour rendre le sol irrégulier et relâchez pour lisser.
-castle_group: Mode château
-castle_group_descr: Placer des bâtiments et unités en mode Château.
 castle_building_counts: Compteurs de bâtiments au-dessus de la minicarte
 castle_building_counts_tooltip: Affiche le nombre de bâtiments au-dessus de la minicarte en mode Château. L’infobulle s’écarte par défaut.
 castle_tower_ruins: Ruines de tours
@@ -275,3 +273,21 @@ grid_group_descr: Superpose la grille des ressources, les limites d’orientatio
 herds_animal_bin: Ajouter un bouton pour effacer tous les animaux terrestres (Alt+E)
 key_configured: Utiliser la touche configurée
 key_off: Désactivé
+castle_buildings_group: Bâtiments du château
+castle_buildings_group_descr: Placer des bâtiments en mode Château.
+keeps_group: Donjons et entrepôts
+keeps_group_descr: Configurer donjons, entrepôts et bâtiments de recrutement en mode Château.
+players_group: Joueurs
+players_group_descr: Choisir joueurs, couleurs et types de donjon en mode Château.
+fortifications_group: Murs et douves
+fortifications_group_descr: Placer murs, escaliers et douves en mode Château.
+tree_brush_group: Plantation et pinceaux
+tree_brush_group_descr: Régler comment le pinceau de végétation plante en mode Paysage.
+tree_spread_group: Propagation des arbres
+tree_spread_group_descr: Montrer dans le menu Végétation sur quel sol chaque arbre se propage.
+cat_terrain_water: Terrain et eau
+cat_vegetation_animals: Végétation et animaux
+cat_castle_placement: Placement du château
+cat_players_walls_moats: Joueurs, murs et douves
+cat_painting_corrections: Peinture et corrections
+cat_map_layout: Disposition et paramètres de la carte

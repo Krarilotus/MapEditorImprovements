@@ -58,8 +58,6 @@ heights_tool_options: Height brush controls
 heights_tool_options_tooltip: Choose a Heights tool to adjust brush range, strength, terrain protection and rock handling above the menu.
 heights_invert_key: Hold to reverse Equalize
 heights_invert_key_tooltip: With Equalize selected, hold this key to roughen the ground and release it to smooth again.
-castle_group: Castle mode
-castle_group_descr: Place buildings and units in Castle mode.
 castle_building_counts: Building counts above the minimap
 castle_building_counts_tooltip: Read building counts above the minimap in Castle mode. Hover text moves aside by default.
 castle_tower_ruins: Tower ruins
@@ -275,3 +273,21 @@ grid_enabled_tooltip: Press Alt+G in the editor or rebind the grid under Options
 grid_group_descr: Overlay the resource grid, keep rotation boundaries or iron mine footprints.
 key_configured: Use configured key
 key_off: 'Off'
+castle_buildings_group: Castle buildings
+castle_buildings_group_descr: Place buildings in Castle mode.
+keeps_group: Keeps and storage
+keeps_group_descr: Set up keeps, storage and recruitment buildings in Castle mode.
+players_group: Players
+players_group_descr: Choose players, colors and keep types in Castle mode.
+fortifications_group: Walls and moats
+fortifications_group_descr: Place walls, stairs and moats in Castle mode.
+tree_brush_group: Planting and brushes
+tree_brush_group_descr: Control how the vegetation brush plants in Landscape mode.
+tree_spread_group: Tree spreading
+tree_spread_group_descr: Show which ground each tree spreads on in the Vegetation menu.
+cat_terrain_water: Terrain and water
+cat_vegetation_animals: Vegetation and animals
+cat_castle_placement: Castle placement
+cat_players_walls_moats: Players, walls and moats
+cat_painting_corrections: Painting and corrections
+cat_map_layout: Map layout and settings

@@ -58,8 +58,6 @@ heights_tool_options: Höhenpinsel-Regler
 heights_tool_options_tooltip: Wähle ein Höhenwerkzeug, um Pinselbereich, Stärke, Geländeschutz und Felsenbehandlung über dem Menü einzustellen.
 heights_invert_key: „Ebnen“ per Tastendruck umkehren
 heights_invert_key_tooltip: Wähle „Ebnen“. Halte die Taste gedrückt, um den Boden aufzurauen, und lass sie los, um wieder zu glätten.
-castle_group: Burgmodus
-castle_group_descr: Gebäude und Einheiten im Burgmodus platzieren.
 castle_building_counts: Gebäudezähler über der Minikarte
 castle_building_counts_tooltip: Lies die Gebäudezahlen im Burgmodus über der Minikarte ab. Hinweise unter dem Mauszeiger weichen standardmäßig zur Seite aus.
 castle_tower_ruins: Turmruinen
@@ -275,3 +273,21 @@ grid_group_descr: Blendet Ressourcenraster, Bergfried-Drehgrenzen oder Eisenmine
 herds_animal_bin: Schaltfläche zum Entfernen aller Landtiere (Alt+E)
 key_configured: Konfigurierte Taste verwenden
 key_off: Aus
+castle_buildings_group: Burggebäude
+castle_buildings_group_descr: Gebäude im Burgmodus platzieren.
+keeps_group: Bergfriede und Lager
+keeps_group_descr: Bergfriede, Lager und Rekrutierungsgebäude im Burgmodus einrichten.
+players_group: Spieler
+players_group_descr: Spieler, Farben und Bergfriedtypen im Burgmodus wählen.
+fortifications_group: Mauern und Gräben
+fortifications_group_descr: Mauern, Treppen und Gräben im Burgmodus platzieren.
+tree_brush_group: Pflanzen und Pinsel
+tree_brush_group_descr: Festlegen, wie der Vegetationspinsel im Landschaftsmodus pflanzt.
+tree_spread_group: Baumausbreitung
+tree_spread_group_descr: Im Vegetationsmenü zeigen, auf welchem Boden sich jeder Baum ausbreitet.
+cat_terrain_water: Gelände und Wasser
+cat_vegetation_animals: Pflanzen und Tiere
+cat_castle_placement: Burgplatzierung
+cat_players_walls_moats: Spieler, Mauern und Gräben
+cat_painting_corrections: Malen und Korrigieren
+cat_map_layout: Kartenaufbau und Einstellungen

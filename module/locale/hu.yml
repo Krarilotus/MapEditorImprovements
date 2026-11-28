@@ -58,8 +58,6 @@ heights_tool_options: Magasságecset vezérlői
 heights_tool_options_tooltip: Válassz egy Magasságok eszközt a tartomány, erősség, terepvédelem és sziklakezelés beállításához a menü felett.
 heights_invert_key: Lenyomva tartva megfordítja a Kiegyenlítést
 heights_invert_key_tooltip: A Kiegyenlítés eszköznél tartsd lenyomva ezt a billentyűt a terep érdesítéséhez, majd engedd fel, ha ismét simítani szeretnél.
-castle_group: Vármód
-castle_group_descr: Épületek és egységek elhelyezése Vár módban.
 castle_building_counts: Épületszámlálók a minitérkép felett
 castle_building_counts_tooltip: Vár módban mutatja az épületszámlálókat a minitérkép felett. A lebegő szöveg alapértelmezésben félreáll.
 castle_tower_ruins: Toronyromok
@@ -275,3 +273,21 @@ grid_group_descr: Nyersanyagrács, vártorony-forgatási határok vagy vasbánya
 herds_animal_bin: Gomb az összes szárazföldi állat törléséhez (Alt+E)
 key_configured: Beállított billentyű használata
 key_off: Ki
+castle_buildings_group: Várépületek
+castle_buildings_group_descr: Épületek elhelyezése Vár módban.
+keeps_group: Vártornyok és raktárak
+keeps_group_descr: Vártornyok, raktárak és toborzóépületek beállítása Vár módban.
+players_group: Játékosok
+players_group_descr: Játékosok, színek és vártoronytípusok kiválasztása Vár módban.
+fortifications_group: Falak és várárkok
+fortifications_group_descr: Falak, lépcsők és várárkok elhelyezése Vár módban.
+tree_brush_group: Ültetés és ecsetek
+tree_brush_group_descr: A növényzetecset ültetésének beállítása Táj módban.
+tree_spread_group: Fák terjedése
+tree_spread_group_descr: A Növényzet menü mutatja, milyen talajon terjednek az egyes fák.
+cat_terrain_water: Terep és víz
+cat_vegetation_animals: Növényzet és állatok
+cat_castle_placement: Várelhelyezés
+cat_players_walls_moats: Játékosok, falak és várárkok
+cat_painting_corrections: Festés és javítás
+cat_map_layout: Térképelrendezés és beállítások

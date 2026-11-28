@@ -58,8 +58,6 @@ heights_tool_options: Yükseklik fırçası kontrolleri
 heights_tool_options_tooltip: Menü üstünde fırça aralığı, gücü, arazi koruması ve kaya işlemesini ayarlamak için bir Yükseklikler aracı seçin.
 heights_invert_key: Düzleştirmeyi ters çevirmek için basılı tut
 heights_invert_key_tooltip: Düzleştir seçiliyken zemini pürüzlü yapmak için bu tuşu basılı tutun; tekrar düzleştirmek için bırakın.
-castle_group: Kale modu
-castle_group_descr: Kale modunda bina ve birim yerleştirin.
 castle_building_counts: Mini harita üzerinde bina sayaçları
 castle_building_counts_tooltip: Kale modunda mini harita üzerindeki bina sayılarını görün. Üzerine gelme metni varsayılan olarak kenara çekilir.
 castle_tower_ruins: Kule yıkıntıları
@@ -275,3 +273,21 @@ grid_group_descr: Kaynak ızgarasını, iç kale dönüş sınırlarını veya d
 herds_animal_bin: Tüm kara hayvanlarını silme düğmesi ekle (Alt+E)
 key_configured: Yapılandırılmış tuşu kullan
 key_off: Kapalı
+castle_buildings_group: Kale binaları
+castle_buildings_group_descr: Kale modunda bina yerleştirin.
+keeps_group: Ana kuleler ve depolar
+keeps_group_descr: Kale modunda ana kuleleri, depoları ve asker binalarını ayarlayın.
+players_group: Oyuncular
+players_group_descr: Kale modunda oyuncuları, renkleri ve ana kule türlerini seçin.
+fortifications_group: Surlar ve hendekler
+fortifications_group_descr: Kale modunda sur, merdiven ve hendek yerleştirin.
+tree_brush_group: Dikim ve fırçalar
+tree_brush_group_descr: Arazi modunda bitki fırçasının nasıl dikeceğini ayarlayın.
+tree_spread_group: Ağaç yayılımı
+tree_spread_group_descr: Bitki örtüsü menüsü her ağacın hangi zeminde yayıldığını gösterir.
+cat_terrain_water: Arazi ve su
+cat_vegetation_animals: Bitki örtüsü ve hayvanlar
+cat_castle_placement: Kale yerleşimi
+cat_players_walls_moats: Oyuncular, surlar ve hendekler
+cat_painting_corrections: Boyama ve düzeltmeler
+cat_map_layout: Harita düzeni ve ayarları

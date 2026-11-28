@@ -3,6 +3,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_map_layout}}'
   header: '{{counts_group}}'
   text: '{{counts_group_descr}}'
   hasHeader: true
@@ -19,18 +20,11 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_vegetation_animals}}'
   header: '{{trees_group}}'
   text: '{{trees_group_descr}}'
   hasHeader: true
   children:
-  - url: map-editor-improvements.trees.growth_from_brush
-    name: map-editor-improvements-trees-growth-from-brush
-    text: '{{trees_growth_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{trees_growth}}'
   - url: map-editor-improvements.trees.apple
     name: map-editor-improvements-trees-apple
     text: '{{trees_apple_tooltip}}'
@@ -55,6 +49,31 @@ options:
       type: boolean
       value: false
     header: '{{trees_felled}}'
+  - url: map-editor-improvements.trees.random_mix
+    name: map-editor-improvements-trees-random-mix
+    text: '{{trees_random_mix_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{trees_random_mix}}'
+- display: GroupBox
+  category:
+  - '{{qol}}'
+  - '{{map_editor}}'
+  - '{{cat_vegetation_animals}}'
+  header: '{{tree_brush_group}}'
+  text: '{{tree_brush_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.trees.growth_from_brush
+    name: map-editor-improvements-trees-growth-from-brush
+    text: '{{trees_growth_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{trees_growth}}'
   - url: map-editor-improvements.trees.no_shrub_stacking
     name: map-editor-improvements-trees-no-shrub-stacking
     text: '{{trees_no_stacking_tooltip}}'
@@ -71,14 +90,6 @@ options:
       type: boolean
       value: false
     header: '{{trees_preview}}'
-  - url: map-editor-improvements.trees.random_mix
-    name: map-editor-improvements-trees-random-mix
-    text: '{{trees_random_mix_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{trees_random_mix}}'
   - url: map-editor-improvements.trees.obstacles
     name: map-editor-improvements-trees-obstacles
     text: '{{trees_obstacles_tooltip}}'
@@ -95,6 +106,15 @@ options:
       type: boolean
       value: false
     header: '{{trees_rocks_and_water}}'
+- display: GroupBox
+  category:
+  - '{{qol}}'
+  - '{{map_editor}}'
+  - '{{cat_vegetation_animals}}'
+  header: '{{tree_spread_group}}'
+  text: '{{tree_spread_group_descr}}'
+  hasHeader: true
+  children:
   - url: map-editor-improvements.trees.spread_order
     name: map-editor-improvements-trees-spread-order
     text: '{{trees_spread_order_tooltip}}'
@@ -115,6 +135,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_terrain_water}}'
   header: '{{textures_group}}'
   text: '{{textures_group_descr}}'
   hasHeader: true
@@ -148,6 +169,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_terrain_water}}'
   header: '{{water_group}}'
   text: '{{water_group_descr}}'
   hasHeader: true
@@ -173,6 +195,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_terrain_water}}'
   header: '{{rocks_group}}'
   text: '{{rocks_group_descr}}'
   hasHeader: true
@@ -229,6 +252,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_terrain_water}}'
   header: '{{heights_group}}'
   text: '{{heights_group_descr}}'
   hasHeader: true
@@ -357,8 +381,9 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
-  header: '{{castle_group}}'
-  text: '{{castle_group_descr}}'
+  - '{{cat_castle_placement}}'
+  header: '{{castle_buildings_group}}'
+  text: '{{castle_buildings_group_descr}}'
   hasHeader: true
   children:
   - url: map-editor-improvements.castle.building_counts
@@ -401,22 +426,6 @@ options:
       type: boolean
       value: false
     header: '{{castle_barrier}}'
-  - url: map-editor-improvements.castle.several_keeps
-    name: map-editor-improvements-castle-several-keeps
-    text: '{{castle_several_keeps_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_several_keeps}}'
-  - url: map-editor-improvements.castle.several_storage_and_recruitment
-    name: map-editor-improvements-castle-several-storage-and-recruitment
-    text: '{{castle_several_storage_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_several_storage}}'
   - url: map-editor-improvements.castle.tower_engines_anywhere
     name: map-editor-improvements-castle-tower-engines-anywhere
     text: '{{castle_tower_engines_tooltip}}'
@@ -425,38 +434,6 @@ options:
       type: boolean
       value: false
     header: '{{castle_tower_engines}}'
-  - url: map-editor-improvements.castle.keep_parts
-    name: map-editor-improvements-castle-keep-parts
-    text: '{{castle_keep_parts_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_keep_parts}}'
-  - url: map-editor-improvements.castle.all_players
-    name: map-editor-improvements-castle-all-players
-    text: '{{castle_all_players_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_all_players}}'
-  - url: map-editor-improvements.castle.player_zero
-    name: map-editor-improvements-castle-player-zero
-    text: '{{castle_player_zero_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_player_zero}}'
-  - url: map-editor-improvements.castle.keep_ground
-    name: map-editor-improvements-castle-keep-ground
-    text: '{{castle_keep_ground}}'
-    tooltip: '{{castle_keep_ground_tooltip}}'
-    display: Switch
-    contents:
-      type: boolean
-      value: false
   - url: map-editor-improvements.castle.rotation
     name: map-editor-improvements-castle-rotation
     text: '{{castle_rotation}}'
@@ -465,46 +442,6 @@ options:
     contents:
       type: boolean
       value: false
-  - url: map-editor-improvements.castle.unit_colour
-    name: map-editor-improvements-castle-unit-colour
-    text: '{{castle_unit_colour}}'
-    tooltip: '{{castle_unit_colour_tooltip}}'
-    display: Switch
-    contents:
-      type: boolean
-      value: false
-  - url: map-editor-improvements.castle.keep_crests
-    name: map-editor-improvements-castle-keep-crests
-    text: '{{castle_keep_crests_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_keep_crests}}'
-  - url: map-editor-improvements.castle.wall_tools
-    name: map-editor-improvements-castle-wall-tools
-    text: '{{castle_wall_tools_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_wall_tools}}'
-  - url: map-editor-improvements.castle.all_keeps
-    name: map-editor-improvements-castle-all-keeps
-    text: '{{castle_all_keeps_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_all_keeps}}'
-  - url: map-editor-improvements.castle.damaged_walls
-    name: map-editor-improvements-castle-damaged-walls
-    text: '{{castle_damaged_walls_tooltip}}'
-    display: UCP2Switch
-    contents:
-      type: boolean
-      value: false
-    header: '{{castle_damaged_walls}}'
   - url: map-editor-improvements.castle.variant_panels
     name: map-editor-improvements-castle-variant-panels
     text: '{{castle_variant_panels_tooltip}}'
@@ -521,6 +458,121 @@ options:
       type: boolean
       value: false
     header: '{{castle_ruined_cathedral}}'
+- display: GroupBox
+  category:
+  - '{{qol}}'
+  - '{{map_editor}}'
+  - '{{cat_castle_placement}}'
+  header: '{{keeps_group}}'
+  text: '{{keeps_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.castle.several_keeps
+    name: map-editor-improvements-castle-several-keeps
+    text: '{{castle_several_keeps_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{castle_several_keeps}}'
+  - url: map-editor-improvements.castle.several_storage_and_recruitment
+    name: map-editor-improvements-castle-several-storage-and-recruitment
+    text: '{{castle_several_storage_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{castle_several_storage}}'
+  - url: map-editor-improvements.castle.keep_parts
+    name: map-editor-improvements-castle-keep-parts
+    text: '{{castle_keep_parts_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{castle_keep_parts}}'
+  - url: map-editor-improvements.castle.keep_ground
+    name: map-editor-improvements-castle-keep-ground
+    text: '{{castle_keep_ground}}'
+    tooltip: '{{castle_keep_ground_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: false
+  - url: map-editor-improvements.castle.keep_crests
+    name: map-editor-improvements-castle-keep-crests
+    text: '{{castle_keep_crests_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{castle_keep_crests}}'
+- display: GroupBox
+  category:
+  - '{{qol}}'
+  - '{{map_editor}}'
+  - '{{cat_players_walls_moats}}'
+  header: '{{players_group}}'
+  text: '{{players_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.castle.all_players
+    name: map-editor-improvements-castle-all-players
+    text: '{{castle_all_players_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{castle_all_players}}'
+  - url: map-editor-improvements.castle.player_zero
+    name: map-editor-improvements-castle-player-zero
+    text: '{{castle_player_zero_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{castle_player_zero}}'
+  - url: map-editor-improvements.castle.unit_colour
+    name: map-editor-improvements-castle-unit-colour
+    text: '{{castle_unit_colour}}'
+    tooltip: '{{castle_unit_colour_tooltip}}'
+    display: Switch
+    contents:
+      type: boolean
+      value: false
+  - url: map-editor-improvements.castle.all_keeps
+    name: map-editor-improvements-castle-all-keeps
+    text: '{{castle_all_keeps_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{castle_all_keeps}}'
+- display: GroupBox
+  category:
+  - '{{qol}}'
+  - '{{map_editor}}'
+  - '{{cat_players_walls_moats}}'
+  header: '{{fortifications_group}}'
+  text: '{{fortifications_group_descr}}'
+  hasHeader: true
+  children:
+  - url: map-editor-improvements.castle.wall_tools
+    name: map-editor-improvements-castle-wall-tools
+    text: '{{castle_wall_tools_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{castle_wall_tools}}'
+  - url: map-editor-improvements.castle.damaged_walls
+    name: map-editor-improvements-castle-damaged-walls
+    text: '{{castle_damaged_walls_tooltip}}'
+    display: UCP2Switch
+    contents:
+      type: boolean
+      value: false
+    header: '{{castle_damaged_walls}}'
   - url: map-editor-improvements.castle.moat_kinds
     name: map-editor-improvements-castle-moat-kinds
     text: '{{castle_moat_kinds_tooltip}}'
@@ -549,6 +601,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_vegetation_animals}}'
   header: '{{herds_group}}'
   text: '{{herds_group_descr}}'
   hasHeader: true
@@ -588,6 +641,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_painting_corrections}}'
   header: '{{brushes_group}}'
   text: '{{brushes_group_descr}}'
   hasHeader: true
@@ -604,6 +658,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_painting_corrections}}'
   header: '{{undo_group}}'
   text: '{{undo_group_descr}}'
   hasHeader: true
@@ -620,6 +675,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_painting_corrections}}'
   header: '{{pipette_group}}'
   text: '{{pipette_group_descr}}'
   hasHeader: true
@@ -854,6 +910,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_painting_corrections}}'
   header: '{{eraser_group}}'
   text: '{{eraser_group_descr}}'
   hasHeader: true
@@ -878,6 +935,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_map_layout}}'
   header: '{{map_settings_group}}'
   text: '{{map_settings_group_descr}}'
   hasHeader: true
@@ -902,6 +960,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_map_layout}}'
   header: '{{menu_group}}'
   text: '{{menu_group_descr}}'
   hasHeader: true
@@ -958,6 +1017,7 @@ options:
   category:
   - '{{qol}}'
   - '{{map_editor}}'
+  - '{{cat_map_layout}}'
   header: '{{grid_group}}'
   text: '{{grid_group_descr}}'
   hasHeader: true
